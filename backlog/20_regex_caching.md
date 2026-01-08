@@ -5,7 +5,9 @@ priority: LOW
 complexity: Low
 estimated_effort: 2 hours
 dependencies: []
-related_backlog: ["09_template_preprocessing.md", "04_template_parser_linter.md"]
+related_backlog:
+  - "[[09_template_preprocessing.md]]"
+  - "[[04_template_parser_linter.md]]"
 related_commit: null
 ---
 

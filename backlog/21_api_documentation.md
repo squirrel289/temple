@@ -4,8 +4,11 @@ status: not_started
 priority: HIGH
 complexity: Low
 estimated_effort: 1 day
-dependencies: ["17_refactor_lsp_server.md", "19_unified_token_model.md"]
-related_backlog: ["16_documentation.md"]
+dependencies:
+  - "[[17_refactor_lsp_server.md]]"
+  - "[[19_unified_token_model.md]]"
+related_backlog:
+  - "[[16_documentation.md]]"
 related_commit: null
 ---
 

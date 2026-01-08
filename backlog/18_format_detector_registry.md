@@ -4,8 +4,11 @@ status: not_started
 priority: MEDIUM
 complexity: Medium
 estimated_effort: 1 day
-dependencies: ["17_refactor_lsp_server.md"]
-related_backlog: ["10_base_format_detection.md", "11_integrate_base_linters.md"]
+dependencies:
+  - "[[17_refactor_lsp_server.md]]"
+related_backlog:
+  - "[[10_base_format_detection.md]]"
+  - "[[11_integrate_base_linters.md]]"
 related_commit: null
 ---
 
