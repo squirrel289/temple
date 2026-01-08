@@ -1,4 +1,10 @@
-# Temple: Meta-Templating System
+# Temple: Core Templating Engine
+
+## Status: Active Development
+
+**Current State**: Production-ready tokenization engine with configurable delimiters and LRU-cached performance optimizations.
+
+**Package**: `temple` - Core library providing authoritative tokenization for Temple DSL
 
 ## Vision
 
@@ -29,7 +35,39 @@ It is a universal, format-agnostic engine for declaratively describing and execu
 
 Everything else—ASTs, schemas, linters, query engines, etc.—are implementation details or optional enhancements. The heart is the ability to declaratively describe and execute transformations from structured data to text.
 
-## Core Capabilities
+## Current Implementation
+
+### ✅ Completed
+- **Template Tokenizer** (`src/temple/template_tokenizer.py`)
+  - Production-ready tokenization with configurable delimiters
+  - LRU-cached regex patterns (10x+ performance improvement)
+  - Position tracking with (line, col) tuples (0-indexed)
+  - Supports custom delimiters for conflict-free templates
+  - 10 passing tests covering edge cases
+
+### Installation
+```bash
+pip install -e .
+```
+
+### Usage
+```python
+from temple import temple_tokenizer, Token
+
+# Tokenize template with default delimiters
+text = "Hello {{ user.name }}!"
+tokens = list(temple_tokenizer(text))
+
+# Custom delimiters
+custom_delims = {
+    "statement": ("<<", ">>"),
+    "expression": ("<:", ":>"),
+    "comment": ("<#", "#>")
+}
+tokens = list(temple_tokenizer(text, custom_delims))
+```
+
+### 🚧 Roadmap (Pending)
 1. **Tree-based templating logic**
 2. **Lightweight DSLs**
    - Templating logic overlays (loops, conditionals, includes, user-defined functions)
@@ -47,28 +85,28 @@ Everything else—ASTs, schemas, linters, query engines, etc.—are implementati
 
 As a template author, I want to write templates in the target output format using standard linters for that format, so I get real-time feedback. The templating DSL overlays the target format and must validate against it. The logic DSL is consistent across all formats, and insertion tokens may be format-specific, but logic is always the same. The system should support any structured data format (JSON, XML, YAML, TOML, etc.) via pluggable parsers and schema validators.
 
-## Roadmap
-- [ ] Define template DSL syntax and logic primitives (including user-defined functions)
-- [ ] Design query language and schema validation integration (supporting multiple data formats)
-- [ ] Build pluggable data format parsers and schema validators
-- [ ] Build template parser and linter
-- [ ] Integrate output format linters
-- [ ] Implement rendering engine (object model input → output format)
-- [ ] Error reporting and best-effort rendering
-- [ ] CLI and/or editor integration for real-time feedback
+### 🚧 Roadmap (Pending)
+- [ ] Query language and schema validation integration (supporting multiple data formats)
+- [ ] Pluggable data format parsers and schema validators
+- [ ] Pluggable data format parsers and schema validators
+- [ ] Rendering engine (object model input → output format)
+- [ ] Advanced error reporting and best-effort rendering
 
-## Structure
-- `src/`: Source code
-- `tests/`: Unit tests
+## Downstream Consumers
+- **temple-linter**: LSP server for template-aware linting (imports `temple.template_tokenizer`)
+- **vscode-temple-linter**: VS Code extension for real-time validation
 
-## Setup
-Install dependencies:
+## Testing
 ```bash
-pip install -r requirements.txt
+pytest tests/
 ```
 
-## Running Tests
-Add your tests in the `tests/` directory and run them with your preferred test runner.
+## Documentation
+See [docs/](docs/) for detailed specifications:
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture
+- [syntax_spec.md](docs/syntax_spec.md) - DSL syntax specification
+- [query_language_and_schema.md](docs/query_language_and_schema.md) - Query language design
+- [error_reporting_strategy.md](docs/error_reporting_strategy.md) - Error handling philosophy
 
 
 ---

@@ -1,4 +1,4 @@
-from src.temple_linter.template_tokenizer import temple_tokenizer, Token, _compile_token_pattern
+from temple.template_tokenizer import temple_tokenizer, Token, _compile_token_pattern
 
 
 def tokens_to_tuples(

@@ -5,19 +5,22 @@ Temple is a meta-templating system for structured data (JSON, XML, YAML, TOML) t
 
 ## Architecture: Three Interconnected Components
 
-### 1. `temple/` - Core Templating Engine (Early Stage)
-- **Purpose**: Template DSL parser, query engine, rendering engine, schema validation
-- **Status**: Specification phase - implementation pending
+### 1. `temple/` - Core Templating Engine (Active Development)
+- **Purpose**: Authoritative tokenization, core template processing, specifications
+- **Status**: Functional core - tokenizer production-ready, rendering engine pending
 - **Key Files**:
+  - [src/temple/template_tokenizer.py](../temple/src/temple/template_tokenizer.py): Authoritative tokenizer with LRU caching
+  - [src/temple/__init__.py](../temple/src/temple/__init__.py): Package exports (Token, TokenType, temple_tokenizer)
+  - [tests/test_tokenizer.py](../temple/tests/test_tokenizer.py): Core tokenizer tests
   - [docs/ARCHITECTURE.md](../temple/docs/ARCHITECTURE.md): Modular architecture (parsers, query engine, linter, renderer)
   - [docs/syntax_spec.md](../temple/docs/syntax_spec.md): DSL syntax using configurable delimiters (default: `{% %}`, `{{ }}`)
   - [docs/query_language_and_schema.md](../temple/docs/query_language_and_schema.md): Dot notation, JMESPath, schema validation
-- **Dependencies**: Python 3.8+, installed via `pip install -r requirements.txt`
+- **Dependencies**: Python 3.8+ (stdlib only), installed via `pip install -e .`
 
 ### 2. `temple-linter/` - Template Linting & Diagnostics (Active Development)
 - **Purpose**: LSP server for template-aware linting, strips templates for base format validation
 - **Key Components**:
-  - [template_tokenizer.py](../temple-linter/src/temple_linter/template_tokenizer.py): Tokenizes templates into text/statement/expression/comment using configurable delimiters
+  - Imports tokenizer from `temple.template_tokenizer` (core dependency)
   - [template_preprocessing.py](../temple-linter/src/temple_linter/template_preprocessing.py): Strips template tokens (regex-based) for base format linting
   - [diagnostics.py](../temple-linter/src/temple_linter/diagnostics.py): Maps diagnostics between preprocessed and original positions
   - [linter.py](../temple-linter/src/temple_linter/linter.py): CLI entry point with `--delegate-base-lint` for external linter integration
@@ -47,7 +50,7 @@ temple:
   expression_start: "<:"
   expression_end: ":>"
 ```
-**Implementation**: All tokenizers/parsers accept `delimiters` dict parameter (see [template_tokenizer.py](../temple-linter/src/temple_linter/template_tokenizer.py))
+**Implementation**: All tokenizers/parsers accept `delimiters` dict parameter (see [template_tokenizer.py](../temple/src/temple/template_tokenizer.py))
 
 ### Token Types
 - **text**: Raw content (default if no delimiters match)
@@ -63,7 +66,7 @@ temple:
 
 ### Testing Conventions
 - Test files: `test_*.py` in respective `tests/` directories
-- Use helper functions like `tokens_to_tuples()` for easier test assertions (see [test_tokenizer.py](../temple-linter/tests/test_tokenizer.py))
+- Use helper functions like `tokens_to_tuples()` for easier test assertions (see [test_tokenizer.py](../temple/tests/test_tokenizer.py))
 - Tests validate token positions (`(line, col)` tuples) and delimiter handling
 
 ## Monorepo Workspace Structure
@@ -78,7 +81,12 @@ This is a **single-root monorepo** defined in `temple.code-workspace`:
 
 ### Python Components (temple, temple-linter)
 ```bash
-# Install dependencies
+# Install temple core first
+cd temple
+pip install -e .
+
+# Install temple-linter (depends on temple)
+cd ../temple-linter
 pip install -r requirements.txt
 
 # Run tests (from component directory)
@@ -97,18 +105,18 @@ npm run watch    # Development mode
 ```
 
 ### Key Commands
-- Test tokenizer: `pytest temple-linter/tests/test_tokenizer.py -v`
+- Test tokenizer: `pytest temple/tests/test_tokenizer.py -v`
 - Preprocess template: `python temple-linter/src/temple_linter/template_preprocessing.py --strip --input "<text>"`
 - Build extension: `cd vscode-temple-linter && npm run compile`
 
 ## Integration Points
-1. **temple-linter → VS Code Extension**: Custom LSP notifications (`temple/createVirtualDocument`) for cleaned content
-2. **VS Code → Native Linters**: Virtual document URIs trigger VS Code's diagnostic providers (JSON, Markdown, HTML, etc.)
-3. **Future**: temple → temple-linter integration for schema-aware query validation
+1. **temple → temple-linter**: temple-linter imports tokenizer from `temple.template_tokenizer`
+2. **temple-linter → VS Code Extension**: Custom LSP notifications (`temple/createVirtualDocument`) for cleaned content
+3. **VS Code → Native Linters**: Virtual document URIs trigger VS Code's diagnostic providers (JSON, Markdown, HTML, etc.)
 
 ## Roadmap Context
-- Core `temple/` engine is in **specification phase** - docs are authoritative, implementation is pending
-- `temple-linter/` is **actively developed** - focus on robust tokenization and LSP integration
+- Core `temple/` engine is **actively developed** - tokenizer production-ready, rendering engine pending
+- `temple-linter/` is **actively developed** - depends on temple core, focus on LSP integration
 - `vscode-temple-linter/` is **functional prototype** - needs testing with real-world templates
 
 ## When Adding Features

@@ -1,21 +1,30 @@
 # Temple Linter
 
-A Language Server Protocol (LSP) server for linting templated files. Validates both template syntax (DSL tokens) and base format (JSON, YAML, HTML, etc.) by delegating to VS Code's native linters.
+A Language Server Protocol (LSP) server for linting templated files. Uses the core `temple` tokenizer to validate template syntax (DSL tokens) and delegates base format linting (JSON, YAML, HTML, etc.) to VS Code's native linters.
 
 ## Features
 
-✨ **Template-Aware Linting**: Validates template syntax while preserving base format structure  
+✨ **Template-Aware Linting**: Validates template syntax using `temple.template_tokenizer`  
 🔍 **Format Detection**: Automatic detection of JSON, YAML, HTML, XML, TOML, Markdown  
-🚀 **Performance**: Regex pattern caching provides 10x+ speedup for batch processing  
+🚀 **Performance**: LRU-cached tokenization from temple core (10x+ speedup)  
 🎨 **Configurable**: Custom temple file extensions via VS Code settings  
 🔌 **VS Code Integration**: Seamless integration with VS Code's native linters  
 📊 **Complete Diagnostics**: Combines template and base format diagnostics with accurate position mapping
 
+## Dependencies
+
+- **temple>=0.1.0**: Core tokenization engine (REQUIRED)
+- **pygls>=1.0.0**: LSP server framework
+
 ## Quick Start
 
 ```bash
-# Install Python package
-cd temple-linter
+# Install temple core first
+cd ../temple
+pip install -e .
+
+# Install temple-linter
+cd ../temple-linter
 pip install -r requirements.txt
 pip install -e .
 

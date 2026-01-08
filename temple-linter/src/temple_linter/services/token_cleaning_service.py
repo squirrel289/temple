@@ -2,7 +2,7 @@
 TokenCleaningService - Strips template tokens for base format linting
 """
 from typing import Tuple, List
-from temple_linter.template_tokenizer import temple_tokenizer, Token
+from temple.template_tokenizer import temple_tokenizer, Token
 
 
 class TokenCleaningService:

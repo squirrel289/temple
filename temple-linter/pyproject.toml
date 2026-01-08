@@ -5,8 +5,18 @@ description = "Linting and diagnostics for templated files. Integrates with temp
 authors = [
 	{ name = "Your Name", email = "your@email.com" }
 ]
-dependencies = []
+dependencies = [
+	"pygls>=1.0.0"
+]
+requires-python = ">=3.7"
+
+[project.scripts]
+temple-linter-lsp = "temple_linter.lsp_server:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 packages = ["temple_linter"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

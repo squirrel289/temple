@@ -5,7 +5,7 @@ import logging
 import copy
 from typing import List, Optional, Tuple
 from lsprotocol.types import Diagnostic, Position, Range
-from temple_linter.template_tokenizer import Token
+from temple.template_tokenizer import Token
 
 
 class DiagnosticMappingService:

@@ -1,3 +1,11 @@
+"""
+temple.template_tokenizer
+Core template tokenization engine for Temple DSL.
+
+This is the AUTHORITATIVE implementation used by all Temple components.
+Supports configurable delimiters and efficient regex pattern caching.
+"""
+
 import re
 from functools import lru_cache
 from typing import Iterator, Optional, Tuple, Literal
