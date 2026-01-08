@@ -1,6 +1,6 @@
 ---
 title: "Comprehensive API Documentation"
-status: not_started
+status: complete
 priority: HIGH
 complexity: Low
 estimated_effort: 1 day
@@ -9,7 +9,8 @@ dependencies:
   - "[[19_unified_token_model.md]]"
 related_backlog:
   - "[[16_documentation.md]]"
-related_commit: null
+related_commit: 
+  - d94283e  # docs(temple-linter): add comprehensive API documentation with Sphinx
 ---
 
 # Comprehensive API Documentation
