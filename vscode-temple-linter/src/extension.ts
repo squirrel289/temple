@@ -120,6 +120,10 @@ export function activate(context: vscode.ExtensionContext) {
     config.get<string>('pythonPath') ||
     'python';
 
+  // Read temple file extensions from configuration
+  const templeConfig = vscode.workspace.getConfiguration('temple');
+  const templeExtensions = templeConfig.get<string[]>('fileExtensions', ['.tmpl', '.template']);
+
   // Path to the temple-linter package root (adjust if needed)
   const linterRoot = context.asAbsolutePath('../temple-linter');
   const serverOptions: ServerOptions = {
@@ -134,6 +138,9 @@ export function activate(context: vscode.ExtensionContext) {
     ],
     synchronize: {
       fileEvents: vscode.workspace.createFileSystemWatcher('**/*.tmpl')
+    },
+    initializationOptions: {
+      templeExtensions: templeExtensions
     }
   };
 

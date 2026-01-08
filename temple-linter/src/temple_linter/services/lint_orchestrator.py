@@ -43,7 +43,8 @@ class LintOrchestrator:
         self,
         text: str,
         uri: str,
-        language_client: LanguageClient
+        language_client: LanguageClient,
+        temple_extensions: List[str] = None
     ) -> List[Diagnostic]:
         """
         Execute complete linting workflow for a templated file.
@@ -52,10 +53,14 @@ class LintOrchestrator:
             text: Template content
             uri: Document URI
             language_client: LSP client for base linting delegation
+            temple_extensions: List of temple file extensions (e.g., [".tmpl", ".template"])
             
         Returns:
             Combined list of template and base format diagnostics
         """
+        if temple_extensions is None:
+            temple_extensions = [".tmpl", ".template"]
+        
         # 1. Template linting
         template_diagnostics = self._lint_template_syntax(text)
         
@@ -68,7 +73,7 @@ class LintOrchestrator:
         
         # 4. Base linting
         base_diagnostics = self.base_linting_service.request_base_diagnostics(
-            language_client, cleaned_text, uri, detected_format, filename
+            language_client, cleaned_text, uri, detected_format, filename, temple_extensions
         )
         
         # 5. Diagnostic mapping

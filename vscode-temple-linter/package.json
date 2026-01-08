@@ -26,7 +26,20 @@
         ],
         "configuration": "./language-configuration.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Temple Linter",
+      "properties": {
+        "temple.fileExtensions": {
+          "type": "array",
+          "default": [".tmpl", ".template"],
+          "items": {
+            "type": "string"
+          },
+          "description": "File extensions to treat as temple template files (e.g., .tmpl, .template)"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

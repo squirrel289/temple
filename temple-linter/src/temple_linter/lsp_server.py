@@ -35,6 +35,7 @@ class TempleLinterServer(LanguageServer):
     def __init__(self):
         super().__init__("temple-linter", "v1")
         self.logger = logging.getLogger(__name__)
+        self.temple_extensions = [".tmpl", ".template"]  # defaults
         self.orchestrator = LintOrchestrator(logger=self.logger)
 
 
@@ -45,6 +46,13 @@ lc = LanguageClient("temple-linter-client", "v1")
 @ls.feature(INITIALIZE)
 def on_initialize(ls: TempleLinterServer, params: InitializeParams):
     from lsprotocol.types import ServerCapabilities
+
+    # Extract temple extensions from initialization options if provided
+    if params.initialization_options:
+        temple_exts = params.initialization_options.get("templeExtensions")
+        if temple_exts and isinstance(temple_exts, list):
+            ls.temple_extensions = temple_exts
+            ls.logger.info(f"Temple extensions configured: {temple_exts}")
 
     return InitializeResult(
         capabilities=ServerCapabilities(
@@ -59,7 +67,7 @@ def did_open(ls: TempleLinterServer, params: DidOpenTextDocumentParams):
     """Handle document open event."""
     text_doc = params.text_document
     diagnostics: List[Diagnostic] = ls.orchestrator.lint_template(
-        text_doc.text, text_doc.uri, lc
+        text_doc.text, text_doc.uri, lc, ls.temple_extensions
     )
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
@@ -73,7 +81,7 @@ def did_open(ls: TempleLinterServer, params: DidOpenTextDocumentParams):
 def did_change(ls: TempleLinterServer, params: DidChangeTextDocumentParams):
     """Handle document change event."""
     text_doc = ls.workspace.get_text_document(params.text_document.uri)
-    diagnostics = ls.orchestrator.lint_template(text_doc.source, text_doc.uri, lc)
+    diagnostics = ls.orchestrator.lint_template(text_doc.source, text_doc.uri, lc, ls.temple_extensions)
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
             uri=text_doc.uri,
@@ -86,7 +94,7 @@ def did_change(ls: TempleLinterServer, params: DidChangeTextDocumentParams):
 def did_save(ls: TempleLinterServer, params: DidSaveTextDocumentParams):
     """Handle document save event."""
     text_doc = ls.workspace.get_text_document(params.text_document.uri)
-    diagnostics = ls.orchestrator.lint_template(text_doc.source, text_doc.uri, lc)
+    diagnostics = ls.orchestrator.lint_template(text_doc.source, text_doc.uri, lc, ls.temple_extensions)
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
             uri=text_doc.uri,

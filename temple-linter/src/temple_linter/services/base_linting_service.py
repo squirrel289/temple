@@ -27,7 +27,8 @@ class BaseLintingService:
         cleaned_text: str,
         original_uri: str,
         detected_format: Optional[str] = None,
-        original_filename: Optional[str] = None
+        original_filename: Optional[str] = None,
+        temple_extensions: List[str] = None
     ) -> List[Diagnostic]:
         """
         Request base format diagnostics from VS Code extension.
@@ -38,15 +39,19 @@ class BaseLintingService:
             original_uri: URI of the original document
             detected_format: Format detected by registry (or VSCODE_PASSTHROUGH)
             original_filename: Original filename for extension stripping
+            temple_extensions: List of temple file extensions (e.g., [".tmpl", ".template"])
             
         Returns:
             List of diagnostics from base format linters
         """
+        if temple_extensions is None:
+            temple_extensions = [".tmpl", ".template"]
+        
         try:
             # If format is unknown, let VS Code auto-detect using stripped filename
             target_uri = original_uri
             if detected_format == VSCODE_PASSTHROUGH and original_filename:
-                stripped = strip_temple_extension(original_filename)
+                stripped = strip_temple_extension(original_filename, temple_extensions)
                 if stripped and stripped != original_filename:
                     # Replace filename in URI for better VS Code detection
                     import os

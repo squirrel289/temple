@@ -18,23 +18,38 @@ MIN_CONFIDENCE = 0.2  # below this threshold we use VS Code auto-detection
 VSCODE_PASSTHROUGH = "vscode-auto"  # sentinel for VS Code auto-detection
 
 
-def strip_temple_extension(filename: Optional[str]) -> Optional[str]:
-    """Strip .tmpl/.template suffix, preserving base extension for VS Code detection.
+def strip_temple_extension(
+    filename: Optional[str],
+    extensions: List[str] = None
+) -> Optional[str]:
+    """Strip temple suffix from filename, preserving base extension for VS Code detection.
+    
+    Args:
+        filename: Original filename (e.g., "config.json.tmpl")
+        extensions: List of temple extensions to strip (e.g., [".tmpl", ".template"])
+            If None, defaults to [".tmpl", ".template"]
+    
+    Returns:
+        Filename with temple extension removed, or original if no match
     
     Examples:
-        config.json.tmpl -> config.json
-        README.md.template -> README.md
-        data.tmpl -> data
-        plain_file -> plain_file
+        strip_temple_extension("config.json.tmpl") -> "config.json"
+        strip_temple_extension("README.md.template") -> "README.md"
+        strip_temple_extension("data.tmpl") -> "data"
+        strip_temple_extension("data.tpl", [".tpl", ".tmpl"]) -> "data"
+        strip_temple_extension("plain_file") -> "plain_file"
     """
     if not filename:
         return filename
     
-    # Strip .tmpl or .template suffix
+    if extensions is None:
+        extensions = [".tmpl", ".template"]
+    
+    # Strip any matching temple extension (case-insensitive)
     base = filename
-    for suffix in [".tmpl", ".template"]:
-        if base.lower().endswith(suffix):
-            base = base[:-len(suffix)]
+    for ext in extensions:
+        if base.lower().endswith(ext.lower()):
+            base = base[:-len(ext)]
             break
     
     return base

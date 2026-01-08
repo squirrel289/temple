@@ -78,3 +78,30 @@ def test_strip_temple_extension_none():
 def test_detect_fallback_to_passthrough(linter):
     # Unknown content and no extension should trigger passthrough
     assert linter.detect_base_format("unknown", "random text") == VSCODE_PASSTHROUGH
+
+
+def test_strip_custom_extensions():
+    # Test with custom temple extensions
+    custom_exts = [".tpl", ".jinja", ".tmpl"]
+    assert strip_temple_extension("config.json.tpl", custom_exts) == "config.json"
+    assert strip_temple_extension("template.md.jinja", custom_exts) == "template.md"
+    assert strip_temple_extension("data.tmpl", custom_exts) == "data"
+
+
+def test_strip_empty_extensions():
+    # Empty extensions list should not strip anything
+    assert strip_temple_extension("config.json.tmpl", []) == "config.json.tmpl"
+
+
+def test_strip_none_extensions_uses_defaults():
+    # None extensions should use defaults
+    assert strip_temple_extension("config.json.tmpl", None) == "config.json"
+    assert strip_temple_extension("data.template", None) == "data"
+
+
+def test_strip_custom_case_insensitive():
+    # Custom extensions should be case-insensitive
+    custom_exts = [".TPL"]
+    assert strip_temple_extension("config.json.tpl", custom_exts) == "config.json"
+    assert strip_temple_extension("config.json.TPL", custom_exts) == "config.json"
+
