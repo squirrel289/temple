@@ -9,7 +9,7 @@ related_backlog:
   - "[[01_define_dsl_syntax.md]]"
   - "[[04_template_parser_linter.md]]"
 related_commit:
-  - f72a34d9c8e0528a8af0f8e1e30d4e6e18d8c7f8
+  - f72a34d  # feat(temple): unify token model with (line,col) tuples
 ---
 
 # Unified Token Model

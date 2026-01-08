@@ -9,8 +9,8 @@ dependencies:
 related_backlog: 
   - "[[08_cli_editor_integration.md]]"
   - "[[04_template_parser_linter.md]]"
-related_commit: 
-  - 173629a8216155fda6ad7badd6853dc8be514fc1
+related_commit:
+  - 659f208  # refactor(temple-linter): extract service classes from LSP server
 ---
 
 # Refactor LSP Server into Service Classes
