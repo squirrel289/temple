@@ -1,6 +1,6 @@
 ---
 title: "Performance Optimization - Regex Caching"
-status: not_started
+status: complete
 priority: LOW
 complexity: Low
 estimated_effort: 2 hours
@@ -8,7 +8,7 @@ dependencies: []
 related_backlog:
   - "[[09_template_preprocessing.md]]"
   - "[[04_template_parser_linter.md]]"
-related_commit: null
+related_commit: 44b8432 # perf(temple-linter): add regex pattern caching for 10x+ speedup
 ---
 
 # Performance Optimization - Regex Caching
