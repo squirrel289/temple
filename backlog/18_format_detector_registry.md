@@ -10,7 +10,7 @@ related_backlog:
   - "[[10_base_format_detection.md]]"
   - "[[11_integrate_base_linters.md]]"
 related_commit:
-   - TBD  # add commit SHA after committing implementation
+   - e40eec8  # feat(temple-linter): add format detector registry and tests
 ---
 
 # Implement Format Detector Registry
