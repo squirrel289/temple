@@ -66,11 +66,12 @@ temple:
 - Use helper functions like `tokens_to_tuples()` for easier test assertions (see [test_tokenizer.py](temple-linter/tests/test_tokenizer.py))
 - Tests validate token positions (`(line, col)` tuples) and delimiter handling
 
-## Multi-Repo Workspace Structure
-This is a **multi-root workspace** defined in `temple.code-workspace`:
-- Work on `temple/` for core engine specifications and future implementation
-- Work on `temple-linter/` for Python LSP server and tokenization logic
-- Work on `vscode-temple-linter/` for VS Code extension integration
+## Monorepo Workspace Structure
+This is a **single-root monorepo** defined in `temple.code-workspace`:
+- All three components (`temple/`, `temple-linter/`, `vscode-temple-linter/`) are in one repository
+- Each Python subproject has its own `.venv/` for dependency isolation
+- VS Code extension has its own `node_modules/` directory
+- Unified workspace settings apply to all folders (Python version, formatters, linters)
 - Changes should consider cross-component impacts (e.g., delimiter config affects all three)
 
 ## Development Workflow
