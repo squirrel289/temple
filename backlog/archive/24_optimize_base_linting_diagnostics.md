@@ -1,7 +1,19 @@
-# 24: Optimize Base Linting Diagnostics
+---
+title: "Optimize Base Linting Diagnostics"
+status: completed
+priority: LOW
+complexity: Low
+estimated_effort: 1 day
+dependencies: []
+related_backlog:
+  - "[[05_output_format_linters.md]]"
+  - "[[23_refactor_tokenizer_to_core.md]]"
+related_commit: 
+  - "3b913ab"
+  - "cd69df9"
+---
 
-## Status
-not-started
+# 24: Optimize Base Linting Diagnostics
 
 ## Overview
 Enhance base format linting with two optimizations:
@@ -44,9 +56,5 @@ Ensures downstream code always receives typed LSP objects.
 ## Acceptance Criteria
 - ✅ `detectedFormat` included in request payload
 - ✅ Dict-to-Diagnostic coercion with error handling
-- ✅ All tests pass (41+)
+- ✅ All tests pass (42+)
 - ✅ No breaking changes to public API
-
-## Related
-- #05_output_format_linters.md
-- #23_refactor_tokenizer_to_core.md (completed)
