@@ -33,7 +33,7 @@ class TempleLinterServer(LanguageServer):
     """LSP server for temple template linting."""
     
     def __init__(self):
-        super().__init__()  # pyright: ignore[reportCallIssue, reportUnknownMemberType]
+        super().__init__("temple-linter", "v1")
         self.logger = logging.getLogger(__name__)
         self.orchestrator = LintOrchestrator(logger=self.logger)
 
@@ -90,9 +90,9 @@ def did_save(ls: TempleLinterServer, params: DidSaveTextDocumentParams):
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
             uri=text_doc.uri,
-    else:
-        col = len(last_line)
-    return (line, col)
+            diagnostics=diagnostics,
+        )
+    )
 
 
 if __name__ == "__main__":

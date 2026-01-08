@@ -12,22 +12,25 @@ def strip_template_tokens(
     delimiters: Optional[Dict[str, Tuple[str, str]]] = None,
     replace_with: str = "",
 ) -> str:
-    """
-    Strips or replaces all template tokens (statements, expressions, comments) from a templated file.
+    """Strips or replaces all template tokens from a templated file.
+    
     Preserves the base format structure for linting. Supports configurable delimiters.
 
     Args:
         text: The input templated text.
         delimiters: Optional dict specifying delimiters for 'statement', 'expression', 'comment'.
-            Example: {
-                'statement': ('{%','%}'),
-                'expression': ('{{','}}'),
-                'comment': ('{#','#}')
-            }
+            Example::
+            
+                {
+                    'statement': ('{%','%}'),
+                    'expression': ('{{','}}'),
+                    'comment': ('{#','#}')
+                }
+            
         replace_with: String to replace template tokens with (default: '').
 
     Returns:
-        str: Text with template tokens stripped or replaced.
+        Text with template tokens stripped or replaced.
     """
     # Default delimiters (Jinja-like)
     default_delims = {

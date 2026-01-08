@@ -1,0 +1,734 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; Temple Linter 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Temple Linter Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Temple Linter
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#services-package">Services Package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.services.lint_orchestrator">LintOrchestrator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.services.lint_orchestrator.LintOrchestrator"><code class="docutils literal notranslate"><span class="pre">LintOrchestrator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.services.token_cleaning_service">TokenCleaningService</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.services.token_cleaning_service.TokenCleaningService"><code class="docutils literal notranslate"><span class="pre">TokenCleaningService</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.services.base_linting_service">BaseLintingService</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.services.base_linting_service.BaseLintingService"><code class="docutils literal notranslate"><span class="pre">BaseLintingService</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.services.diagnostic_mapping_service">DiagnosticMappingService</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.services.diagnostic_mapping_service.DiagnosticMappingService"><code class="docutils literal notranslate"><span class="pre">DiagnosticMappingService</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-modules">Core Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.template_tokenizer">Template Tokenizer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.template_tokenizer.Token"><code class="docutils literal notranslate"><span class="pre">Token</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.template_tokenizer.temple_tokenizer"><code class="docutils literal notranslate"><span class="pre">temple_tokenizer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.template_preprocessing">Template Preprocessing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.template_preprocessing.strip_template_tokens"><code class="docutils literal notranslate"><span class="pre">strip_template_tokens()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.linter">Template Linter</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.linter.TemplateLinter"><code class="docutils literal notranslate"><span class="pre">TemplateLinter</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-temple_linter.lsp_server">LSP Server</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#temple_linter.lsp_server.TempleLinterServer"><code class="docutils literal notranslate"><span class="pre">TempleLinterServer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.lsp_server.TempleLinterServer.__init__"><code class="docutils literal notranslate"><span class="pre">TempleLinterServer.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#temple_linter.lsp_server.on_initialize"><code class="docutils literal notranslate"><span class="pre">on_initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#temple_linter.lsp_server.did_open"><code class="docutils literal notranslate"><span class="pre">did_open()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#temple_linter.lsp_server.did_change"><code class="docutils literal notranslate"><span class="pre">did_change()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#temple_linter.lsp_server.did_save"><code class="docutils literal notranslate"><span class="pre">did_save()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#supporting-modules">Supporting Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.diagnostics">Diagnostics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.diagnostics.map_diagnostics"><code class="docutils literal notranslate"><span class="pre">map_diagnostics()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.template_mapping">Template Mapping</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.template_mapping.TemplateMapping"><code class="docutils literal notranslate"><span class="pre">TemplateMapping</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-temple_linter.base_format_linter">Base Format Linter</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temple_linter.base_format_linter.BaseFormatLinter"><code class="docutils literal notranslate"><span class="pre">BaseFormatLinter</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Temple Linter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<section id="services-package">
+<h2>Services Package<a class="headerlink" href="#services-package" title="Link to this heading"></a></h2>
+<p>The services package contains all linting services following Single Responsibility Principle.</p>
+<section id="module-temple_linter.services.lint_orchestrator">
+<span id="lintorchestrator"></span><h3>LintOrchestrator<a class="headerlink" href="#module-temple_linter.services.lint_orchestrator" title="Link to this heading"></a></h3>
+<p>LintOrchestrator - Coordinates all linting services</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.services.lint_orchestrator.LintOrchestrator">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.services.lint_orchestrator.</span></span><span class="sig-name descname"><span class="pre">LintOrchestrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/lint_orchestrator.html#LintOrchestrator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.lint_orchestrator.LintOrchestrator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Orchestrates the complete linting workflow for templated files.</p>
+<p>Workflow:
+1. Template linting (syntax and logic validation)
+2. Token cleaning (strip DSL tokens)
+3. Base linting (delegate to native linters)
+4. Diagnostic mapping (map positions back to original)
+5. Merge all diagnostics</p>
+<p>This orchestrator coordinates services following Single Responsibility Principle:
+- TemplateLinter: Validates template syntax
+- TokenCleaningService: Strips DSL tokens
+- BaseLintingService: Delegates to native linters
+- DiagnosticMappingService: Maps positions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logger</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Logger</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.services.lint_orchestrator.LintOrchestrator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/lint_orchestrator.html#LintOrchestrator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.lint_orchestrator.LintOrchestrator.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logger</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Logger</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.services.lint_orchestrator.LintOrchestrator.lint_template">
+<span class="sig-name descname"><span class="pre">lint_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uri</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language_client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/lint_orchestrator.html#LintOrchestrator.lint_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.lint_orchestrator.LintOrchestrator.lint_template" title="Link to this definition"></a></dt>
+<dd><p>Execute complete linting workflow for a templated file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Template content</p></li>
+<li><p><strong>uri</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Document URI</p></li>
+<li><p><strong>language_client</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">LanguageClient</span></code></span>) – LSP client for base linting delegation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/types.html#lsprotocol.types.Diagnostic" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diagnostic</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Combined list of template and base format diagnostics</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-temple_linter.services.token_cleaning_service">
+<span id="tokencleaningservice"></span><h3>TokenCleaningService<a class="headerlink" href="#module-temple_linter.services.token_cleaning_service" title="Link to this heading"></a></h3>
+<p>TokenCleaningService - Strips template tokens for base format linting</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.services.token_cleaning_service.TokenCleaningService">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.services.token_cleaning_service.</span></span><span class="sig-name descname"><span class="pre">TokenCleaningService</span></span><a class="reference internal" href="_modules/temple_linter/services/token_cleaning_service.html#TokenCleaningService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.token_cleaning_service.TokenCleaningService" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Service responsible for stripping template tokens and tracking text positions.</p>
+<p>This service:
+- Tokenizes template content
+- Extracts only text tokens (strips DSL tokens)
+- Tracks original positions for diagnostic mapping</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.services.token_cleaning_service.TokenCleaningService.clean_text_and_tokens">
+<span class="sig-name descname"><span class="pre">clean_text_and_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/token_cleaning_service.html#TokenCleaningService.clean_text_and_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.token_cleaning_service.TokenCleaningService.clean_text_and_tokens" title="Link to this definition"></a></dt>
+<dd><p>Strip template tokens and return cleaned text with position tracking.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Original template content</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#temple_linter.template_tokenizer.Token" title="temple_linter.template_tokenizer.Token"><code class="xref py py-class docutils literal notranslate"><span class="pre">Token</span></code></a>]]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple of (cleaned_text, text_tokens)
+- cleaned_text: Content with all DSL tokens removed
+- text_tokens: List of text Token objects for position mapping</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-temple_linter.services.base_linting_service">
+<span id="baselintingservice"></span><h3>BaseLintingService<a class="headerlink" href="#module-temple_linter.services.base_linting_service" title="Link to this heading"></a></h3>
+<p>BaseLintingService - Delegates linting to VS Code’s native linters</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.services.base_linting_service.BaseLintingService">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.services.base_linting_service.</span></span><span class="sig-name descname"><span class="pre">BaseLintingService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/base_linting_service.html#BaseLintingService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.base_linting_service.BaseLintingService" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Service responsible for delegating base format linting to VS Code extension.</p>
+<p>This service:
+- Sends cleaned content to VS Code extension
+- Receives diagnostics from native linters (JSON, YAML, etc.)
+- Handles communication errors gracefully</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logger</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Logger</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.services.base_linting_service.BaseLintingService.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/base_linting_service.html#BaseLintingService.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.base_linting_service.BaseLintingService.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logger</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Logger</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.services.base_linting_service.BaseLintingService.request_base_diagnostics">
+<span class="sig-name descname"><span class="pre">request_base_diagnostics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cleaned_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_uri</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/base_linting_service.html#BaseLintingService.request_base_diagnostics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.base_linting_service.BaseLintingService.request_base_diagnostics" title="Link to this definition"></a></dt>
+<dd><p>Request base format diagnostics from VS Code extension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lc</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">LanguageClient</span></code></span>) – Language client for communication</p></li>
+<li><p><strong>cleaned_text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Template content with DSL tokens stripped</p></li>
+<li><p><strong>original_uri</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – URI of the original document</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/types.html#lsprotocol.types.Diagnostic" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diagnostic</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of diagnostics from base format linters</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-temple_linter.services.diagnostic_mapping_service">
+<span id="diagnosticmappingservice"></span><h3>DiagnosticMappingService<a class="headerlink" href="#module-temple_linter.services.diagnostic_mapping_service" title="Link to this heading"></a></h3>
+<p>DiagnosticMappingService - Maps diagnostics from cleaned content to original positions</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.services.diagnostic_mapping_service.DiagnosticMappingService">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.services.diagnostic_mapping_service.</span></span><span class="sig-name descname"><span class="pre">DiagnosticMappingService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/diagnostic_mapping_service.html#DiagnosticMappingService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.diagnostic_mapping_service.DiagnosticMappingService" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Service responsible for mapping diagnostics between cleaned and original content.</p>
+<p>This service:
+- Maps diagnostic positions from cleaned content back to original template
+- Accounts for stripped DSL tokens in position calculations
+- Handles edge cases and errors gracefully</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logger</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Logger</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.services.diagnostic_mapping_service.DiagnosticMappingService.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/diagnostic_mapping_service.html#DiagnosticMappingService.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.diagnostic_mapping_service.DiagnosticMappingService.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logger</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Logger</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.services.diagnostic_mapping_service.DiagnosticMappingService.map_diagnostics">
+<span class="sig-name descname"><span class="pre">map_diagnostics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diagnostics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_tokens</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/services/diagnostic_mapping_service.html#DiagnosticMappingService.map_diagnostics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.services.diagnostic_mapping_service.DiagnosticMappingService.map_diagnostics" title="Link to this definition"></a></dt>
+<dd><p>Map diagnostics from cleaned content to original template positions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>diagnostics</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/types.html#lsprotocol.types.Diagnostic" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diagnostic</span></code></a>]</span>) – Diagnostics with positions in cleaned content</p></li>
+<li><p><strong>text_tokens</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#temple_linter.template_tokenizer.Token" title="temple_linter.template_tokenizer.Token"><code class="xref py py-class docutils literal notranslate"><span class="pre">Token</span></code></a>]</span>) – Text tokens tracking original positions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/types.html#lsprotocol.types.Diagnostic" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diagnostic</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Diagnostics with positions mapped to original template</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="core-modules">
+<h2>Core Modules<a class="headerlink" href="#core-modules" title="Link to this heading"></a></h2>
+<section id="module-temple_linter.template_tokenizer">
+<span id="template-tokenizer"></span><h3>Template Tokenizer<a class="headerlink" href="#module-temple_linter.template_tokenizer" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.template_tokenizer.Token">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.template_tokenizer.</span></span><span class="sig-name descname"><span class="pre">Token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delimiters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_tokenizer.html#Token"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_tokenizer.Token" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>raw_token</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>start</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</span>)</p></li>
+<li><p><strong>delimiters</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code></a>[<code class="docutils literal notranslate"><span class="pre">'text'</span></code>, <code class="docutils literal notranslate"><span class="pre">'statement'</span></code>, <code class="docutils literal notranslate"><span class="pre">'expression'</span></code>, <code class="docutils literal notranslate"><span class="pre">'comment'</span></code>], <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.template_tokenizer.Token.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delimiters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_tokenizer.html#Token.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_tokenizer.Token.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>raw_token</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>start</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</span>)</p></li>
+<li><p><strong>delimiters</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code></a>[<code class="docutils literal notranslate"><span class="pre">'text'</span></code>, <code class="docutils literal notranslate"><span class="pre">'statement'</span></code>, <code class="docutils literal notranslate"><span class="pre">'expression'</span></code>, <code class="docutils literal notranslate"><span class="pre">'comment'</span></code>], <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="temple_linter.template_tokenizer.temple_tokenizer">
+<span class="sig-prename descclassname"><span class="pre">temple_linter.template_tokenizer.</span></span><span class="sig-name descname"><span class="pre">temple_tokenizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delimiters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_tokenizer.html#temple_tokenizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_tokenizer.temple_tokenizer" title="Link to this definition"></a></dt>
+<dd><p>Yields Token objects for text, statement, expression, and comment regions.
+Supports custom delimiters.</p>
+<p>TODO: Add regex pattern caching for performance (recompiles on every call)
+See ARCHITECTURE_ANALYSIS.md Work Item #4 for implementation plan</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>delimiters</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code></a>[<code class="docutils literal notranslate"><span class="pre">'text'</span></code>, <code class="docutils literal notranslate"><span class="pre">'statement'</span></code>, <code class="docutils literal notranslate"><span class="pre">'expression'</span></code>, <code class="docutils literal notranslate"><span class="pre">'comment'</span></code>], <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#temple_linter.template_tokenizer.Token" title="temple_linter.template_tokenizer.Token"><code class="xref py py-class docutils literal notranslate"><span class="pre">Token</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-temple_linter.template_preprocessing">
+<span id="template-preprocessing"></span><h3>Template Preprocessing<a class="headerlink" href="#module-temple_linter.template_preprocessing" title="Link to this heading"></a></h3>
+<p>template_preprocessing.py
+Utility for stripping/replacing template tokens for base format linting.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="temple_linter.template_preprocessing.strip_template_tokens">
+<span class="sig-prename descclassname"><span class="pre">temple_linter.template_preprocessing.</span></span><span class="sig-name descname"><span class="pre">strip_template_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delimiters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace_with</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_preprocessing.html#strip_template_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_preprocessing.strip_template_tokens" title="Link to this definition"></a></dt>
+<dd><p>Strips or replaces all template tokens from a templated file.</p>
+<p>Preserves the base format structure for linting. Supports configurable delimiters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – The input templated text.</p></li>
+<li><p><strong>delimiters</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) – <p>Optional dict specifying delimiters for ‘statement’, ‘expression’, ‘comment’.
+Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;statement&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;{%&#39;</span><span class="p">,</span><span class="s1">&#39;%}&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;expression&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;{{&#39;</span><span class="p">,</span><span class="s1">&#39;}}&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;comment&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;{#&#39;</span><span class="p">,</span><span class="s1">&#39;#}&#39;</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p></li>
+<li><p><strong>replace_with</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">''</span></code>) – String to replace template tokens with (default: ‘’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Text with template tokens stripped or replaced.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-temple_linter.linter">
+<span id="template-linter"></span><h3>Template Linter<a class="headerlink" href="#module-temple_linter.linter" title="Link to this heading"></a></h3>
+<p>linter.py
+Core linting logic for templated files.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.linter.TemplateLinter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.linter.</span></span><span class="sig-name descname"><span class="pre">TemplateLinter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/linter.html#TemplateLinter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.linter.TemplateLinter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.linter.TemplateLinter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/linter.html#TemplateLinter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.linter.TemplateLinter.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.linter.TemplateLinter.lint">
+<span class="sig-name descname"><span class="pre">lint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/linter.html#TemplateLinter.lint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.linter.TemplateLinter.lint" title="Link to this definition"></a></dt>
+<dd><p>Lint the given templated text and return diagnostics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="module-temple_linter.lsp_server">
+<span id="lsp-server"></span><h2>LSP Server<a class="headerlink" href="#module-temple_linter.lsp_server" title="Link to this heading"></a></h2>
+<p>Temple LSP Server - Thin adapter for Language Server Protocol</p>
+<p>This server delegates all linting logic to service classes following
+Single Responsibility Principle. See services/ directory for implementation.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.lsp_server.TempleLinterServer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.lsp_server.</span></span><span class="sig-name descname"><span class="pre">TempleLinterServer</span></span><a class="reference internal" href="_modules/temple_linter/lsp_server.html#TempleLinterServer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.lsp_server.TempleLinterServer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/servers.html#pygls.lsp.server.LanguageServer" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">LanguageServer</span></code></a></p>
+<p>LSP server for temple template linting.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.lsp_server.TempleLinterServer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/lsp_server.html#TempleLinterServer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.lsp_server.TempleLinterServer.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="temple_linter.lsp_server.on_initialize">
+<span class="sig-prename descclassname"><span class="pre">temple_linter.lsp_server.</span></span><span class="sig-name descname"><span class="pre">on_initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/lsp_server.html#on_initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.lsp_server.on_initialize" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ls</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#temple_linter.lsp_server.TempleLinterServer" title="temple_linter.lsp_server.TempleLinterServer"><code class="xref py py-class docutils literal notranslate"><span class="pre">TempleLinterServer</span></code></a></span>)</p></li>
+<li><p><strong>params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/types.html#lsprotocol.types.InitializeParams" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">InitializeParams</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="temple_linter.lsp_server.did_open">
+<span class="sig-prename descclassname"><span class="pre">temple_linter.lsp_server.</span></span><span class="sig-name descname"><span class="pre">did_open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/lsp_server.html#did_open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.lsp_server.did_open" title="Link to this definition"></a></dt>
+<dd><p>Handle document open event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ls</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#temple_linter.lsp_server.TempleLinterServer" title="temple_linter.lsp_server.TempleLinterServer"><code class="xref py py-class docutils literal notranslate"><span class="pre">TempleLinterServer</span></code></a></span>)</p></li>
+<li><p><strong>params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/types.html#lsprotocol.types.DidOpenTextDocumentParams" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DidOpenTextDocumentParams</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="temple_linter.lsp_server.did_change">
+<span class="sig-prename descclassname"><span class="pre">temple_linter.lsp_server.</span></span><span class="sig-name descname"><span class="pre">did_change</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/lsp_server.html#did_change"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.lsp_server.did_change" title="Link to this definition"></a></dt>
+<dd><p>Handle document change event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ls</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#temple_linter.lsp_server.TempleLinterServer" title="temple_linter.lsp_server.TempleLinterServer"><code class="xref py py-class docutils literal notranslate"><span class="pre">TempleLinterServer</span></code></a></span>)</p></li>
+<li><p><strong>params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/types.html#lsprotocol.types.DidChangeTextDocumentParams" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DidChangeTextDocumentParams</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="temple_linter.lsp_server.did_save">
+<span class="sig-prename descclassname"><span class="pre">temple_linter.lsp_server.</span></span><span class="sig-name descname"><span class="pre">did_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/lsp_server.html#did_save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.lsp_server.did_save" title="Link to this definition"></a></dt>
+<dd><p>Handle document save event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ls</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#temple_linter.lsp_server.TempleLinterServer" title="temple_linter.lsp_server.TempleLinterServer"><code class="xref py py-class docutils literal notranslate"><span class="pre">TempleLinterServer</span></code></a></span>)</p></li>
+<li><p><strong>params</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://pygls.readthedocs.io/en/latest/pygls/api-reference/types.html#lsprotocol.types.DidSaveTextDocumentParams" title="(in pygls v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DidSaveTextDocumentParams</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="supporting-modules">
+<h2>Supporting Modules<a class="headerlink" href="#supporting-modules" title="Link to this heading"></a></h2>
+<section id="module-temple_linter.diagnostics">
+<span id="diagnostics"></span><h3>Diagnostics<a class="headerlink" href="#module-temple_linter.diagnostics" title="Link to this heading"></a></h3>
+<p>diagnostics.py
+Diagnostics mapping and reporting for templated files.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="temple_linter.diagnostics.map_diagnostics">
+<span class="sig-prename descclassname"><span class="pre">temple_linter.diagnostics.</span></span><span class="sig-name descname"><span class="pre">map_diagnostics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template_diagnostics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_diagnostics</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/diagnostics.html#map_diagnostics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.diagnostics.map_diagnostics" title="Link to this definition"></a></dt>
+<dd><p>Map and combine diagnostics from template and base format linters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template_diagnostics</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span>)</p></li>
+<li><p><strong>base_diagnostics</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-temple_linter.template_mapping">
+<span id="template-mapping"></span><h3>Template Mapping<a class="headerlink" href="#module-temple_linter.template_mapping" title="Link to this heading"></a></h3>
+<p>template_mapping.py
+Map positions between preprocessed and original template files for diagnostics.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.template_mapping.TemplateMapping">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.template_mapping.</span></span><span class="sig-name descname"><span class="pre">TemplateMapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delimiters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_mapping.html#TemplateMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_mapping.TemplateMapping" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>delimiters</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.template_mapping.TemplateMapping.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delimiters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_mapping.html#TemplateMapping.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_mapping.TemplateMapping.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>delimiters</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.template_mapping.TemplateMapping.pre_to_orig">
+<span class="sig-name descname"><span class="pre">pre_to_orig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pre_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_mapping.html#TemplateMapping.pre_to_orig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_mapping.TemplateMapping.pre_to_orig" title="Link to this definition"></a></dt>
+<dd><p>Map a position in preprocessed text to original template position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pre_pos</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.template_mapping.TemplateMapping.orig_to_pre">
+<span class="sig-name descname"><span class="pre">orig_to_pre</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orig_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_mapping.html#TemplateMapping.orig_to_pre"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_mapping.TemplateMapping.orig_to_pre" title="Link to this definition"></a></dt>
+<dd><p>Map a position in original template to preprocessed text position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>orig_pos</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.template_mapping.TemplateMapping.map_diagnostic">
+<span class="sig-name descname"><span class="pre">map_diagnostic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/template_mapping.html#TemplateMapping.map_diagnostic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.template_mapping.TemplateMapping.map_diagnostic" title="Link to this definition"></a></dt>
+<dd><p>Map a diagnostic from preprocessed to original template positions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>diag</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-temple_linter.base_format_linter">
+<span id="base-format-linter"></span><h3>Base Format Linter<a class="headerlink" href="#module-temple_linter.base_format_linter" title="Link to this heading"></a></h3>
+<p>Base format linting integration for templated files.
+Uses template_preprocessing to strip template tokens before linting.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="temple_linter.base_format_linter.BaseFormatLinter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">temple_linter.base_format_linter.</span></span><span class="sig-name descname"><span class="pre">BaseFormatLinter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delimiters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/base_format_linter.html#BaseFormatLinter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.base_format_linter.BaseFormatLinter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>delimiters</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.base_format_linter.BaseFormatLinter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delimiters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/base_format_linter.html#BaseFormatLinter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.base_format_linter.BaseFormatLinter.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>delimiters</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.base_format_linter.BaseFormatLinter.detect_base_format">
+<span class="sig-name descname"><span class="pre">detect_base_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/base_format_linter.html#BaseFormatLinter.detect_base_format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.base_format_linter.BaseFormatLinter.detect_base_format" title="Link to this definition"></a></dt>
+<dd><p>Detect the base format of a templated file using extension and content heuristics.
+Supported formats: json, yaml, html, toml, xml, md, txt</p>
+<p>TODO: Refactor using Strategy pattern with FormatDetectorRegistry
+See ARCHITECTURE_ANALYSIS.md Work Item #2 for implementation plan</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>)</p></li>
+<li><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="temple_linter.base_format_linter.BaseFormatLinter.lint_base_format">
+<span class="sig-name descname"><span class="pre">lint_base_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/temple_linter/base_format_linter.html#BaseFormatLinter.lint_base_format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#temple_linter.base_format_linter.BaseFormatLinter.lint_base_format" title="Link to this definition"></a></dt>
+<dd><p>Lint the base format of a templated file by stripping template tokens first.
+Returns diagnostics from the base linter (placeholder).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>filename</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Temple Linter Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Temple Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

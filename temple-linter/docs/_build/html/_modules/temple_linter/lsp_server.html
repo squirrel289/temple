@@ -1,0 +1,225 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>temple_linter.lsp_server &mdash; Temple Linter 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Temple Linter
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Temple Linter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">temple_linter.lsp_server</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for temple_linter.lsp_server</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Temple LSP Server - Thin adapter for Language Server Protocol</span>
+
+<span class="sd">This server delegates all linting logic to service classes following</span>
+<span class="sd">Single Responsibility Principle. See services/ directory for implementation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pygls.lsp.server</span><span class="w"> </span><span class="kn">import</span> <span class="n">LanguageServer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pygls.lsp.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">LanguageClient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lsprotocol.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">InitializeParams</span><span class="p">,</span>
+    <span class="n">InitializeResult</span><span class="p">,</span>
+    <span class="n">TextDocumentSyncKind</span><span class="p">,</span>
+    <span class="n">Diagnostic</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lsprotocol.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TEXT_DOCUMENT_DID_OPEN</span><span class="p">,</span>
+    <span class="n">TEXT_DOCUMENT_DID_CHANGE</span><span class="p">,</span>
+    <span class="n">TEXT_DOCUMENT_DID_SAVE</span><span class="p">,</span>
+    <span class="n">INITIALIZE</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lsprotocol.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DidOpenTextDocumentParams</span><span class="p">,</span>
+    <span class="n">DidChangeTextDocumentParams</span><span class="p">,</span>
+    <span class="n">DidSaveTextDocumentParams</span><span class="p">,</span>
+    <span class="n">PublishDiagnosticsParams</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">temple_linter.services.lint_orchestrator</span><span class="w"> </span><span class="kn">import</span> <span class="n">LintOrchestrator</span>
+
+
+<div class="viewcode-block" id="TempleLinterServer">
+<a class="viewcode-back" href="../../api.html#temple_linter.lsp_server.TempleLinterServer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TempleLinterServer</span><span class="p">(</span><span class="n">LanguageServer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;LSP server for temple template linting.&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="TempleLinterServer.__init__">
+<a class="viewcode-back" href="../../api.html#temple_linter.lsp_server.TempleLinterServer.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;temple-linter&quot;</span><span class="p">,</span> <span class="s2">&quot;v1&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span> <span class="o">=</span> <span class="n">LintOrchestrator</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">ls</span> <span class="o">=</span> <span class="n">TempleLinterServer</span><span class="p">()</span>
+<span class="n">lc</span> <span class="o">=</span> <span class="n">LanguageClient</span><span class="p">(</span><span class="s2">&quot;temple-linter-client&quot;</span><span class="p">,</span> <span class="s2">&quot;v1&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="on_initialize">
+<a class="viewcode-back" href="../../api.html#temple_linter.lsp_server.on_initialize">[docs]</a>
+<span class="nd">@ls</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="n">INITIALIZE</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_initialize</span><span class="p">(</span><span class="n">ls</span><span class="p">:</span> <span class="n">TempleLinterServer</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">InitializeParams</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">lsprotocol.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerCapabilities</span>
+
+    <span class="k">return</span> <span class="n">InitializeResult</span><span class="p">(</span>
+        <span class="n">capabilities</span><span class="o">=</span><span class="n">ServerCapabilities</span><span class="p">(</span>
+            <span class="n">text_document_sync</span><span class="o">=</span><span class="n">TextDocumentSyncKind</span><span class="o">.</span><span class="n">Incremental</span><span class="p">,</span>
+            <span class="n">experimental</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;temple/baseLint&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="did_open">
+<a class="viewcode-back" href="../../api.html#temple_linter.lsp_server.did_open">[docs]</a>
+<span class="nd">@ls</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="n">TEXT_DOCUMENT_DID_OPEN</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">did_open</span><span class="p">(</span><span class="n">ls</span><span class="p">:</span> <span class="n">TempleLinterServer</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">DidOpenTextDocumentParams</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle document open event.&quot;&quot;&quot;</span>
+    <span class="n">text_doc</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">text_document</span>
+    <span class="n">diagnostics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">lint_template</span><span class="p">(</span>
+        <span class="n">text_doc</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">text_doc</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="n">lc</span>
+    <span class="p">)</span>
+    <span class="n">ls</span><span class="o">.</span><span class="n">text_document_publish_diagnostics</span><span class="p">(</span>
+        <span class="n">PublishDiagnosticsParams</span><span class="p">(</span>
+            <span class="n">uri</span><span class="o">=</span><span class="n">text_doc</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span>
+            <span class="n">diagnostics</span><span class="o">=</span><span class="n">diagnostics</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="did_change">
+<a class="viewcode-back" href="../../api.html#temple_linter.lsp_server.did_change">[docs]</a>
+<span class="nd">@ls</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="n">TEXT_DOCUMENT_DID_CHANGE</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">did_change</span><span class="p">(</span><span class="n">ls</span><span class="p">:</span> <span class="n">TempleLinterServer</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">DidChangeTextDocumentParams</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle document change event.&quot;&quot;&quot;</span>
+    <span class="n">text_doc</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">workspace</span><span class="o">.</span><span class="n">get_text_document</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">text_document</span><span class="o">.</span><span class="n">uri</span><span class="p">)</span>
+    <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">lint_template</span><span class="p">(</span><span class="n">text_doc</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">text_doc</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="n">lc</span><span class="p">)</span>
+    <span class="n">ls</span><span class="o">.</span><span class="n">text_document_publish_diagnostics</span><span class="p">(</span>
+        <span class="n">PublishDiagnosticsParams</span><span class="p">(</span>
+            <span class="n">uri</span><span class="o">=</span><span class="n">text_doc</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span>
+            <span class="n">diagnostics</span><span class="o">=</span><span class="n">diagnostics</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="did_save">
+<a class="viewcode-back" href="../../api.html#temple_linter.lsp_server.did_save">[docs]</a>
+<span class="nd">@ls</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="n">TEXT_DOCUMENT_DID_SAVE</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">did_save</span><span class="p">(</span><span class="n">ls</span><span class="p">:</span> <span class="n">TempleLinterServer</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">DidSaveTextDocumentParams</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle document save event.&quot;&quot;&quot;</span>
+    <span class="n">text_doc</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">workspace</span><span class="o">.</span><span class="n">get_text_document</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">text_document</span><span class="o">.</span><span class="n">uri</span><span class="p">)</span>
+    <span class="n">diagnostics</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">lint_template</span><span class="p">(</span><span class="n">text_doc</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">text_doc</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="n">lc</span><span class="p">)</span>
+    <span class="n">ls</span><span class="o">.</span><span class="n">text_document_publish_diagnostics</span><span class="p">(</span>
+        <span class="n">PublishDiagnosticsParams</span><span class="p">(</span>
+            <span class="n">uri</span><span class="o">=</span><span class="n">text_doc</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span>
+            <span class="n">diagnostics</span><span class="o">=</span><span class="n">diagnostics</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Temple LSP][DEBUG] sys.executable:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Temple LSP][DEBUG] PATH:&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PATH&quot;</span><span class="p">),</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Temple LSP][DEBUG] VIRTUAL_ENV:&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VIRTUAL_ENV&quot;</span><span class="p">),</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Temple LSP][DEBUG] PYTHONPATH:&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PYTHONPATH&quot;</span><span class="p">),</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ls</span><span class="o">.</span><span class="n">start_io</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Temple Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
