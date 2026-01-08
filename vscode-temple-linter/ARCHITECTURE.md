@@ -39,7 +39,7 @@ graph TD
 
 ## Sequence Diagram
 
-```mermaidmermaid
+```mermaid
 sequenceDiagram
     participant VSCode as VS Code Extension
     participant Proxy as LSP Proxy Server

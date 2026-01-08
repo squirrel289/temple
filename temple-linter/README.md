@@ -32,39 +32,14 @@ The linter uses a service-oriented architecture following the Single Responsibil
 
 ### Workflow
 
-```
-Template File (.tmpl)
-        │
-        ▼
-┌───────────────────────────────────┐
-│  1. Template Linting              │  Validates {% %}, {{ }}, {# #}
-│     (TemplateLinter)               │
-└───────────────┬───────────────────┘
-                ▼
-┌───────────────────────────────────┐
-│  2. Token Cleaning                 │  Strips DSL tokens
-│     (TokenCleaningService)         │
-└───────────────┬───────────────────┘
-                ▼
-┌───────────────────────────────────┐
-│  3. Format Detection               │  Detects JSON/YAML/HTML/etc.
-│     (BaseFormatLinter)             │
-└───────────────┬───────────────────┘
-                ▼
-┌───────────────────────────────────┐
-│  4. Base Linting                   │  Delegates to VS Code linters
-│     (BaseLintingService)           │
-└───────────────┬───────────────────┘
-                ▼
-┌───────────────────────────────────┐
-│  5. Diagnostic Mapping             │  Maps positions back
-│     (DiagnosticMappingService)     │
-└───────────────┬───────────────────┘
-                ▼
-┌───────────────────────────────────┐
-│  6. Merge & Publish                │  Combined diagnostics to editor
-│     (LintOrchestrator)             │
-└───────────────────────────────────┘
+```mermaid
+flowchart TD
+  A["Template file (.tmpl)"] --> B["1) Template Linting\n(TemplateLinter)\nValidates {% %}, {{ }}, {# #}"]
+  B --> C["2) Token Cleaning\n(TokenCleaningService)\nStrips DSL tokens"]
+  C --> D["3) Format Detection\n(BaseFormatLinter)\nDetects JSON/YAML/HTML/etc."]
+  D --> E["4) Base Linting\n(BaseLintingService)\nDelegates to VS Code linters"]
+  E --> F["5) Diagnostic Mapping\n(DiagnosticMappingService)\nMaps positions back"]
+  F --> G["6) Merge & Publish\n(LintOrchestrator)\nCombined diagnostics to editor"]
 ```
 
 ## Usage

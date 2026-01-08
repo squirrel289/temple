@@ -10,19 +10,12 @@
 
 Temple is a **three-tier meta-templating system** designed for declarative transformation of structured data into text formats with real-time validation and developer tooling.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Temple Monorepo                           │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────────┐    ┌─────────────────┐    ┌─────────────┐│
-│  │   temple/    │───→│ temple-linter/  │───→│  vscode-    ││
-│  │ Core Engine  │    │   LSP Server    │    │  extension  ││
-│  │ (Spec Phase) │    │ (Active Dev)    │    │ (Prototype) ││
-│  └──────────────┘    └─────────────────┘    └─────────────┘│
-│       Python              Python                TypeScript   │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  A["temple/ Core Engine\n(Spec Phase)"] --> B["temple-linter/ LSP Server\n(Active Dev)"]
+  B --> C["vscode-temple-linter/ Extension\n(Prototype)"]
+  classDef lang fill:#f8f8f8,stroke:#999,stroke-width:1px,color:#111;
+  class A,B,C lang;
 ```
 
 ### 1.2 Component Roles & Responsibilities
@@ -146,52 +139,15 @@ Temple is a **three-tier meta-templating system** designed for declarative trans
 
 ### 1.3 Data Flow Architecture
 
-```
-┌──────────────────┐
-│ User edits .tmpl │
-│   file in VS Code│
-└────────┬─────────┘
-         │
-         ▼
-┌────────────────────────────────────────────────────────────┐
-│ vscode-temple-linter (TypeScript Extension)                │
-│  • Intercepts file changes                                  │
-│  • Sends document to Python LSP server                      │
-└────────┬───────────────────────────────────────────────────┘
-         │ LSP: textDocument/didChange
-         ▼
-┌────────────────────────────────────────────────────────────┐
-│ temple-linter (Python LSP Server)                           │
-│  1. Tokenize template with temple_tokenizer()               │
-│  2. Lint template syntax (TemplateLinter)                   │
-│  3. Strip tokens with strip_template_tokens()               │
-│  4. Send cleaned content to VS Code extension               │
-└────────┬───────────────────────────────────────────────────┘
-         │ Custom LSP: temple/requestBaseDiagnostics
-         ▼
-┌────────────────────────────────────────────────────────────┐
-│ vscode-temple-linter (Diagnostic Proxy)                     │
-│  1. Create virtual document (temple-cleaned://)             │
-│  2. Trigger VS Code's native linters (JSON, HTML, etc.)     │
-│  3. Collect diagnostics from VS Code API                    │
-│  4. Convert to LSP format                                   │
-│  5. Return to Python LSP server                             │
-└────────┬───────────────────────────────────────────────────┘
-         │ LSP Response: { diagnostics: [...] }
-         ▼
-┌────────────────────────────────────────────────────────────┐
-│ temple-linter (Position Mapper)                             │
-│  1. Map diagnostic positions from cleaned → original         │
-│  2. Merge template + base format diagnostics                │
-│  3. Publish combined diagnostics                            │
-└────────┬───────────────────────────────────────────────────┘
-         │ LSP: textDocument/publishDiagnostics
-         ▼
-┌────────────────────────────────────────────────────────────┐
-│ VS Code Editor                                              │
-│  • Display squiggles/errors in original template positions  │
-│  • Show error messages in Problems panel                    │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+  user["User edits .tmpl in VS Code"] --> ext["vscode-temple-linter (Extension)\n• Intercepts file changes\n• Sends document to Python LSP"]
+  ext -->|LSP: textDocument/didChange| lsp["temple-linter (Python LSP)\n1) Tokenize\n2) Lint template\n3) Strip tokens\n4) Send cleaned content"]
+  lsp -->|temple/requestBaseDiagnostics| proxy["vscode-temple-linter (Diagnostic Proxy)\n1) Create virtual doc (temple-cleaned://)\n2) Trigger native linters\n3) Collect diagnostics\n4) Convert to LSP"]
+  proxy --> native["VS Code native linters\nJSON / YAML / HTML / etc."]
+  native --> proxy
+  proxy --> mapper["temple-linter (Position Mapper)\n1) Map cleaned → original\n2) Merge template + base\n3) Publish combined diagnostics"]
+  mapper --> editor["VS Code editor\n• Squiggles in original file\n• Problems panel entries"]
 ```
 
 ---
