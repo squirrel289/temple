@@ -1,5 +1,5 @@
 import unittest
-from src.linter import TemplateLinter
+from temple_linter.linter import TemplateLinter
 
 
 class TestTemplateLinter(unittest.TestCase):

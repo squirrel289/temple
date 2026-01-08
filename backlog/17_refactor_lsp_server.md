@@ -1,12 +1,16 @@
 ---
 title: "Refactor LSP Server into Service Classes"
-status: not_started
+status: complete
 priority: HIGH
 complexity: High
 estimated_effort: 2-3 days
-dependencies: ["19_unified_token_model.md"]
-related_backlog: ["08_cli_editor_integration.md", "04_template_parser_linter.md"]
-related_commit: null
+dependencies: 
+ - "[[19_unified_token_model.md]]"
+related_backlog: 
+  - "[[08_cli_editor_integration.md]]"
+  - "[[04_template_parser_linter.md]]"
+related_commit: 
+  - 173629a8216155fda6ad7badd6853dc8be514fc1
 ---
 
 # Refactor LSP Server into Service Classes

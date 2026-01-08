@@ -1,5 +1,5 @@
 import unittest
-from src.base_format_linter import BaseFormatLinter
+from temple_linter.base_format_linter import BaseFormatLinter
 
 
 class TestBaseFormatLinter(unittest.TestCase):

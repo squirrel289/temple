@@ -1,5 +1,5 @@
 import unittest
-from src.diagnostics import map_diagnostics
+from temple_linter.diagnostics import map_diagnostics
 
 
 class TestDiagnostics(unittest.TestCase):
