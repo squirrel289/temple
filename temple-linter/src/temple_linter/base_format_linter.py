@@ -1,57 +1,204 @@
 """
 Base format linting integration for templated files.
-Uses template_preprocessing to strip template tokens before linting.
+
+Implements an extensible registry of format detectors following the Strategy
+pattern. Each detector returns a confidence score (0.0-1.0) based on filename
+and content heuristics; the registry selects the highest-confidence format.
 """
 
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Protocol
+
 from temple_linter.template_preprocessing import strip_template_tokens
-from typing import List, Dict, Any, Optional
 
-import os
+MIN_CONFIDENCE = 0.2  # below this threshold we fall back to "txt"
 
-# TODO: Refactor to use registry pattern for extensibility (see ARCHITECTURE_ANALYSIS.md Work Item #2)
+
+class FormatDetector(Protocol):
+    """Protocol for pluggable format detectors."""
+
+    def matches(self, filename: Optional[str], content: str) -> float:
+        """Return confidence score in [0.0, 1.0] for this format."""
+
+    def format_name(self) -> str:
+        """Return canonical format name (e.g., "json", "yaml")."""
+
+
+@dataclass
+class RegisteredDetector:
+    priority: int
+    detector: FormatDetector
+
+
+class FormatDetectorRegistry:
+    """Registry that resolves file formats via pluggable detectors."""
+
+    def __init__(self) -> None:
+        self._detectors: List[RegisteredDetector] = []
+
+    def register(self, detector: FormatDetector, priority: int = 0) -> None:
+        self._detectors.append(RegisteredDetector(priority, detector))
+        # Sort descending priority to evaluate higher-priority detectors first
+        self._detectors.sort(key=lambda d: d.priority, reverse=True)
+
+    def detect(self, filename: Optional[str], content: str) -> str:
+        best_format = "txt"
+        best_score = MIN_CONFIDENCE
+        for entry in self._detectors:
+            score = entry.detector.matches(filename, content)
+            if score > best_score:
+                best_score = score
+                best_format = entry.detector.format_name()
+        return best_format
+
+
+def _has_extension(filename: Optional[str], extensions: List[str]) -> bool:
+    if not filename:
+        return False
+    lower = filename.lower()
+    return any(lower.endswith(ext) for ext in extensions)
+
+
+class _JsonDetector:
+    def format_name(self) -> str:
+        return "json"
+
+    def matches(self, filename: Optional[str], content: str) -> float:
+        if _has_extension(filename, [".json", ".json.tmpl", ".json.template"]):
+            return 1.0
+        sample = content.lstrip()[:200].lower()
+        if sample.startswith("{") or sample.startswith("["):
+            return 0.7
+        return 0.0
+
+
+class _YamlDetector:
+    def format_name(self) -> str:
+        return "yaml"
+
+    def matches(self, filename: Optional[str], content: str) -> float:
+        if _has_extension(
+            filename,
+            [
+                ".yaml",
+                ".yml",
+                ".yaml.tmpl",
+                ".yml.tmpl",
+                ".yaml.template",
+                ".yml.template",
+            ],
+        ):
+            return 1.0
+        sample = content.lstrip()[:400].lower()
+        if sample.startswith("---"):
+            return 0.7
+        if ": " in sample:
+            return 0.35
+        return 0.0
+
+
+class _HtmlDetector:
+    def format_name(self) -> str:
+        return "html"
+
+    def matches(self, filename: Optional[str], content: str) -> float:
+        if _has_extension(
+            filename,
+            [
+                ".html",
+                ".htm",
+                ".html.tmpl",
+                ".htm.tmpl",
+                ".html.template",
+                ".htm.template",
+            ],
+        ):
+            return 1.0
+        sample = content.lstrip()[:400].lower()
+        if sample.startswith("<!doctype html") or sample.startswith("<html"):
+            return 0.9
+        if "<head" in sample or "<body" in sample:
+            return 0.6
+        return 0.0
+
+
+class _TomlDetector:
+    def format_name(self) -> str:
+        return "toml"
+
+    def matches(self, filename: Optional[str], content: str) -> float:
+        if _has_extension(filename, [".toml", ".toml.tmpl", ".toml.template"]):
+            return 1.0
+        sample = content.lstrip()[:400].lower()
+        if sample.startswith("[") and "=" in sample:
+            return 0.8
+        if "[" in sample and "]" in sample and "=" in sample:
+            return 0.45
+        return 0.0
+
+
+class _XmlDetector:
+    def format_name(self) -> str:
+        return "xml"
+
+    def matches(self, filename: Optional[str], content: str) -> float:
+        if _has_extension(filename, [".xml", ".xml.tmpl", ".xml.template"]):
+            return 1.0
+        sample = content.lstrip()[:400].lower()
+        if sample.startswith("<?xml"):
+            return 0.9
+        if sample.startswith("<"):
+            return 0.4
+        return 0.0
+
+
+class _MarkdownDetector:
+    def format_name(self) -> str:
+        return "md"
+
+    def matches(self, filename: Optional[str], content: str) -> float:
+        if _has_extension(
+            filename,
+            [
+                ".md",
+                ".markdown",
+                ".md.tmpl",
+                ".markdown.tmpl",
+                ".md.template",
+                ".markdown.template",
+            ],
+        ):
+            return 1.0
+        sample = content.lstrip()[:200]
+        if sample.startswith("#"):
+            return 0.6
+        if "\n- " in sample or "\n* " in sample:
+            return 0.4
+        return 0.0
+
+
 class BaseFormatLinter:
+    """Integrates format detection with base format linting."""
+
     def __init__(self, delimiters: Optional[Dict[str, tuple]] = None):
         self.delimiters = delimiters
+        self.registry = self._build_default_registry()
+
+    def _build_default_registry(self) -> FormatDetectorRegistry:
+        registry = FormatDetectorRegistry()
+        registry.register(_JsonDetector(), priority=100)
+        registry.register(_YamlDetector(), priority=90)
+        registry.register(_HtmlDetector(), priority=80)
+        registry.register(_XmlDetector(), priority=70)
+        registry.register(_TomlDetector(), priority=60)
+        registry.register(_MarkdownDetector(), priority=50)
+        return registry
 
     def detect_base_format(self, filename: Optional[str], text: str) -> str:
-        """
-        Detect the base format of a templated file using extension and content heuristics.
-        Supported formats: json, yaml, html, toml, xml, md, txt
-        
-        TODO: Refactor using Strategy pattern with FormatDetectorRegistry
-        See ARCHITECTURE_ANALYSIS.md Work Item #2 for implementation plan
-        """
-        if filename:
-            ext = os.path.splitext(filename)[1].lower()
-            if ext in ['.json', '.json.tmpl', '.json.template']:
-                return 'json'
-            if ext in ['.yaml', '.yml', '.yaml.tmpl', '.yml.tmpl', '.yaml.template', '.yml.template']:
-                return 'yaml'
-            if ext in ['.html', '.htm', '.html.tmpl', '.htm.tmpl', '.html.template', '.htm.template']:
-                return 'html'
-            if ext in ['.toml', '.toml.tmpl', '.toml.template']:
-                return 'toml'
-            if ext in ['.xml', '.xml.tmpl', '.xml.template']:
-                return 'xml'
-            if ext in ['.md', '.markdown', '.md.tmpl', '.markdown.tmpl', '.md.template', '.markdown.template']:
-                return 'md'
-            if ext in ['.txt', '.text', '.txt.tmpl', '.text.tmpl', '.txt.template', '.text.template']:
-                return 'txt'
-        # Fallback: content-based detection
-        sample = text.strip()[:1000].lower()
-        if sample.startswith('{') or sample.startswith('['):
-            return 'json'
-        if sample.startswith('<!doctype html') or sample.startswith('<html'):
-            return 'html'
-        if sample.startswith('<?xml') or sample.startswith('<'):
-            return 'xml'
-        if sample.startswith('---') or 'yaml' in sample or ': ' in sample:
-            return 'yaml'
-        if '[[' in sample and ']]' in sample:
-            return 'toml'
-        if sample.startswith('#') or sample.startswith('##'):
-            return 'md'
-        return 'txt'
+        """Detect the base format using registered detectors with confidence scoring."""
+        return self.registry.detect(filename, text)
 
     def lint_base_format(self, text: str, filename: Optional[str] = None) -> List[Dict[str, Any]]:
         """
@@ -60,11 +207,9 @@ class BaseFormatLinter:
         """
         base_text = strip_template_tokens(text, self.delimiters)
         base_format = self.detect_base_format(filename, base_text)
-        diagnostics = []
-        # TODO: Integrate with actual base format linter (Markdown, HTML, JSON, etc.)
+        diagnostics: List[Dict[str, Any]] = []
         diagnostics.append({
-            'base_format': base_format,
-            'info': f'Detected base format: {base_format}'
+            "base_format": base_format,
+            "info": f"Detected base format: {base_format}",
         })
-        # ... base format linting logic ...
         return diagnostics

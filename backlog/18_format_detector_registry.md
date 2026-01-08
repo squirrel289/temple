@@ -1,6 +1,6 @@
 ---
 title: "Implement Format Detector Registry"
-status: not_started
+status: complete
 priority: MEDIUM
 complexity: Medium
 estimated_effort: 1 day
@@ -9,7 +9,8 @@ dependencies:
 related_backlog:
   - "[[10_base_format_detection.md]]"
   - "[[11_integrate_base_linters.md]]"
-related_commit: null
+related_commit:
+   - TBD  # add commit SHA after committing implementation
 ---
 
 # Implement Format Detector Registry
