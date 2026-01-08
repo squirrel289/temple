@@ -48,31 +48,24 @@ class BaseLintingService:
             temple_extensions = [".tmpl", ".template"]
         
         try:
-            # If format is unknown, let VS Code auto-detect using stripped filename
+            # Strip temple suffix from filename so the extension matches the base format
             target_uri = original_uri
-            if detected_format == VSCODE_PASSTHROUGH and original_filename:
+            if original_filename:
                 stripped = strip_temple_extension(original_filename, temple_extensions)
                 if stripped and stripped != original_filename:
-                    # Replace filename in URI for better VS Code detection
                     import os
                     dir_uri = os.path.dirname(original_uri)
                     target_uri = f"{dir_uri}/{stripped}" if dir_uri else stripped
-            
+
             # Send custom request to VS Code extension
             result = lc.protocol.send_request(
                 "temple/requestBaseDiagnostics",
                 {"uri": target_uri, "content": cleaned_text},
             ).result()
-            
+
             diagnostics: List[Diagnostic] = result.get("diagnostics", []) if result else []
-            valid_diagnostics: List[Diagnostic] = []
-            
-            for d in diagnostics:
-                # Accept Diagnostic objects directly
-                valid_diagnostics.append(d)
-            
-            return valid_diagnostics
-        
+            return diagnostics if diagnostics else []
+
         except Exception as e:
             # Log and return no diagnostics on error
             self.logger.error(f"Error requesting base diagnostics: {e}")
