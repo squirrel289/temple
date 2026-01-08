@@ -9,6 +9,8 @@ related_backlog:
   - "[[19_unified_token_model.md]]"
   - "[[20_regex_caching.md]]"
 completed_date: 2026-01-08
+related_commit:
+  - 9e38e7b # refactor(core)!: move tokenizer to temple core engine
 ---
 
 # Refactor: Move Tokenizer to Temple Core
