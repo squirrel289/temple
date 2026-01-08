@@ -1,0 +1,118 @@
+# Temple: AI Agent Instructions
+
+## Project Overview
+Temple is a meta-templating system for structured data (JSON, XML, YAML, TOML) that enables authoring templates in target output formats (Markdown, HTML, JSON) with lightweight DSL overlays. The core philosophy: **declarative, logic-driven transformation of structured data into text** with a consistent, extensible authoring experience.
+
+## Architecture: Three Interconnected Components
+
+### 1. `temple/` - Core Templating Engine (Early Stage)
+- **Purpose**: Template DSL parser, query engine, rendering engine, schema validation
+- **Status**: Specification phase - implementation pending
+- **Key Files**:
+  - [docs/ARCHITECTURE.md](temple/docs/ARCHITECTURE.md): Modular architecture (parsers, query engine, linter, renderer)
+  - [docs/syntax_spec.md](temple/docs/syntax_spec.md): DSL syntax using configurable delimiters (default: `{% %}`, `{{ }}`)
+  - [docs/query_language_and_schema.md](temple/docs/query_language_and_schema.md): Dot notation, JMESPath, schema validation
+- **Dependencies**: Python 3.8+, installed via `pip install -r requirements.txt`
+
+### 2. `temple-linter/` - Template Linting & Diagnostics (Active Development)
+- **Purpose**: LSP server for template-aware linting, strips templates for base format validation
+- **Key Components**:
+  - [template_tokenizer.py](temple-linter/src/temple_linter/template_tokenizer.py): Tokenizes templates into text/statement/expression/comment using configurable delimiters
+  - [template_preprocessing.py](temple-linter/src/temple_linter/template_preprocessing.py): Strips template tokens (regex-based) for base format linting
+  - [diagnostics.py](temple-linter/src/temple_linter/diagnostics.py): Maps diagnostics between preprocessed and original positions
+  - [linter.py](temple-linter/src/temple_linter/linter.py): CLI entry point with `--delegate-base-lint` for external linter integration
+- **Testing**: Run tests in `tests/` directory using pytest
+- **Dependencies**: Python 3.8+, installed via `pip install -r requirements.txt`
+
+### 3. `vscode-temple-linter/` - VS Code Extension (TypeScript)
+- **Purpose**: VS Code integration using LSP proxy to delegate base format linting back to VS Code's native linters
+- **Architecture**: Python LSP server (temple-linter) ↔ Node.js LSP proxy ↔ VS Code linters (see [ARCHITECTURE.md](vscode-temple-linter/ARCHITECTURE.md))
+- **Key File**: [src/extension.ts](vscode-temple-linter/src/extension.ts)
+  - Virtual document provider (`temple-cleaned://` scheme) for diagnostic collection
+  - LSP proxy server handling `temple/createVirtualDocument` notifications
+  - Fallback to temp files if virtual docs fail (controlled by `TEMPLE_LINTER_FORCE_TEMP`)
+- **Build**: `npm run compile` (TypeScript → dist/src/)
+- **File Extensions**: `.tmpl`, `.template` mapped to `templated-any` language ID
+
+## Critical Patterns & Conventions
+
+### Configurable Delimiters
+Templates support custom delimiters to avoid conflicts with output formats:
+```yaml
+# Default: {% %}, {{ }}, {# #}
+# Custom example:
+temple:
+  statement_start: "<<"
+  statement_end: ">>"
+  expression_start: "<:"
+  expression_end: ":>"
+```
+**Implementation**: All tokenizers/parsers accept `delimiters` dict parameter (see [template_tokenizer.py](temple-linter/src/temple_linter/template_tokenizer.py))
+
+### Token Types
+- **text**: Raw content (default if no delimiters match)
+- **statement**: Logic blocks (`{% if %}`, `{% for %}`, etc.)
+- **expression**: Variable insertion (`{{ user.name }}`)
+- **comment**: Ignored content (`{# note #}`)
+
+### Error Reporting Philosophy (from [error_reporting_strategy.md](temple/docs/error_reporting_strategy.md))
+- **Inline annotations**: Errors reference exact token positions (start/end tuples)
+- **Actionable messages**: Suggest fixes, not just problems
+- **Best-effort rendering**: Partial output with error comments when possible
+- **Query validation**: Reference both query syntax and schema location
+
+### Testing Conventions
+- Test files: `test_*.py` in respective `tests/` directories
+- Use helper functions like `tokens_to_tuples()` for easier test assertions (see [test_tokenizer.py](temple-linter/tests/test_tokenizer.py))
+- Tests validate token positions (`(line, col)` tuples) and delimiter handling
+
+## Multi-Repo Workspace Structure
+This is a **multi-root workspace** defined in `temple.code-workspace`:
+- Work on `temple/` for core engine specifications and future implementation
+- Work on `temple-linter/` for Python LSP server and tokenization logic
+- Work on `vscode-temple-linter/` for VS Code extension integration
+- Changes should consider cross-component impacts (e.g., delimiter config affects all three)
+
+## Development Workflow
+
+### Python Components (temple, temple-linter)
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests (from component directory)
+pytest tests/
+
+# CLI usage example (temple-linter)
+python -m src.temple_linter.linter --lint --input "{% if x %}hello{% endif %}"
+```
+
+### VS Code Extension
+```bash
+cd vscode-temple-linter
+npm install
+npm run compile  # TypeScript compilation
+npm run watch    # Development mode
+```
+
+### Key Commands
+- Test tokenizer: `pytest temple-linter/tests/test_tokenizer.py -v`
+- Preprocess template: `python temple-linter/src/temple_linter/template_preprocessing.py --strip --input "<text>"`
+- Build extension: `cd vscode-temple-linter && npm run compile`
+
+## Integration Points
+1. **temple-linter → VS Code Extension**: Custom LSP notifications (`temple/createVirtualDocument`) for cleaned content
+2. **VS Code → Native Linters**: Virtual document URIs trigger VS Code's diagnostic providers (JSON, Markdown, HTML, etc.)
+3. **Future**: temple → temple-linter integration for schema-aware query validation
+
+## Roadmap Context
+- Core `temple/` engine is in **specification phase** - docs are authoritative, implementation is pending
+- `temple-linter/` is **actively developed** - focus on robust tokenization and LSP integration
+- `vscode-temple-linter/` is **functional prototype** - needs testing with real-world templates
+
+## When Adding Features
+1. **Delimiter support**: Always add `delimiters` parameter with defaults
+2. **Position tracking**: Maintain accurate `(line, col)` tuples through all transformations
+3. **Error messages**: Follow inline + actionable format from error strategy doc
+4. **Tests first**: Add test cases before implementing (see existing test patterns)
+5. **Cross-component**: Consider if changes affect temple/temple-linter/vscode-linter integration
