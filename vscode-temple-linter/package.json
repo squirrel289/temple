@@ -1,0 +1,58 @@
+{
+  "name": "vscode-temple-linter",
+  "displayName": "Temple Linter",
+  "description": "Lint and preprocess temple templated files for correct linting and diagnostics in VS Code.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": ">=1.70.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/src/extension.js",
+  "activationEvents": [
+    "onLanguage:templated-any"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "templated-any",
+        "aliases": [
+          "Templated File"
+        ],
+        "extensions": [
+          ".tmpl",
+          ".template"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/vscode-temple-linter.git"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@types/vscode": "^1.70.0",
+    "typescript": "^4.8.0",
+    "vsce": "^2.10.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^8.0.0",
+    "vscode-languageserver-textdocument": "^1.0.1"
+  },
+  "files": [
+    "lib",
+    "out",
+    "node_modules",
+    "package.json",
+    "README.md"
+  ]
+}
