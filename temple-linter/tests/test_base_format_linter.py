@@ -8,7 +8,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from temple_linter.base_format_linter import BaseFormatLinter
+from temple_linter.base_format_linter import BaseFormatLinter, strip_temple_extension, VSCODE_PASSTHROUGH
 
 
 @pytest.fixture()
@@ -45,10 +45,36 @@ def test_detect_toml(linter):
 
 
 def test_detect_fallback_txt(linter):
-    assert linter.detect_base_format("notes.unknown", "just text") == "txt"
+    # Unknown content and extension now triggers VS Code passthrough
+    assert linter.detect_base_format("notes.unknown", "just text") == VSCODE_PASSTHROUGH
 
 
 def test_lint_base_format_returns_diagnostics(linter):
     diagnostics = linter.lint_base_format("Hello {% if user %}{{ user.name }}{% endif %}")
     assert isinstance(diagnostics, list)
-    assert diagnostics[0]["base_format"] == "txt"
+    assert diagnostics[0]["base_format"] == VSCODE_PASSTHROUGH
+
+
+def test_strip_temple_extension_tmpl():
+    assert strip_temple_extension("config.json.tmpl") == "config.json"
+
+
+def test_strip_temple_extension_template():
+    assert strip_temple_extension("README.md.template") == "README.md"
+
+
+def test_strip_temple_extension_no_suffix():
+    assert strip_temple_extension("plain_file") == "plain_file"
+
+
+def test_strip_temple_extension_case_insensitive():
+    assert strip_temple_extension("config.TMPL") == "config"
+
+
+def test_strip_temple_extension_none():
+    assert strip_temple_extension(None) is None
+
+
+def test_detect_fallback_to_passthrough(linter):
+    # Unknown content and no extension should trigger passthrough
+    assert linter.detect_base_format("unknown", "random text") == VSCODE_PASSTHROUGH

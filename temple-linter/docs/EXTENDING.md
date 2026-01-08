@@ -45,7 +45,18 @@ linter.registry.register(MyFormatDetector(), priority=75)
 
 - Detectors are tried in **descending priority**.
 - Built-in defaults (highest to lowest): JSON (100), YAML (90), HTML (80), XML (70), TOML (60), Markdown (50).
-- If no detector exceeds the minimum confidence threshold (0.2), the registry returns `"txt"`.
+- If no detector exceeds the minimum confidence threshold (0.2), the format is set to `vscode-auto`, which triggers **VS Code passthrough mode**: the temple extension (`.tmpl`/`.template`) is stripped from the filename, and the cleaned content is forwarded to VS Code for automatic language detection and linting.
+
+## VS Code Passthrough Mode
+
+When the registry cannot confidently detect a format, Temple Linter defers to VS Code:
+
+1. The temple extension (`.tmpl`, `.template`) is stripped: `config.ini.tmpl` → `config.ini`
+2. The cleaned content is sent to VS Code with the stripped filename
+3. VS Code uses its own language detection based on the resulting extension and content
+4. This allows support for any format VS Code recognizes without needing a Temple detector
+
+This means users can template **any** file format supported by VS Code without adding custom detectors—the registry handles common cases for performance, but unknown formats automatically fall back to VS Code's detection.
 
 ## Tips for Detectors
 

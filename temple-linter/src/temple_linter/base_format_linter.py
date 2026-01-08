@@ -8,12 +8,36 @@ and content heuristics; the registry selects the highest-confidence format.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Protocol
 
 from temple_linter.template_preprocessing import strip_template_tokens
 
-MIN_CONFIDENCE = 0.2  # below this threshold we fall back to "txt"
+MIN_CONFIDENCE = 0.2  # below this threshold we use VS Code auto-detection
+VSCODE_PASSTHROUGH = "vscode-auto"  # sentinel for VS Code auto-detection
+
+
+def strip_temple_extension(filename: Optional[str]) -> Optional[str]:
+    """Strip .tmpl/.template suffix, preserving base extension for VS Code detection.
+    
+    Examples:
+        config.json.tmpl -> config.json
+        README.md.template -> README.md
+        data.tmpl -> data
+        plain_file -> plain_file
+    """
+    if not filename:
+        return filename
+    
+    # Strip .tmpl or .template suffix
+    base = filename
+    for suffix in [".tmpl", ".template"]:
+        if base.lower().endswith(suffix):
+            base = base[:-len(suffix)]
+            break
+    
+    return base
 
 
 class FormatDetector(Protocol):
@@ -44,7 +68,7 @@ class FormatDetectorRegistry:
         self._detectors.sort(key=lambda d: d.priority, reverse=True)
 
     def detect(self, filename: Optional[str], content: str) -> str:
-        best_format = "txt"
+        best_format = VSCODE_PASSTHROUGH
         best_score = MIN_CONFIDENCE
         for entry in self._detectors:
             score = entry.detector.matches(filename, content)
