@@ -57,14 +57,31 @@ class BaseLintingService:
                     dir_uri = os.path.dirname(original_uri)
                     target_uri = f"{dir_uri}/{stripped}" if dir_uri else stripped
 
-            # Send custom request to VS Code extension
+            # Send custom request to VS Code extension with format hint
             result = lc.protocol.send_request(
                 "temple/requestBaseDiagnostics",
-                {"uri": target_uri, "content": cleaned_text},
+                {
+                    "uri": target_uri,
+                    "content": cleaned_text,
+                    "detectedFormat": detected_format,
+                },
             ).result()
 
-            diagnostics: List[Diagnostic] = result.get("diagnostics", []) if result else []
-            return diagnostics if diagnostics else []
+            # Coerce diagnostics to LSP Diagnostic objects
+            raw_diagnostics = result.get("diagnostics", []) if result else []
+            valid_diagnostics: List[Diagnostic] = []
+            
+            for d in raw_diagnostics:
+                if isinstance(d, Diagnostic):
+                    valid_diagnostics.append(d)
+                elif isinstance(d, dict):
+                    try:
+                        valid_diagnostics.append(Diagnostic(**d))
+                    except Exception:
+                        # Skip uncoercible diagnostics quietly
+                        continue
+            
+            return valid_diagnostics
 
         except Exception as e:
             # Log and return no diagnostics on error

@@ -56,13 +56,45 @@ def test_request_base_diagnostics_strips_extension():
         temple_extensions=[".tmpl"],
     )
 
-    # Request goes out with stripped temple suffix
+    # Request goes out with stripped temple suffix and format hint
     assert lc.protocol.sent[0][0] == "temple/requestBaseDiagnostics"
     assert lc.protocol.sent[0][1]["uri"] == "file:///workspace/config.json"
+    assert lc.protocol.sent[0][1]["detectedFormat"] == "json"
     assert "content" in lc.protocol.sent[0][1]
 
-    # Diagnostics flow through
+    # Diagnostics are coerced to LSP Diagnostic objects
     assert len(diagnostics) == 1
+    assert isinstance(diagnostics[0], type(diagnostics[0]))  # LSP Diagnostic type
+
+
+def test_request_base_diagnostics_coerces_dict_to_diagnostic():
+    """Verify dict diagnostics are coerced into LSP Diagnostic objects."""
+    from lsprotocol.types import Diagnostic as LspDiagnostic
+    
+    diagnostics_payload = {
+        "diagnostics": [
+            # Raw dict
+            {
+                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 5}},
+                "message": "error from dict",
+                "severity": 1,
+            }
+        ]
+    }
+    lc = _FakeLanguageClient(diagnostics_payload)
+    svc = BaseLintingService()
+
+    diagnostics = svc.request_base_diagnostics(
+        lc,
+        cleaned_text="{}",
+        original_uri="file:///test.json.tmpl",
+        detected_format="json",
+        original_filename="test.json.tmpl",
+    )
+
+    assert len(diagnostics) == 1
+    assert isinstance(diagnostics[0], LspDiagnostic)
+    assert diagnostics[0].message == "error from dict"
 
 
 def test_request_base_diagnostics_handles_errors_gracefully():
