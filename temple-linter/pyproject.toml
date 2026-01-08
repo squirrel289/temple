@@ -1,0 +1,12 @@
+[project]
+name = "temple-linter"
+version = "0.1.0"
+description = "Linting and diagnostics for templated files. Integrates with temple and base format linters."
+authors = [
+	{ name = "Your Name", email = "your@email.com" }
+]
+dependencies = []
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["temple_linter"]
