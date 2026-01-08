@@ -9,25 +9,25 @@ Temple is a meta-templating system for structured data (JSON, XML, YAML, TOML) t
 - **Purpose**: Template DSL parser, query engine, rendering engine, schema validation
 - **Status**: Specification phase - implementation pending
 - **Key Files**:
-  - [docs/ARCHITECTURE.md](temple/docs/ARCHITECTURE.md): Modular architecture (parsers, query engine, linter, renderer)
-  - [docs/syntax_spec.md](temple/docs/syntax_spec.md): DSL syntax using configurable delimiters (default: `{% %}`, `{{ }}`)
-  - [docs/query_language_and_schema.md](temple/docs/query_language_and_schema.md): Dot notation, JMESPath, schema validation
+  - [docs/ARCHITECTURE.md](../temple/docs/ARCHITECTURE.md): Modular architecture (parsers, query engine, linter, renderer)
+  - [docs/syntax_spec.md](../temple/docs/syntax_spec.md): DSL syntax using configurable delimiters (default: `{% %}`, `{{ }}`)
+  - [docs/query_language_and_schema.md](../temple/docs/query_language_and_schema.md): Dot notation, JMESPath, schema validation
 - **Dependencies**: Python 3.8+, installed via `pip install -r requirements.txt`
 
 ### 2. `temple-linter/` - Template Linting & Diagnostics (Active Development)
 - **Purpose**: LSP server for template-aware linting, strips templates for base format validation
 - **Key Components**:
-  - [template_tokenizer.py](temple-linter/src/temple_linter/template_tokenizer.py): Tokenizes templates into text/statement/expression/comment using configurable delimiters
-  - [template_preprocessing.py](temple-linter/src/temple_linter/template_preprocessing.py): Strips template tokens (regex-based) for base format linting
-  - [diagnostics.py](temple-linter/src/temple_linter/diagnostics.py): Maps diagnostics between preprocessed and original positions
-  - [linter.py](temple-linter/src/temple_linter/linter.py): CLI entry point with `--delegate-base-lint` for external linter integration
+  - [template_tokenizer.py](../temple-linter/src/temple_linter/template_tokenizer.py): Tokenizes templates into text/statement/expression/comment using configurable delimiters
+  - [template_preprocessing.py](../temple-linter/src/temple_linter/template_preprocessing.py): Strips template tokens (regex-based) for base format linting
+  - [diagnostics.py](../temple-linter/src/temple_linter/diagnostics.py): Maps diagnostics between preprocessed and original positions
+  - [linter.py](../temple-linter/src/temple_linter/linter.py): CLI entry point with `--delegate-base-lint` for external linter integration
 - **Testing**: Run tests in `tests/` directory using pytest
 - **Dependencies**: Python 3.8+, installed via `pip install -r requirements.txt`
 
 ### 3. `vscode-temple-linter/` - VS Code Extension (TypeScript)
 - **Purpose**: VS Code integration using LSP proxy to delegate base format linting back to VS Code's native linters
-- **Architecture**: Python LSP server (temple-linter) ↔ Node.js LSP proxy ↔ VS Code linters (see [ARCHITECTURE.md](vscode-temple-linter/ARCHITECTURE.md))
-- **Key File**: [src/extension.ts](vscode-temple-linter/src/extension.ts)
+- **Architecture**: Python LSP server (temple-linter) ↔ Node.js LSP proxy ↔ VS Code linters (see [ARCHITECTURE.md](../vscode-temple-linter/ARCHITECTURE.md))
+- **Key File**: [src/extension.ts](../vscode-temple-linter/src/extension.ts)
   - Virtual document provider (`temple-cleaned://` scheme) for diagnostic collection
   - LSP proxy server handling `temple/createVirtualDocument` notifications
   - Fallback to temp files if virtual docs fail (controlled by `TEMPLE_LINTER_FORCE_TEMP`)
@@ -47,7 +47,7 @@ temple:
   expression_start: "<:"
   expression_end: ":>"
 ```
-**Implementation**: All tokenizers/parsers accept `delimiters` dict parameter (see [template_tokenizer.py](temple-linter/src/temple_linter/template_tokenizer.py))
+**Implementation**: All tokenizers/parsers accept `delimiters` dict parameter (see [template_tokenizer.py](../temple-linter/src/temple_linter/template_tokenizer.py))
 
 ### Token Types
 - **text**: Raw content (default if no delimiters match)
@@ -55,7 +55,7 @@ temple:
 - **expression**: Variable insertion (`{{ user.name }}`)
 - **comment**: Ignored content (`{# note #}`)
 
-### Error Reporting Philosophy (from [error_reporting_strategy.md](temple/docs/error_reporting_strategy.md))
+### Error Reporting Philosophy (from [error_reporting_strategy.md](../temple/docs/error_reporting_strategy.md))
 - **Inline annotations**: Errors reference exact token positions (start/end tuples)
 - **Actionable messages**: Suggest fixes, not just problems
 - **Best-effort rendering**: Partial output with error comments when possible
@@ -63,7 +63,7 @@ temple:
 
 ### Testing Conventions
 - Test files: `test_*.py` in respective `tests/` directories
-- Use helper functions like `tokens_to_tuples()` for easier test assertions (see [test_tokenizer.py](temple-linter/tests/test_tokenizer.py))
+- Use helper functions like `tokens_to_tuples()` for easier test assertions (see [test_tokenizer.py](../temple-linter/tests/test_tokenizer.py))
 - Tests validate token positions (`(line, col)` tuples) and delimiter handling
 
 ## Monorepo Workspace Structure
