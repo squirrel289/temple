@@ -19,7 +19,7 @@ def test_expression_token():
     tokens = list(temple_tokenizer(text))
     assert tokens_to_tuples(tokens) == [
         ("text", "foo ", (0, 0), (0, 4)),
-        ("expression", "{{ bar }}", (0, 4), (0, 13)),
+        ("expression", "bar", (0, 4), (0, 13)),
         ("text", " baz", (0, 13), (0, 17)),
     ]
 
@@ -28,9 +28,9 @@ def test_statement_token():
     text = "{% if x %}42{% endif %}"
     tokens = list(temple_tokenizer(text))
     assert tokens_to_tuples(tokens) == [
-        ("statement", "{% if x %}", (0, 0), (0, 10)),
+        ("statement", "if x", (0, 0), (0, 10)),
         ("text", "42", (0, 10), (0, 12)),
-        ("statement", "{% endif %}", (0, 12), (0, 23)),
+        ("statement", "endif", (0, 12), (0, 23)),
     ]
 
 
@@ -39,7 +39,7 @@ def test_comment_token():
     tokens = list(temple_tokenizer(text))
     assert tokens_to_tuples(tokens) == [
         ("text", "foo ", (0, 0), (0, 4)),
-        ("comment", "{# comment #}", (0, 4), (0, 17)),
+        ("comment", "comment", (0, 4), (0, 17)),
         ("text", " bar", (0, 17), (0, 21)),
     ]
 
@@ -49,11 +49,11 @@ def test_mixed_tokens():
     tokens = list(temple_tokenizer(text))
     assert tokens_to_tuples(tokens) == [
         ("text", "a", (0, 0), (0, 1)),
-        ("expression", "{{x}}", (0, 1), (0, 6)),
+        ("expression", "x", (0, 1), (0, 6)),
         ("text", "b", (0, 6), (0, 7)),
-        ("statement", "{%y%}", (0, 7), (0, 12)),
+        ("statement", "y", (0, 7), (0, 12)),
         ("text", "c", (0, 12), (0, 13)),
-        ("comment", "{#z#}", (0, 13), (0, 18)),
+        ("comment", "z", (0, 13), (0, 18)),
         ("text", "d", (0, 18), (0, 19)),
     ]
 
@@ -63,7 +63,7 @@ def test_multiline_tokens():
     tokens = list(temple_tokenizer(text))
     assert tokens_to_tuples(tokens) == [
         ("text", "foo\n", (0, 0), (1, 0)),
-        ("expression", "{{\nbar\n}}", (1, 0), (3, 2)),
+        ("expression", "bar", (1, 0), (3, 2)),
         ("text", "\nbaz", (3, 2), (4, 3)),
     ]
 
@@ -72,7 +72,7 @@ def test_unclosed_token():
     text = "foo {{ bar "
     tokens = list(temple_tokenizer(text))
     # Should treat the whole as text since no closing '}}'
-    assert tokens_to_tuples(tokens) == [("text", "foo {{ bar ", (0, 0), (0, 12))]
+    assert tokens_to_tuples(tokens) == [("text", "foo {{ bar ", (0, 0), (0, 11))]
 
 
 def test_empty_string():
@@ -83,4 +83,4 @@ def test_empty_string():
 def test_only_token():
     text = "{{foo}}"
     tokens = list(temple_tokenizer(text))
-    assert tokens_to_tuples(tokens) == [("expression", "{{foo}}", (0, 0), (0, 7))]
+    assert tokens_to_tuples(tokens) == [("expression", "foo", (0, 0), (0, 7))]

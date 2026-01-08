@@ -2,24 +2,35 @@
 temple/parser.py
 Template parser for base formats (Markdown, HTML, JSON) with DSL overlays.
 
-NOTE: This is a REFERENCE IMPLEMENTATION for specification purposes.
-The authoritative implementation is in temple-linter/src/temple_linter/template_tokenizer.py
-which uses (line, col) tuples for better error reporting.
+NOTE: This is a REFERENCE IMPLEMENTATION matching the authoritative implementation
+in temple-linter/src/temple_linter/template_tokenizer.py
 
-TODO: Unify token models across temple and temple-linter
-See ARCHITECTURE_ANALYSIS.md Work Item #3
+Token Model: Uses (line, col) tuples for positions (0-indexed)
+- line: 0-indexed line number
+- col: 0-indexed column number within line
+- Tuples enable accurate error reporting and diagnostic mapping
 """
 
 import re
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 
 
 class TemplateToken:
-    def __init__(self, type_: str, value: str, start: int, end: int):
+    """
+    Template token with (line, col) position tracking.
+    
+    Position Semantics (0-indexed):
+    - line: Line number starting from 0
+    - col: Column number within line starting from 0
+    - Both start and end positions are inclusive
+    
+    Example: "foo\nbar" with token "bar" at line 1, col 0
+    """
+    def __init__(self, type_: str, value: str, start: Tuple[int, int], end: Tuple[int, int]):
         self.type = type_  # 'base', 'statement', 'expression', 'comment'
         self.value = value
-        self.start = start
-        self.end = end
+        self.start = start  # (line, col) tuple
+        self.end = end      # (line, col) tuple
 
     def __repr__(self):
         return f"<Token {self.type}: {self.value[:30]!r} @ {self.start}-{self.end}>"
@@ -74,9 +85,12 @@ class TemplateParser:
         }
 
     def tokenize(self, template: str) -> List[TemplateToken]:
-        """Tokenize template into base and DSL logic tokens."""
+        """Tokenize template into base and DSL logic tokens with (line, col) positions."""
         tokens: List[TemplateToken] = []
         pos = 0
+        line = 0
+        col = 0
+        
         while pos < len(template):
             # Find next DSL token
             matches = [
@@ -84,17 +98,45 @@ class TemplateParser:
             ]
             matches = [(typ, m) for typ, m in matches if m]
             if not matches:
-                tokens.append(TemplateToken("base", template[pos:], pos, len(template)))
+                # Remaining content is base text
+                value = template[pos:]
+                start_pos = (line, col)
+                end_pos = self._advance_position((line, col), value)
+                tokens.append(TemplateToken("base", value, start_pos, end_pos))
                 break
+            
             # Find earliest match
             typ, m = min(matches, key=lambda x: x[1].start())
+            
+            # Base text before DSL token
             if m.start() > pos:
-                tokens.append(
-                    TemplateToken("base", template[pos : m.start()], pos, m.start())
-                )
-            tokens.append(TemplateToken(typ, m.group(1).strip(), m.start(), m.end()))
+                value = template[pos : m.start()]
+                start_pos = (line, col)
+                end_pos = self._advance_position((line, col), value)
+                tokens.append(TemplateToken("base", value, start_pos, end_pos))
+                line, col = end_pos
+            
+            # DSL token itself
+            value = m.group(1).strip()
+            raw_token = template[m.start() : m.end()]
+            start_pos = (line, col)
+            end_pos = self._advance_position((line, col), raw_token)
+            tokens.append(TemplateToken(typ, value, start_pos, end_pos))
+            line, col = end_pos
             pos = m.end()
+            
         return tokens
+    
+    def _advance_position(self, start: Tuple[int, int], value: str) -> Tuple[int, int]:
+        """Advance (line, col) position by processing value string."""
+        line, col = start
+        for c in value:
+            if c == "\n":
+                line += 1
+                col = 0
+            else:
+                col += 1
+        return (line, col)
 
     def parse(self, template: str) -> List[TemplateToken]:
         """Parse template and return token list (AST nodes)."""
