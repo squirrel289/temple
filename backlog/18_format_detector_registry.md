@@ -10,7 +10,8 @@ related_backlog:
   - "[[10_base_format_detection.md]]"
   - "[[11_integrate_base_linters.md]]"
 related_commit:
-   - e40eec8  # feat(temple-linter): add format detector registry and tests
+  - e40eec8  # feat(temple-linter): add format detector registry and tests
+  - 6d06f33  # feat(temple-linter): add VS Code passthrough for unknown formats
 ---
 
 # Implement Format Detector Registry
