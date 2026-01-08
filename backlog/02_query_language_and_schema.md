@@ -1,5 +1,12 @@
 ---
+title: "Design Query Language and Schema Validation Integration"
 status: complete
+priority: CRITICAL
+complexity: High
+estimated_effort: 1 week
+dependencies: ["01_define_dsl_syntax.md"]
+related_backlog: ["03_data_format_parsers.md", "06_rendering_engine.md"]
+related_commit: "31e3c1c"
 ---
 # Design Query Language and Schema Validation Integration
 

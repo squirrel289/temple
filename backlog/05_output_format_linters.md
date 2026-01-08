@@ -1,3 +1,13 @@
+---
+title: "Integrate Output Format Linters"
+status: not_started
+priority: HIGH
+complexity: Medium
+estimated_effort: 1 week
+dependencies: ["10_base_format_detection.md", "11_integrate_base_linters.md"]
+related_backlog: ["07_error_reporting.md", "13_combine_template_and_base_diagnostics.md"]
+related_commit: null
+---
 # Integrate Output Format Linters
 
 ## Goal

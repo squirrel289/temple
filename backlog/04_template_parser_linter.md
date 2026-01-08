@@ -1,6 +1,12 @@
 ---
+title: "Build Template Parser and Linter"
 status: implemented
-commit: pending
+priority: CRITICAL
+complexity: High
+estimated_effort: 2 weeks
+dependencies: ["01_define_dsl_syntax.md"]
+related_backlog: ["07_error_reporting.md", "09_template_preprocessing.md", "13_combine_template_and_base_diagnostics.md", "19_unified_token_model.md"]
+related_commit: "a9e45fb"
 ---
 # Build Template Parser and Linter
 

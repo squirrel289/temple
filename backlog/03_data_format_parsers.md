@@ -1,5 +1,12 @@
 ---
+title: "Build Pluggable Data Format Parsers and Schema Validators"
 status: complete
+priority: HIGH
+complexity: Medium
+estimated_effort: 1 week
+dependencies: ["02_query_language_and_schema.md"]
+related_backlog: ["06_rendering_engine.md", "10_base_format_detection.md"]
+related_commit: "31e3c1c"
 ---
 # Build Pluggable Data Format Parsers and Schema Validators
 

@@ -1,5 +1,12 @@
 ---
+title: "Define Template DSL Syntax and Logic Primitives"
 status: complete
+priority: CRITICAL
+complexity: High
+estimated_effort: 1 week
+dependencies: []
+related_backlog: ["02_query_language_and_schema.md", "04_template_parser_linter.md", "06_rendering_engine.md"]
+related_commit: "31e3c1c"
 ---
 # Define Template DSL Syntax and Logic Primitives
 

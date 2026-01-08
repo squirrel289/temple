@@ -1,3 +1,13 @@
+---
+title: "Implement Rendering Engine"
+status: not_started
+priority: CRITICAL
+complexity: High
+estimated_effort: 3 weeks
+dependencies: ["01_define_dsl_syntax.md", "02_query_language_and_schema.md", "03_data_format_parsers.md"]
+related_backlog: ["07_error_reporting.md", "15_testing_and_validation.md"]
+related_commit: null
+---
 # Implement Rendering Engine (Object Model Input → Output Format)
 
 ## Goal

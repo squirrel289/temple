@@ -1,5 +1,12 @@
 ---
+title: "Map Diagnostics to Original Template"
 status: complete
+priority: CRITICAL
+complexity: High
+estimated_effort: 1 week
+dependencies: ["11_integrate_base_linters.md", "09_template_preprocessing.md"]
+related_backlog: ["07_error_reporting.md", "13_combine_template_and_base_diagnostics.md"]
+related_commit: "a9e45fb"
 ---
 # Map Diagnostics to Original Template
 
