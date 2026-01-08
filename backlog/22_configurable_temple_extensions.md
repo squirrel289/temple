@@ -1,6 +1,6 @@
 ---
 title: "Configurable Temple Extensions from VS Code"
-status: not_started
+status: complete
 priority: LOW
 complexity: Low
 estimated_effort: 4 hours
@@ -8,7 +8,7 @@ dependencies:
   - "[[18_format_detector_registry.md]]"
 related_backlog:
   - "[[14_config_support.md]]"
-related_commit: null
+related_commit: b4acda5 # feat: add configurable temple extensions from VS Code
 ---
 
 # Configurable Temple Extensions from VS Code
