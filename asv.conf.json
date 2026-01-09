@@ -6,5 +6,9 @@
   "environment_type": "virtualenv",
   "matrix": {},
   "benchmark_dir": "asv_benchmarks",
-  "results_dir": "asv_results"
+  "results_dir": "asv_results",
+  "build_command": [],
+  "install_command": [
+    "in-dir={env_dir} python -m pip install -e {build_dir}"
+  ]
 }
