@@ -9,6 +9,7 @@ This script is a temporary CI-time workaround.
 """
 import importlib
 import sys
+import re
 
 
 def _parse_version_to_number(v):
@@ -57,15 +58,24 @@ def main():
         print('Failed to read file:', e, file=sys.stderr)
         return 1
 
-    old = "if data['version'] < api_version:"
-    new_block = "vnum = _parse_version_to_number(data.get('version', 0))\nif vnum < api_version:"
+    # Find the 'if data["version"] < api_version:' line capturing indentation
+    pattern = re.compile(r"(?m)^([ \t]*)if data\['version'\] < api_version:")
+    m = pattern.search(src)
+    if not m:
+        print('No version-compare pattern found')
+        return 0
 
-    if old in src:
-        # Prepend helper if not already present
-        if '_parse_version_to_number' not in src:
-            new_src = _generate_helper_src() + "\n" + src.replace(old, new_block)
-        else:
-            new_src = src.replace(old, new_block)
+    indent = m.group(1)
+    replacement = (
+        f"{indent}vnum = _parse_version_to_number(data.get('version', 0))\n"
+        f"{indent}if vnum < api_version:"
+    )
+
+    # Insert the helper at the top if missing
+    if '_parse_version_to_number' not in src:
+        new_src = _generate_helper_src() + "\n" + src[: m.start()] + replacement + src[m.end() :]
+    else:
+        new_src = src[: m.start()] + replacement + src[m.end() :]
 
         try:
             with open(path, 'w', encoding='utf-8') as f:
