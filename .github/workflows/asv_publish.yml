@@ -37,9 +37,21 @@ jobs:
 
       - name: Run ASV benchmarks
         run: |
+          # Ensure the deterministic machine JSON is present in results so ASV
+          # recognizes the CI runner as a stable machine and avoids fragmented history.
+          mkdir -p asv_results/temple-ci-gh-actions
+          if [ -f asv_machines/ci_machine.json ]; then
+            cp asv_machines/ci_machine.json asv_results/temple-ci-gh-actions/machine.json
+            echo "Copied deterministic machine JSON into asv_results/temple-ci-gh-actions/machine.json"
+          else
+            echo "ERROR: deterministic machine JSON not found at asv_machines/ci_machine.json" >&2
+            exit 1
+          fi
           # Ensure ASV config is up-to-date, then run benchmarks non-interactively
           asv update || true
-          # Avoid passing `--repo` — some ASV installations reject that flag.
+          # Run benchmarks using the deterministic machine; do NOT auto-create a machine
+          # with `asv machine --yes` here so missing machine files fail loudly instead
+          # of masking the root problem.
           asv run --quick --machine "temple-ci-gh-actions"
 
       - name: Prepare versioned publish directory
