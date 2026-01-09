@@ -23,19 +23,24 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install asv
+          pip install asv==0.6.5
 
       - name: Patch asv version-compare bug (temporary)
         run: |
             python .github/scripts/patch_asv_version.py || true
 
+      - name: Prepare deterministic CI machine identity
+        run: |
+          # Copy checked-in sanitized machine JSON into asv_results so ASV recognizes this machine
+          mkdir -p asv_results/temple-ci-gh-actions
+          cp asv_machines/ci_machine.json asv_results/temple-ci-gh-actions/machine.json
+
       - name: Run ASV benchmarks
         run: |
-          # Ensure ASV config is up-to-date, then run benchmarks
+          # Ensure ASV config is up-to-date, then run benchmarks non-interactively
           asv update || true
-          # Ensure a machine record exists for this runner
-          asv machine --yes || true
-          asv run --quick
+          # Avoid passing `--repo` — some ASV installations reject that flag.
+          asv run --quick --machine "temple-ci-gh-actions"
 
       - name: Prepare versioned publish directory
         run: |
