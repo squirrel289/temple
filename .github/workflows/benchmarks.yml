@@ -29,7 +29,15 @@ jobs:
           FNAME=bench-${TS}.json
           pytest -q temple/tests/test_benchmarks.py -q --benchmark-save=${FNAME}
           mkdir -p asv_publish/${TS}/bench
-          mv .benchmarks/${FNAME} asv_publish/${TS}/bench/
+          # find the generated benchmark file and move it into the timestamped dir
+          found=$(find .benchmarks -type f -name "*${FNAME}" -print -quit || true)
+          if [ -n "$found" ]; then
+            mv "$found" asv_publish/${TS}/bench/
+          else
+            echo "Benchmark file not found in .benchmarks"
+            ls -R .benchmarks || true
+            exit 1
+          fi
         continue-on-error: false
 
       - name: Upload benchmark artifact
