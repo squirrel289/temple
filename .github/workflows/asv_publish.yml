@@ -22,6 +22,28 @@ jobs:
           python -m pip install --upgrade pip
           pip install asv
 
+        - name: Patch asv version-compare bug (temporary)
+        run: |
+          python - <<'PY'
+    import importlib,io,sys
+    try:
+      m = importlib.import_module('asv.util')
+      path = m.__file__
+      print('Patching', path)
+      with open(path, 'r', encoding='utf-8') as f:
+        src = f.read()
+      new = src.replace("if data['version'] < api_version:", "if int(data.get('version', 0)) < api_version:")
+      if src != new:
+        with open(path, 'w', encoding='utf-8') as f:
+          f.write(new)
+        print('Patched asv.util')
+      else:
+        print('No patch needed')
+    except Exception as e:
+      print('Patch step failed:', e, file=sys.stderr)
+      sys.exit(0)
+    PY
+
       - name: Run ASV benchmarks
         run: |
           # Run all ASV benchmarks; adjust args for matrix/env if needed
