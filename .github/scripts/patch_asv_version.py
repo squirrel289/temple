@@ -77,17 +77,14 @@ def main():
     else:
         new_src = src[: m.start()] + replacement + src[m.end() :]
 
-        try:
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(new_src)
-            print('Patched asv.util')
-            return 0
-        except Exception as e:
-            print('Failed to write patch:', e, file=sys.stderr)
-            return 1
-    else:
-        print('No patch needed')
+    try:
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(new_src)
+        print('Patched asv.util')
         return 0
+    except Exception as e:
+        print('Failed to write patch:', e, file=sys.stderr)
+        return 1
 
 
 def _generate_helper_src():
