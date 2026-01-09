@@ -1,6 +1,7 @@
 ---
 title: "30_typed_dsl_prototype"
-status: proposed
+status: complete
+completed_date: 2026-01-09
 priority: Medium
 complexity: Medium
 estimated_effort: 2 weeks
@@ -9,6 +10,8 @@ dependencies:
 related_backlog:
   - [[25_expression_rendering.md]]
   - [[26_control_flow_rendering.md]]
+
+related_commit: 4102af0 # spike(temple/typed-dsl): prototype typed DSL, examples, and stricter include tests
 ---
 
 # 30 — Structured / Typed Template AST (Spike)
@@ -50,3 +53,28 @@ Notes / Constraints
 ------------------
 - Keep the prototype minimal — focus on shape validation and mapping diagnostics to AST nodes.
 - Do not implement a full template parser; examples can use programmatic AST construction or a tiny hand-rolled parser for the limited syntax.
+
+Progress
+--------
+2026-01-09: Spike implemented (prototype)
+
+- Status: In-repo prototype complete and tested.
+- Key changes (files):
+  - `temple/src/temple/typed_grammar.lark` — small Lark grammar for the DSL.
+  - `temple/src/temple/lark_parser.py` — parser + transformer into typed AST.
+  - `temple/src/temple/typed_ast.py` — AST node definitions (`Text`, `Expression`, `If`, `For`, `Include`, `Block`, etc.).
+  - `temple/src/temple/typed_renderer.py` — semantics engine that evaluates AST into IR.
+  - `temple/src/temple/schema_checker.py` — basic schema validation for rendered IR.
+  - `temple/tests/` — unit tests and `test_example_templates.py` exercising multi-format examples.
+  - `examples/dsl_examples/` — canonical example templates and includes per base format.
+
+- Verification: `pytest temple -q` → 26 passed, 2 warnings (local venv reported during run).
+
+Next steps / follow-ups
+----------------------
+- Add targeted unit tests for each AST node to increase coverage of edge cases.
+- Improve expression/query support and error messages; map diagnostics to source/token positions more precisely.
+- Consider adding lightweight format validators (markdown/HTML) if stricter validation is desired (may add deps).
+- Prepare a short PR and changelog entry for review.
+
+If you'd like, I can open a PR, create a changelog entry, or run the `temple-linter` tests in a separate venv.
