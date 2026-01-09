@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head><title>Large Doc</title></head>
+  <body>
+  <h1>Catalog</h1>
+  <div class="items">
+  {% for item in items %}
+    <section class="item">
+      <h2>{{ item.title }}</h2>
+      <p>{{ item.description }}</p>
+      <ul>
+      {% for tag in item.tags %}
+        <li>{{ tag }}</li>
+      {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+  </div>
+  </body>
+</html>

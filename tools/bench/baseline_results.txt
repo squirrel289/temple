@@ -1,0 +1,18 @@
+Pytest-benchmark run: temple/tests/test_benchmarks.py
+
+Warnings:
+../temple/.venv/lib/python3.14/site-packages/lark/utils.py:163
+  DeprecationWarning: module 'sre_parse' is deprecated
+../temple/.venv/lib/python3.14/site-packages/lark/utils.py:164
+  DeprecationWarning: module 'sre_constants' is deprecated
+
+Benchmark summary (times in microseconds)
+
+Name (time in us)                 Min                   Max                  Mean         StdDev                Median                IQR            Outliers           OPS            Rounds  Iterations
+test_bench_real_medium         7.0003 (1.0)         84.4998 (1.09)         7.3647 (1.0)   1.2356 (1.03)         7.2503 (1.0)       0.1672 (1.0)      535;3088  135,782.4759 (1.0)       69160           1
+test_bench_real_small          7.5828 (1.08)        77.2090 (1.0)          7.9425 (1.08)  1.1981 (1.0)          7.8329 (1.08)      0.2082 (1.25)      179;859  125,905.7013 (0.93)      23078           1
+test_bench_real_large      1,308.4579 (186.91)   1,606.0830 (20.80)    1,336.7267 (181.50) 37.6699 (31.44)    1,320.7919 (182.17)   34.1980 (204.57)      89;50      748.0961 (0.01)        753           1
+
+Notes:
+- Baseline was generated locally in the project's virtualenv on macOS.
+- Use this file as the initial baseline for CI comparisons or historical records.

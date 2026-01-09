@@ -1,0 +1,47 @@
+name: ASV Benchmarks Publish
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'  # weekly on Monday at 04:00 UTC
+
+jobs:
+  run-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install asv
+
+      - name: Run ASV benchmarks
+        run: |
+          # Run all ASV benchmarks; adjust args for matrix/env if needed
+          asv run --quick
+
+      - name: Prepare versioned publish directory
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
+          PUBLISH_DIR=asv_publish/${TIMESTAMP}
+          mkdir -p ${PUBLISH_DIR}
+          if [ -d asv_results/html ]; then
+            rsync -a asv_results/html/ ${PUBLISH_DIR}/html/
+          fi
+          if [ -d asv_results ]; then
+            rsync -a asv_results/ ${PUBLISH_DIR}/raw/
+          fi
+
+      - name: Publish ASV HTML to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./asv_publish
+          publish_branch: gh-pages

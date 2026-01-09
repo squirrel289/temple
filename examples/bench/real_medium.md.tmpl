@@ -1,0 +1,15 @@
+<article>
+  <h1>{{ user.name }}</h1>
+  <p>Age: {{ user.age }}</p>
+  {% if user.active %}
+  <p>Status: Active</p>
+  {% else %}
+  <p>Status: Inactive</p>
+  {% endif %}
+
+  <ul>
+  {% for job in user.jobs %}
+    <li>{{ job.title }} at {{ job.company }}</li>
+  {% endfor %}
+  </ul>
+</article>

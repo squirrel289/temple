@@ -1,0 +1,10 @@
+{
+  "version": "0.5",
+  "project": "temple",
+  "repo": "",
+  "matrix": {
+    "python": ["3.10", "3.11", "3.12"]
+  },
+  "benchmarks_dir": "asv_benchmarks",
+  "results_dir": "asv_results"
+}

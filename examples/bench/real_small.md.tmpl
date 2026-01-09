@@ -1,0 +1,9 @@
+# Profile: {{ user.name }}
+
+## Skills
+
+{% for s in user.skills %}
+- {{ s }}
+{% endfor %}
+
+Contact: {{ user.email }}
