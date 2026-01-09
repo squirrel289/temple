@@ -35,7 +35,24 @@ jobs:
           mkdir -p asv_results/temple-ci-gh-actions
           cp asv_machines/ci_machine.json asv_results/temple-ci-gh-actions/machine.json
 
+      - name: Collect runner info
+        run: |
+          hostname > .github/runner_info.txt || true
+          uname -a >> .github/runner_info.txt || true
+          lscpu >> .github/runner_info.txt || true
+          free -h >> .github/runner_info.txt || true
+
+      - name: Upload pre-ASV results snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre_asv_results
+          path: |
+            asv_results
+            .github/runner_info.txt
+
       - name: Run ASV benchmarks
+        continue-on-error: true
         run: |
           # Ensure the deterministic (hex) machine JSON is present in results so ASV
           # recognizes the CI runner as a stable machine and avoids fragmented history.
@@ -67,6 +84,13 @@ jobs:
           if [ -d asv_results ]; then
             rsync -a asv_results/ ${PUBLISH_DIR}/raw/
           fi
+
+        - name: Upload ASV results artifact
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: asv_results
+            path: asv_results
 
       - name: Publish ASV HTML to gh-pages
         uses: peaceiris/actions-gh-pages@v3
