@@ -70,16 +70,7 @@ jobs:
           # Ensure ASV has a machine record (create non-interactively by
           # piping the checked-in sanitized machine JSON). This avoids prompts
           # and creates a machine.json we can capture.
-          python - <<'PY' | asv machine --yes || true
-import json, sys
-data = json.load(open('asv_machines/ci_machine.json'))
-sys.stdout.write(data.get('machine','') + "\n")
-sys.stdout.write(data.get('os','') + "\n")
-sys.stdout.write(data.get('arch','') + "\n")
-sys.stdout.write(data.get('cpu','') + "\n")
-sys.stdout.write(str(data.get('num_cpu','')) + "\n")
-sys.stdout.write(str(data.get('ram','')) + "\n")
-PY
+          python -c "import json,sys; d=json.load(open('asv_machines/ci_machine.json')); sys.stdout.write('\n'.join([str(d.get('machine','')), str(d.get('os','')), str(d.get('arch','')), str(d.get('cpu','')), str(d.get('num_cpu','')), str(d.get('ram',''))]) + '\n')" | asv machine --yes || true
           asv run --quick --machine "${DETERMINISTIC_ID}"
 
       - name: Prepare versioned publish directory
