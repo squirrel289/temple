@@ -1,10 +1,42 @@
 #!/usr/bin/env python3
-"""Patch asv.util to ensure data['version'] is cast to int before compare.
+"""Patch asv.util to make version comparison robust for CI.
 
-This is a temporary workaround applied in CI when running `asv`.
+ASV's config uses a 'version' field that can be a string like '0.5'.
+Instead of forcing an int() conversion (which fails for '0.5'),
+parse the version more flexibly to a numeric value for comparison.
+
+This script is a temporary CI-time workaround.
 """
 import importlib
 import sys
+
+
+def _parse_version_to_number(v):
+    """Return a numeric approximation for version strings.
+
+    Tries float() then int(); if that fails extracts a numeric prefix
+    like '0.5.1' -> '0.5' and returns float of first two components.
+    Falls back to 0 on failure.
+    """
+    try:
+        return float(v)
+    except Exception:
+        pass
+    try:
+        return int(v)
+    except Exception:
+        pass
+    s = str(v)
+    import re
+
+    m = re.match(r"(\d+(?:\.\d+)*)", s)
+    if not m:
+        return 0
+    parts = m.group(1).split('.')
+    try:
+        return float('.'.join(parts[:2]))
+    except Exception:
+        return 0
 
 
 def main():
@@ -26,9 +58,15 @@ def main():
         return 1
 
     old = "if data['version'] < api_version:"
-    new = "if int(data.get('version', 0)) < api_version:"
+    new_block = "vnum = _parse_version_to_number(data.get('version', 0))\nif vnum < api_version:"
+
     if old in src:
-        new_src = src.replace(old, new)
+        # Prepend helper if not already present
+        if '_parse_version_to_number' not in src:
+            new_src = _generate_helper_src() + "\n" + src.replace(old, new_block)
+        else:
+            new_src = src.replace(old, new_block)
+
         try:
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(new_src)
@@ -40,6 +78,29 @@ def main():
     else:
         print('No patch needed')
         return 0
+
+
+def _generate_helper_src():
+    return (
+        "def _parse_version_to_number(v):\n"
+        "    try:\n"
+        "        return float(v)\n"
+        "    except Exception:\n"
+        "        pass\n"
+        "    try:\n"
+        "        return int(v)\n"
+        "    except Exception:\n"
+        "        pass\n"
+        "    import re\n"
+        "    m = re.match(r\"(\\d+(?:\\.\\d+)*)\", str(v))\n"
+        "    if not m:\n"
+        "        return 0\n"
+        "    parts = m.group(1).split('.')\n"
+        "    try:\n"
+        "        return float('.'.join(parts[:2]))\n"
+        "    except Exception:\n"
+        "        return 0\n"
+    )
 
 
 if __name__ == '__main__':
