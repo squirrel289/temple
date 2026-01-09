@@ -26,11 +26,16 @@ jobs:
       - name: Run pytest benchmarks and version results
         run: |
           TS=$(date -u +"%Y%m%dT%H%M%SZ")
-          FNAME=bench-${TS}.json
+          FNAME=bench-${TS}
+          echo "PWD=$(pwd)"
+          ls -la || true
           pytest -q temple/tests/test_benchmarks.py -q --benchmark-save=${FNAME}
           mkdir -p asv_publish/${TS}/bench
+          # debug: list generated benchmark files
+          echo "Looking for benchmark files under $GITHUB_WORKSPACE/.benchmarks"
+          ls -R "$GITHUB_WORKSPACE/.benchmarks" || true
           # find the generated benchmark file and move it into the timestamped dir
-          found=$(find .benchmarks -type f -name "*${FNAME}" -print -quit || true)
+          found=$(find "$GITHUB_WORKSPACE/.benchmarks" -type f -name "*${FNAME}*" -print -quit || true)
           if [ -n "$found" ]; then
             mv "$found" asv_publish/${TS}/bench/
           else
