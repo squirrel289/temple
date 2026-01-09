@@ -4,11 +4,7 @@
   "repo": ".",
   "branches": ["main"],
   "environment_type": "virtualenv",
-  "matrix": {
-    "python": [
-      "3.11"
-    ]
-  },
+  "matrix": {},
   "benchmarks_dir": "asv_benchmarks",
   "results_dir": "asv_results"
 }
