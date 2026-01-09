@@ -33,6 +33,8 @@ jobs:
         run: |
           # Ensure ASV config is up-to-date, then run benchmarks
           asv update || true
+          # Ensure a machine record exists for this runner
+          asv machine --yes || true
           asv run --quick
 
       - name: Prepare versioned publish directory
