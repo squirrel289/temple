@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   run-and-publish:
@@ -117,9 +119,11 @@ jobs:
           name: asv_results
           path: asv_results
 
-      - name: Publish ASV HTML to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload HTML for Pages deployment
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./asv_results/html
-          publish_branch: gh-pages
+          path: ./asv_results/html
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
