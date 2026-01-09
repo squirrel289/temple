@@ -31,7 +31,8 @@ jobs:
 
       - name: Run ASV benchmarks
         run: |
-          # Run all ASV benchmarks; adjust args for matrix/env if needed
+          # Ensure ASV config is up-to-date, then run benchmarks
+          asv update || true
           asv run --quick
 
       - name: Prepare versioned publish directory
