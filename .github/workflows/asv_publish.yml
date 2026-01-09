@@ -100,7 +100,10 @@ jobs:
           # Update ASV and run benchmarks. If ~/.asv-machine.json contains the
           # host entry ASV should not prompt interactively.
           asv update || true
-          asv run --quick || true
+          # Run on last 5 commits to populate graphs with historical data
+          asv run --quick HEAD~4..HEAD || true
+          # Also run current HEAD if not already covered
+          asv run --quick HEAD || true
 
       - name: Generate ASV HTML report
         run: |
