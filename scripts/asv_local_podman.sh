@@ -21,10 +21,10 @@ echo "Backed up asv.conf.json -> $BACKUP"
 
 # If a deterministic CI machine JSON is present, copy it into asv_results so ASV
 # will see it and run non-interactively using that identity.
-DETERMINISTIC_ID=deadbeefcafe
-if [ -f "${REPO_ROOT}/asv_machines/deadbeefcafe_machine.json" ]; then
+DETERMINISTIC_ID=2b167144ba2b
+if [ -f "${REPO_ROOT}/asv_machines/2b167144ba2b_machine.json" ]; then
   mkdir -p "${REPO_ROOT}/asv_results/${DETERMINISTIC_ID}"
-  cp "${REPO_ROOT}/asv_machines/deadbeefcafe_machine.json" "${REPO_ROOT}/asv_results/${DETERMINISTIC_ID}/machine.json"
+  cp "${REPO_ROOT}/asv_machines/2b167144ba2b_machine.json" "${REPO_ROOT}/asv_results/${DETERMINISTIC_ID}/machine.json"
   echo "Copied deterministic machine JSON into asv_results/${DETERMINISTIC_ID}/machine.json"
 fi
 
@@ -66,7 +66,7 @@ PY
 # Non-interactive setup and run (use checked-in deterministic machine if present)
 asv update || true
 # Run using deterministic hex ID
-asv run --quick --machine "deadbeefcafe" || true
+asv run --quick --machine "${DETERMINISTIC_ID}" || true
 '
 
 RC=$?

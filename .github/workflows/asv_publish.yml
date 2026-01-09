@@ -39,13 +39,13 @@ jobs:
         run: |
           # Ensure the deterministic (hex) machine JSON is present in results so ASV
           # recognizes the CI runner as a stable machine and avoids fragmented history.
-          DETERMINISTIC_ID=deadbeefcafe
+          DETERMINISTIC_ID=2b167144ba2b
           mkdir -p asv_results/${DETERMINISTIC_ID}
-          if [ -f asv_machines/deadbeefcafe_machine.json ]; then
-            cp asv_machines/deadbeefcafe_machine.json asv_results/${DETERMINISTIC_ID}/machine.json
+          if [ -f asv_machines/2b167144ba2b_machine.json ]; then
+            cp asv_machines/2b167144ba2b_machine.json asv_results/${DETERMINISTIC_ID}/machine.json
             echo "Copied deterministic machine JSON into asv_results/${DETERMINISTIC_ID}/machine.json"
           else
-            echo "ERROR: deterministic machine JSON not found at asv_machines/deadbeefcafe_machine.json" >&2
+            echo "ERROR: deterministic machine JSON not found at asv_machines/2b167144ba2b_machine.json" >&2
             exit 1
           fi
           # Ensure ASV config is up-to-date, then run benchmarks non-interactively
@@ -54,7 +54,7 @@ jobs:
           # This allows the first CI run to register a canonical machine id which
           # we can capture and commit back into the repo for deterministic future runs.
           asv machine --yes || true
-          asv run --quick --machine "deadbeefcafe"
+          asv run --quick --machine "${DETERMINISTIC_ID}"
 
       - name: Prepare versioned publish directory
         run: |
