@@ -4,8 +4,14 @@ status: in-progress
 priority: HIGH
 complexity: Medium
 estimated_effort: 2 weeks
-dependencies: ["04_template_parser_linter.md", "11_integrate_base_linters.md", "13_combine_template_and_base_diagnostics.md"]
-related_backlog: ["14_config_support.md", "16_documentation.md", "17_refactor_lsp_server.md"]
+dependencies:
+  - [[04_template_parser_linter.md]]
+  - [[11_integrate_base_linters.md]]
+  - [[13_combine_template_and_base_diagnostics.md]]
+related_backlog:
+  - [[14_config_support.md]]
+  - [[16_documentation.md]]
+  - [[17_refactor_lsp_server.md]]
 related_commit: "8261cd3"
 notes: "VS Code extension implemented, CLI partial"
 ---
