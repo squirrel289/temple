@@ -1,0 +1,9 @@
+
+{% include 'header.txt' %}
+Name: {{ user.name }}
+Age: {{ user.age }}
+Active: {% if user.active %}Yes{% else %}No{% endif %}
+Skills: {% for s in user.skills %}{{ s }}{% if not loop.last %}, {% endif %}{% endfor %}
+Job: {% for job in user.jobs %}{{ job.title }} at {{ job.company }}{% if loop.last %} (current){% endif %}{% endfor %}
+{% include 'footer.txt' %}
+

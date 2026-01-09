@@ -1,1 +1,2 @@
 # Add your project dependencies here
+lark-parser==0.12.0

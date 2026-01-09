@@ -1,0 +1,29 @@
+// Minimal grammar for Temple prototype (supports text, expressions, if, for, include, comment)
+start: block
+block: (text | expression | if_block | for_block | include)*
+
+text: TEXT
+
+expression: OPEN_EXPR
+
+if_block: OPEN_IF block (OPEN_ELSE block)? OPEN_ENDIF
+
+for_block: OPEN_FOR block OPEN_ENDFOR
+
+include: OPEN_INCLUDE
+
+// Terminals capture full tag text, transformer will parse internals
+OPEN_EXPR: /\{\{[^}]*\}\}/
+OPEN_IF: /\{\%[^%]*if[^%]*\%\}/
+OPEN_ELSE: /\{\%[^%]*else[^%]*\%\}/
+OPEN_ENDIF: /\{\%[^%]*endif[^%]*\%\}/
+OPEN_FOR: /\{\%[^%]*for[^%]*\%\}/
+OPEN_ENDFOR: /\{\%[^%]*endfor[^%]*\%\}/
+OPEN_INCLUDE: /\{\%[^%]*include[^%]*\%\}/
+OPEN_COMMENT: /\{#[\s\S]*?#\}/
+
+// TEXT matches any characters up to the next template opening sequence
+// Use tempered greedy token to avoid splitting around '{{', '{%' and '{#'
+TEXT: /(?:(?!\{\{|\{\%|\{#)[\s\S])+/
+
+%ignore OPEN_COMMENT
