@@ -54,24 +54,40 @@ jobs:
       - name: Run ASV benchmarks
         continue-on-error: true
         run: |
-          # Ensure the deterministic (hex) machine JSON is present in results so ASV
-          # recognizes the CI runner as a stable machine and avoids fragmented history.
-          DETERMINISTIC_ID=2b167144ba2b
-          mkdir -p asv_results/${DETERMINISTIC_ID}
-          if [ -f asv_machines/2b167144ba2b_machine.json ]; then
-            cp asv_machines/2b167144ba2b_machine.json asv_results/${DETERMINISTIC_ID}/machine.json
-            echo "Copied deterministic machine JSON into asv_results/${DETERMINISTIC_ID}/machine.json"
-          else
-            echo "ERROR: deterministic machine JSON not found at asv_machines/2b167144ba2b_machine.json" >&2
-            exit 1
-          fi
-          # Ensure ASV config is up-to-date, then run benchmarks non-interactively
+          # Create ~/.asv-machine.json mapping the runner hostname to a checked-in
+          # machine JSON (prefer host-specific, then ci_machine.json, then deterministic fallback).
+            HOSTNAME=$(hostname)
+            SRC=''
+            if [ -f "asv_machines/${HOSTNAME}_machine.json" ]; then
+              SRC="asv_machines/${HOSTNAME}_machine.json"
+            elif [ -f asv_machines/ci_machine.json ]; then
+              SRC="asv_machines/ci_machine.json"
+            elif [ -f asv_machines/2b167144ba2b_machine.json ]; then
+              SRC="asv_machines/2b167144ba2b_machine.json"
+            fi
+            if [ -n "$SRC" ]; then
+              # Build a JSON object with the runner hostname as a quoted key.
+              # Write mapping and include a version key so asv can parse the file.
+              echo -n '{' > ~/.asv-machine.json
+              printf '%s' "\"$HOSTNAME\"" >> ~/.asv-machine.json
+              echo -n ':' >> ~/.asv-machine.json
+              cat "$SRC" >> ~/.asv-machine.json
+              echo -n ",\"version\": 1}" >> ~/.asv-machine.json
+              MNAME=$(grep -m1 '"machine"' "$SRC" | sed -E "s/.*:\\s*\"([^\"]+)\".*/\\1/")
+              if [ -z "$MNAME" ]; then
+                MNAME="$HOSTNAME"
+              fi
+              mkdir -p "asv_results/$MNAME"
+              cp "$SRC" "asv_results/$MNAME/machine.json"
+              echo "Wrote ~/.asv-machine.json and asv_results/$MNAME/machine.json"
+            else
+              echo "No checked-in machine json found; ASV may prompt interactively"
+            fi
+
+          # Update ASV and run benchmarks. If ~/.asv-machine.json contains the
+          # host entry ASV should not prompt interactively.
           asv update || true
-          # Ensure ASV has a machine record (create non-interactively by
-          # piping the checked-in sanitized machine JSON). This avoids prompts
-          # and creates a machine.json we can capture.
-          # Machine registration disabled: using committed canonical machine JSONs
-          asv run --quick --machine "${DETERMINISTIC_ID}"
+          asv run --quick || true
 
       - name: Prepare versioned publish directory
         run: |

@@ -65,8 +65,39 @@ PY
 
 # Non-interactive setup and run (use checked-in deterministic machine if present)
 asv update || true
-# Run using deterministic hex ID
-asv run --quick --machine "${DETERMINISTIC_ID}" || true
+
+# Create ~/.asv-machine.json mapping for the runtime hostname to a checked-in
+# machine JSON if available. This ensures ASV finds machine info non-interactively.
+HOSTNAME=$(hostname)
+SRC=''
+if [ -f "/work/asv_machines/${HOSTNAME}_machine.json" ]; then
+  SRC="/work/asv_machines/${HOSTNAME}_machine.json"
+elif [ -f "/work/asv_machines/ci_machine.json" ]; then
+  SRC="/work/asv_machines/ci_machine.json"
+elif [ -f "/work/asv_machines/2b167144ba2b_machine.json" ]; then
+  SRC="/work/asv_machines/2b167144ba2b_machine.json"
+fi
+if [ -n "$SRC" ]; then
+    # Write mapping and include API version so asv can parse the file.
+    echo -n '{' > ~/.asv-machine.json
+    printf '%s' "\"$HOSTNAME\"" >> ~/.asv-machine.json
+    echo -n ':' >> ~/.asv-machine.json
+    cat "$SRC" >> ~/.asv-machine.json
+    echo -n ",\"version\": 1}" >> ~/.asv-machine.json
+  # Extract machine name from the JSON and ensure results dir has machine.json
+  MNAME=$(grep -m1 '"machine"' "$SRC" | sed -E "s/.*:\\s*\"([^\"]+)\".*/\\1/")
+  if [ -z "$MNAME" ]; then
+    MNAME="$HOSTNAME"
+  fi
+  mkdir -p "/work/asv_results/$MNAME"
+  cp "$SRC" "/work/asv_results/$MNAME/machine.json"
+  echo "Wrote ~/.asv-machine.json and asv_results/$MNAME/machine.json"
+else
+  echo "No checked-in machine json found; ASV will prompt if no existing record"
+fi
+
+# Run ASV (no interactive prompt expected if ~/.asv-machine.json contained the host entry)
+asv run --quick || true
 '
 
 RC=$?
