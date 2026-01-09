@@ -93,6 +93,11 @@ jobs:
           asv update || true
           asv run --quick || true
 
+      - name: Generate ASV HTML report
+        run: |
+          # Publish benchmark results to HTML
+          asv publish
+
       - name: Prepare versioned publish directory
         run: |
           TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
@@ -116,5 +121,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./asv_publish
+          publish_dir: ./asv_results/html
           publish_branch: gh-pages

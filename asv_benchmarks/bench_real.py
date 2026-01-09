@@ -1,28 +1,25 @@
-import time
-from temple.lark_parser import parse_template
-from temple.typed_renderer import evaluate_ast
+"""Benchmarks for real-world template tokenization."""
+import os
+from temple import temple_tokenizer
 
 
 def load_template_text(path):
-    with open(path, "r", encoding="utf-8") as f:
+    # Resolve path relative to repo root
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    full_path = os.path.join(repo_root, path)
+    with open(full_path, "r", encoding="utf-8") as f:
         return f.read()
 
 
-def bench_real_small(loops=1000):
+def bench_tokenize_small():
+    """Tokenize small template."""
     tpl = load_template_text("examples/bench/real_small.md.tmpl")
-    root = parse_template(tpl)
-    ctx = {"user": {"name": "Alice"}, "items": [{"title": f"i{i}"} for i in range(10)]}
-    start = time.perf_counter()
-    for _ in range(loops):
-        evaluate_ast(root, ctx)
-    return time.perf_counter() - start
+    for _ in range(100):
+        list(temple_tokenizer(tpl))
 
 
-def bench_real_large(loops=100):
+def bench_tokenize_large():
+    """Tokenize large template."""
     tpl = load_template_text("examples/bench/real_large.html.tmpl")
-    root = parse_template(tpl)
-    ctx = {"user": {"name": "Alice"}, "items": [{"title": f"i{i}"} for i in range(200)]}
-    start = time.perf_counter()
-    for _ in range(loops):
-        evaluate_ast(root, ctx)
-    return time.perf_counter() - start
+    for _ in range(10):
+        list(temple_tokenizer(tpl))

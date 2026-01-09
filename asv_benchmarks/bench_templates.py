@@ -1,46 +1,37 @@
-import time
-from temple.lark_parser import parse_template
-from temple.typed_renderer import evaluate_ast
+"""Benchmarks for template tokenization across various sizes."""
+import os
+from temple import temple_tokenizer
 
 
 def load_template_text(path):
-    with open(path, "r", encoding="utf-8") as f:
+    # Resolve path relative to repo root
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    full_path = os.path.join(repo_root, path)
+    with open(full_path, "r", encoding="utf-8") as f:
         return f.read()
 
 
 class TemplateBenchBase:
     def setup(self):
-        # load template and parse once
+        # Load templates once per benchmark run
         self.tpl_small = load_template_text("examples/bench/real_small.md.tmpl")
         self.tpl_medium = load_template_text("examples/bench/real_medium.md.tmpl")
         self.tpl_large = load_template_text("examples/bench/real_large.html.tmpl")
-        self.root_small = parse_template(self.tpl_small)
-        self.root_medium = parse_template(self.tpl_medium)
-        self.root_large = parse_template(self.tpl_large)
-        self.ctx_small = {"user": {"name": "Alice"}, "items": [{"title": f"i{i}"} for i in range(10)]}
-        self.ctx_medium = {"user": {"name": "Alice"}, "items": [{"title": f"i{i}"} for i in range(50)]}
-        self.ctx_large = {"user": {"name": "Alice"}, "items": [{"title": f"i{i}"} for i in range(200)]}
 
 
 class BenchTemplateSmall(TemplateBenchBase):
-    def time_render_small(self, loops=1000):
-        start = time.perf_counter()
-        for _ in range(loops):
-            evaluate_ast(self.root_small, self.ctx_small)
-        return time.perf_counter() - start
+    def time_tokenize_small(self):
+        """Time tokenizing small template."""
+        list(temple_tokenizer(self.tpl_small))
 
 
 class BenchTemplateMedium(TemplateBenchBase):
-    def time_render_medium(self, loops=200):
-        start = time.perf_counter()
-        for _ in range(loops):
-            evaluate_ast(self.root_medium, self.ctx_medium)
-        return time.perf_counter() - start
+    def time_tokenize_medium(self):
+        """Time tokenizing medium template."""
+        list(temple_tokenizer(self.tpl_medium))
 
 
 class BenchTemplateLarge(TemplateBenchBase):
-    def time_render_large(self, loops=50):
-        start = time.perf_counter()
-        for _ in range(loops):
-            evaluate_ast(self.root_large, self.ctx_large)
-        return time.perf_counter() - start
+    def time_tokenize_large(self):
+        """Time tokenizing large template."""
+        list(temple_tokenizer(self.tpl_large))
