@@ -2,9 +2,12 @@
   "version": 1,
   "project": "temple",
   "repo": ".",
+  "branches": ["main"],
   "environment_type": "virtualenv",
   "matrix": {
-    "python": ["3.10", "3.11", "3.12"]
+    "python": [
+      "3.11"
+    ]
   },
   "benchmarks_dir": "asv_benchmarks",
   "results_dir": "asv_results"
