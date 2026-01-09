@@ -67,10 +67,19 @@ jobs:
           fi
           # Ensure ASV config is up-to-date, then run benchmarks non-interactively
           asv update || true
-          # Ensure ASV has a machine record (create non-interactively if missing).
-          # This allows the first CI run to register a canonical machine id which
-          # we can capture and commit back into the repo for deterministic future runs.
-          asv machine --yes || true
+          # Ensure ASV has a machine record (create non-interactively by
+          # piping the checked-in sanitized machine JSON). This avoids prompts
+          # and creates a machine.json we can capture.
+          python - <<'PY' | asv machine --yes || true
+import json, sys
+data = json.load(open('asv_machines/ci_machine.json'))
+sys.stdout.write(data.get('machine','') + "\n")
+sys.stdout.write(data.get('os','') + "\n")
+sys.stdout.write(data.get('arch','') + "\n")
+sys.stdout.write(data.get('cpu','') + "\n")
+sys.stdout.write(str(data.get('num_cpu','')) + "\n")
+sys.stdout.write(str(data.get('ram','')) + "\n")
+PY
           asv run --quick --machine "${DETERMINISTIC_ID}"
 
       - name: Prepare versioned publish directory
@@ -85,12 +94,12 @@ jobs:
             rsync -a asv_results/ ${PUBLISH_DIR}/raw/
           fi
 
-        - name: Upload ASV results artifact
-          if: always()
-          uses: actions/upload-artifact@v4
-          with:
-            name: asv_results
-            path: asv_results
+      - name: Upload ASV results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: asv_results
+          path: asv_results
 
       - name: Publish ASV HTML to gh-pages
         uses: peaceiris/actions-gh-pages@v3
