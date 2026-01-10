@@ -5,9 +5,9 @@
   "branches": ["main"],
   "environment_type": "virtualenv",
   "matrix": {},
-  "benchmark_dir": "asv_benchmarks",
-  "results_dir": "asv_results",
-  "html_dir": "asv_results/html",
+  "benchmark_dir": "asv/benchmarks",
+  "results_dir": "asv/results",
+  "html_dir": "asv/results/html",
   "build_command": [],
   "install_command": [
     "in-dir={env_dir} python -m pip install -e {build_dir}"

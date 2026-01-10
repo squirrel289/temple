@@ -44,9 +44,9 @@ jobs:
 
       - name: Prepare deterministic CI machine identity
         run: |
-          # Copy checked-in sanitized machine JSON into asv_results so ASV recognizes this machine
-          mkdir -p asv_results/temple-ci-gh-actions
-          cp asv_machines/ci_machine.json asv_results/temple-ci-gh-actions/machine.json
+          # Copy checked-in sanitized machine JSON into asv/results so ASV recognizes this machine
+          mkdir -p asv/results/temple-ci-gh-actions
+          cp asv/machines/ci_machine.json asv/results/temple-ci-gh-actions/machine.json
 
       - name: Collect runner info
         run: |
@@ -61,24 +61,17 @@ jobs:
         with:
           name: pre_asv_results
           path: |
-            asv_results
+            asv/results
             .github/runner_info.txt
 
       - name: Run ASV benchmarks
         continue-on-error: true
         run: |
           # Create ~/.asv-machine.json mapping the runner hostname to a checked-in
-          # machine JSON (prefer host-specific, then ci_machine.json, then deterministic fallback).
+          # machine JSON (use ci_machine.json)
             HOSTNAME=$(hostname)
-            SRC=''
-            if [ -f "asv_machines/${HOSTNAME}_machine.json" ]; then
-              SRC="asv_machines/${HOSTNAME}_machine.json"
-            elif [ -f asv_machines/ci_machine.json ]; then
-              SRC="asv_machines/ci_machine.json"
-            elif [ -f asv_machines/2b167144ba2b_machine.json ]; then
-              SRC="asv_machines/2b167144ba2b_machine.json"
-            fi
-            if [ -n "$SRC" ]; then
+            SRC="asv/machines/ci_machine.json"
+            if [ -f "$SRC" ]; then
               # Build a JSON object with the runner hostname as a quoted key.
               # Write mapping and include a version key so asv can parse the file.
               echo -n '{' > ~/.asv-machine.json
@@ -90,16 +83,16 @@ jobs:
               if [ -z "$MNAME" ]; then
                 MNAME="$HOSTNAME"
               fi
-              mkdir -p "asv_results/$MNAME"
-              cp "$SRC" "asv_results/$MNAME/machine.json"
-              echo "Wrote ~/.asv-machine.json and asv_results/$MNAME/machine.json"
+              mkdir -p "asv/results/$MNAME"
+              cp "$SRC" "asv/results/$MNAME/machine.json"
+              echo "Wrote ~/.asv-machine.json and asv/results/$MNAME/machine.json"
             else
               echo "No checked-in machine json found; ASV may prompt interactively"
             fi
 
           # Update ASV and run benchmarks. If ~/.asv-machine.json contains the
           # host entry ASV should not prompt interactively.
-          asv update || true
+          cd asv && asv update || true
           # Run on last 5 commits to populate graphs with historical data
           asv run --quick HEAD~4..HEAD || true
           # Also run current HEAD if not already covered
@@ -108,18 +101,18 @@ jobs:
       - name: Generate ASV HTML report
         run: |
           # Publish benchmark results to HTML
-          asv publish
+          cd asv && asv publish
 
       - name: Prepare versioned publish directory
         run: |
           TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
           PUBLISH_DIR=asv_publish/${TIMESTAMP}
           mkdir -p ${PUBLISH_DIR}
-          if [ -d asv_results/html ]; then
-            rsync -a asv_results/html/ ${PUBLISH_DIR}/html/
+          if [ -d asv/results/html ]; then
+            rsync -a asv/results/html/ ${PUBLISH_DIR}/html/
           fi
-          if [ -d asv_results ]; then
-            rsync -a asv_results/ ${PUBLISH_DIR}/raw/
+          if [ -d asv/results ]; then
+            rsync -a asv/results/ ${PUBLISH_DIR}/raw/
           fi
 
       - name: Upload ASV results artifact
@@ -127,12 +120,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: asv_results
-          path: asv_results
+          path: asv/results
 
       - name: Upload HTML for Pages deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./asv_results/html
+          path: ./asv/results/html
 
       - name: Deploy to GitHub Pages
         id: deployment
