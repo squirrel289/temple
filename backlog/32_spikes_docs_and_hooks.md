@@ -1,12 +1,11 @@
 ---
 title: "32_spikes_docs_and_hooks"
-status: proposed
+status: archived
 priority: Low
 complexity: Low
 estimated_effort: 3 days
 dependencies:
   - [[30_typed_dsl_prototype.md]]
-  - [[31_constraint_driven_templates.md]]
 ---
 
 # 32 — Docs, Examples & Extensibility Hooks for Spikes
@@ -31,3 +30,9 @@ Tasks
 1. Create `docs/spikes/` and add per-spike README files.
 2. Add example `README.md` in each `examples/` subfolder for the spikes.
 3. Document minimal extension APIs in a single doc under `docs/spikes/hooks.md`.
+
+Reason for archival
+-------------------
+- Team decided to productionize the typed DSL approach (spike 30) with greenfield implementation rather than spike documentation.
+- Production work will include comprehensive documentation as part of feature development, making spike docs unnecessary overhead.
+- Spike code remains available for reference; if needed, docs can be added on-demand during productionization.
