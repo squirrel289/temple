@@ -1,0 +1,28 @@
+---
+title: Integration & End-to-End Tests
+id: 38
+status: open
+related_commits: []
+estimated_hours: 24
+priority: high
+---
+
+## Goal
+
+Create reproducible end-to-end integration tests that exercise the full pipeline: parser → type checker → diagnostics → serializers.
+
+## Tasks
+
+- Define canonical input templates and corresponding expected outputs for JSON, Markdown, HTML, and YAML.
+- Implement pytest-based E2E harness under `tests/integration/` that runs the full pipeline against examples.
+- Add fixtures for runtime schemas and sample data used by the tests.
+- Run the suite locally and on CI; triage any regressions.
+
+## Acceptance Criteria
+
+- `pytest tests/integration/` runs and either passes or emits documented failures.
+- Each E2E test includes input template, expected serializer output, and any schema needed.
+
+## Notes
+
+- Start with a small set (3–5) of representative examples, expand later.
