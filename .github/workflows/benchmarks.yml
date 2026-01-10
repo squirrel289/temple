@@ -1,0 +1,54 @@
+name: Benchmarks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * 1'
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install asv==0.6.5
+          pip install -e .
+
+      - name: Prepare ASV machine mapping
+        run: |
+          HOSTNAME=$(hostname)
+          SRC="asv/machines/ci_machine.json"
+          mkdir -p asv/results
+          if [ -f "$SRC" ]; then
+            echo -n '{' > ~/.asv-machine.json
+            printf '%s' "\"$HOSTNAME\"" >> ~/.asv-machine.json
+            echo -n ':' >> ~/.asv-machine.json
+            cat "$SRC" >> ~/.asv-machine.json
+            echo -n ",\"version\": 1}" >> ~/.asv-machine.json
+            MNAME=$(grep -m1 '"machine"' "$SRC" | sed -E "s/.*:\s*\"([^\"]+)\".*/\1/")
+            [ -z "$MNAME" ] && MNAME="$HOSTNAME"
+            mkdir -p "asv/results/$MNAME"
+            cp "$SRC" "asv/results/$MNAME/machine.json"
+          fi
+
+      - name: Run quick benchmarks
+        run: |
+          asv update || true
+          asv run --quick HEAD~1..HEAD || true
+          asv run --quick HEAD || true
+
+      - name: Upload ASV results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: asv_results
+          path: asv/results
