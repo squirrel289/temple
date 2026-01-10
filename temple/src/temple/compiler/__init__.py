@@ -19,6 +19,7 @@ from temple.compiler.ast_nodes import (
     For,
     Include,
     Block,
+    walk_ast,
 )
 from temple.compiler.parser import TypedTemplateParser
 
@@ -34,6 +35,8 @@ __all__ = [
     "For",
     "Include",
     "Block",
+    # Utilities
+    "walk_ast",
     # Parser
     "TypedTemplateParser",
 ]
