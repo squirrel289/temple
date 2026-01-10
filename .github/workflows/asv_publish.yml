@@ -92,16 +92,17 @@ jobs:
 
           # Update ASV and run benchmarks. If ~/.asv-machine.json contains the
           # host entry ASV should not prompt interactively.
-          cd asv && asv update || true
+          # Run from repo root with --config pointing to asv/asv.conf.json
+          asv --config=asv/asv.conf.json update || true
           # Run on last 5 commits to populate graphs with historical data
-          asv run --quick HEAD~4..HEAD || true
+          asv --config=asv/asv.conf.json run --quick HEAD~4..HEAD || true
           # Also run current HEAD if not already covered
-          asv run --quick HEAD || true
+          asv --config=asv/asv.conf.json run --quick HEAD || true
 
       - name: Generate ASV HTML report
         run: |
-          # Publish benchmark results to HTML
-          cd asv && asv publish
+          # Publish benchmark results to HTML (run from repo root)
+          asv --config=asv/asv.conf.json publish
 
       - name: Prepare versioned publish directory
         run: |
