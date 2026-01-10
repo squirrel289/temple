@@ -1,0 +1,1 @@
+"""Temple compiler tests."""
