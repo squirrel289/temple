@@ -1,6 +1,6 @@
 ---
 title: "31_constraint_driven_templates"
-status: proposed
+status: archived
 priority: Medium
 complexity: Medium
 estimated_effort: 2 weeks
@@ -40,3 +40,9 @@ Notes / Trade-offs
 -----------------
 - Constraint-first templates give stronger guarantees to consumers but require template authors to think schema-first.
 - This spike is focused on compile-time checks and diagnostic quality — not user ergonomics or migration tooling.
+
+
+Reason for archival
+-------------------
+- Per project direction during scoping, the team chose to prioritize the `Structured/typed template AST` ~~and `Declarative, constraint-driven templates`~~ spikes (backlog items [[30_typed_dsl_prototype.md]] ~~and 31~~). Those approaches offer stronger compile-time guarantees and are a better fit for the current architectural goals.
+- The render-time validation idea remains valid but is deprioritized and can be reconsidered later or explored as part of spike 30 if useful.

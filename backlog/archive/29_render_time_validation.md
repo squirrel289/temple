@@ -19,7 +19,7 @@ This item originally described a spike to instrument the renderer to emit an out
 
 Reason for archival
 -------------------
-- Per project direction during scoping, the team chose to prioritize the `Structured/typed template AST` and `Declarative, constraint-driven templates` spikes (backlog items 30 and 31). Those approaches offer stronger compile-time guarantees and are a better fit for the current architectural goals.
+- Per project direction during scoping, the team chose to prioritize the `Structured/typed template AST` and `Declarative, constraint-driven templates` spikes (backlog items [[30_typed_dsl_prototype.md]] and [[31_constraint_driven_templates.md]]). Those approaches offer stronger compile-time guarantees and are a better fit for the current architectural goals.
 - The render-time validation idea remains valid but is deprioritized and can be reconsidered later or explored as part of spike 30 if useful.
 
 If needed later
