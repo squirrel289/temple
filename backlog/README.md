@@ -18,10 +18,10 @@ The following 4 items form the critical path for the typed DSL compiler:
    - Deliverables: Type checker, schema validation, constraint checking
    - Completed: 2026-01-09
 
-3. **[36_typed_dsl_diagnostics.md](36_typed_dsl_diagnostics.md)** — Error Diagnostics & Source Mapping (1 week)
-   - Status: `ready` (depends on 34, 35)
+3. **[archive/36_typed_dsl_diagnostics.md](archive/36_typed_dsl_diagnostics.md)** — Error Diagnostics & Source Mapping (1 week)
+   - Status: ✅ `complete`
    - Deliverables: Diagnostic engine, source position mapping, error formatting
-   - Key: Actionable error messages with source context
+   - Completed: 2026-01-09
 
 4. **[37_typed_dsl_serializers.md](37_typed_dsl_serializers.md)** — Multi-Format Serializers (2 weeks)
    - Status: `ready` (depends on 34, 35, 36)

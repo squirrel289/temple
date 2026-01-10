@@ -1,12 +1,17 @@
 ---
 title: "36_typed_dsl_diagnostics"
-status: ready
+status: complete
 priority: High
 complexity: Medium
 estimated_effort: 1 week
+actual_effort: 1 day
+completed_date: 2026-01-09
+related_commit:
+  - d391a99  # feat(compiler): implement error diagnostics, source mapping, and error formatting
+test_results: 47 tests passing
 dependencies:
-  - [[34_typed_dsl_parser.md]]
-  - [[35_typed_dsl_type_system.md]]
+  - [[34_typed_dsl_parser.md]] ✅
+  - [[35_typed_dsl_type_system.md]] ✅
 related_backlog:
   - [[37_typed_dsl_serializers.md]]
 ---
