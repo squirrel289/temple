@@ -1,6 +1,6 @@
 ---
 title: "34_typed_dsl_parser"
-status: ready
+status: complete
 priority: High
 complexity: Medium
 estimated_effort: 2 weeks
@@ -11,6 +11,9 @@ related_backlog:
   - [[36_typed_dsl_diagnostics.md]]
 related_spike: 
   - archive/30_typed_dsl_prototype.md (reference implementation)
+related_commit:
+  - 0ccdf09  # feat(compiler): implement parser & AST construction with position tracking
+  - 6c5c7f8  # docs(compiler): add progress summary and export walk_ast utility
 ---
 
 # 34 — Typed DSL: Parser & AST Construction
