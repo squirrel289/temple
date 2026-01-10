@@ -5,12 +5,12 @@ priority: High
 complexity: Medium
 estimated_effort: 2 weeks
 dependencies:
-  - [[33_decision_snapshot.md]]
+  - Architectural decision documented in archive/33_decision_snapshot.md
 related_backlog:
   - [[35_typed_dsl_type_system.md]]
   - [[36_typed_dsl_diagnostics.md]]
 related_spike: 
-  - [[30_typed_dsl_prototype.md]]
+  - archive/30_typed_dsl_prototype.md (reference implementation)
 ---
 
 # 34 — Typed DSL: Parser & AST Construction

@@ -8,10 +8,12 @@ dependencies:
   - [[34_typed_dsl_parser.md]]
   - [[35_typed_dsl_type_system.md]]
   - [[36_typed_dsl_diagnostics.md]]
-related_backlog:
-  - [[38_typed_dsl_integration.md]]
+related_backlog: []
 related_spike:
-  - [[30_typed_dsl_prototype.md]]
+  - archive/30_typed_dsl_prototype.md (reference implementation)
+
+notes: |
+  Item 37 is the final MVP component; integration and future epics (validation, query language, user functions) documented in archive/33_decision_snapshot.md
 ---
 
 # 37 — Typed DSL: Multi-Format Serializers

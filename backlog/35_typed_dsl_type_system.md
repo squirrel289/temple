@@ -10,7 +10,7 @@ related_backlog:
   - [[36_typed_dsl_diagnostics.md]]
   - [[37_typed_dsl_serializers.md]]
 related_spike:
-  - [[30_typed_dsl_prototype.md]]
+  - archive/30_typed_dsl_prototype.md (reference implementation)
 ---
 
 # 35 — Typed DSL: Type System & Schema Validation
