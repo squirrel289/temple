@@ -8,15 +8,15 @@ The Temple project is executing a **Typed DSL Compiler MVP** (8-week effort) aft
 
 The following 4 items form the critical path for the typed DSL compiler:
 
-1. **[34_typed_dsl_parser.md](34_typed_dsl_parser.md)** — Parser & AST Construction (2 weeks)
-   - Status: `ready` → Begin immediately
+1. **[archive/34_typed_dsl_parser.md](archive/34_typed_dsl_parser.md)** — Parser & AST Construction (2 weeks)
+   - Status: ✅ `complete`
    - Deliverables: Tokenizer, parser, AST nodes with position tracking
-   - Key: Build position tracking from day one for diagnostics
+   - Completed: 2026-01-09
 
-2. **[35_typed_dsl_type_system.md](35_typed_dsl_type_system.md)** — Type System (1.5 weeks)
-   - Status: `ready` (depends on 34)
+2. **[archive/35_typed_dsl_type_system.md](archive/35_typed_dsl_type_system.md)** — Type System (1.5 weeks)
+   - Status: ✅ `complete`
    - Deliverables: Type checker, schema validation, constraint checking
-   - Key: Comprehensive type semantics for template safety
+   - Completed: 2026-01-09
 
 3. **[36_typed_dsl_diagnostics.md](36_typed_dsl_diagnostics.md)** — Error Diagnostics & Source Mapping (1 week)
    - Status: `ready` (depends on 34, 35)

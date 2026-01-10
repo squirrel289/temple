@@ -1,6 +1,6 @@
 ---
 title: "35_typed_dsl_type_system"
-status: ready
+status: complete
 priority: High
 complexity: High
 estimated_effort: 1.5 weeks
@@ -11,6 +11,9 @@ related_backlog:
   - [[37_typed_dsl_serializers.md]]
 related_spike:
   - archive/30_typed_dsl_prototype.md (reference implementation)
+related_commit:
+  - e14cfc8  # feat(compiler): implement type system, schema validation, and type checker
+completed_date: 2026-01-09
 ---
 
 # 35 — Typed DSL: Type System & Schema Validation
