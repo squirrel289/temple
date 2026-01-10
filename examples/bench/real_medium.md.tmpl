@@ -1,0 +1,258 @@
+# {{ project.name }} Documentation
+
+Version {{ project.version }} | Last updated: {{ project.updated_at }}
+
+---
+
+## Table of Contents
+
+{% for section in project.sections %}
+- [{{ section.title }}](#{{ section.id }})
+  {% for subsection in section.subsections %}
+  - [{{ subsection.title }}](#{{ subsection.id }})
+  {% endfor %}
+{% endfor %}
+
+---
+
+## Overview
+
+{{ project.description }}
+
+### Key Features
+
+{% for feature in project.features %}
+#### {{ feature.name }}
+
+{{ feature.description }}
+
+{% if feature.code_example %}
+```{{ feature.language }}
+{{ feature.code_example }}
+```
+{% endif %}
+
+**Status:** {{ feature.status }}
+{% if feature.availability %}**Available since:** {{ feature.availability }}{% endif %}
+
+{% endfor %}
+
+---
+
+## Installation
+
+### Prerequisites
+
+{% for req in project.requirements %}
+- {{ req.name }} ({{ req.version }}){% if req.optional %} *(optional)*{% endif %}
+  {% if req.notes %}
+  > {{ req.notes }}
+  {% endif %}
+{% endfor %}
+
+### Installation Steps
+
+{% for step in project.installation_steps %}
+{{ loop.index }}. **{{ step.title }}**
+   
+   {{ step.description }}
+   
+   {% if step.command %}
+   ```bash
+   {{ step.command }}
+   ```
+   {% endif %}
+   
+   {% if step.verification %}
+   Verify by running:
+   ```bash
+   {{ step.verification }}
+   ```
+   {% endif %}
+   
+{% endfor %}
+
+---
+
+## Configuration
+
+### Basic Configuration
+
+{{ project.config_description }}
+
+```{{ project.config_format }}
+{{ project.config_example }}
+```
+
+### Advanced Options
+
+{% for option in project.config_options %}
+#### `{{ option.name }}`
+
+{{ option.description }}
+
+- **Type:** `{{ option.type }}`
+- **Default:** `{{ option.default }}`
+{% if option.required %}- **Required:** Yes{% endif %}
+{% if option.example %}
+- **Example:** `{{ option.example }}`
+{% endif %}
+
+{% endfor %}
+
+---
+
+## API Reference
+
+{% for api in project.api_methods %}
+### `{{ api.signature }}`
+
+{{ api.description }}
+
+**Parameters:**
+
+{% for param in api.parameters %}
+- `{{ param.name }}` ({{ param.type }}){% if param.required %} **required**{% endif %}: {{ param.description }}
+  {% if param.default %}
+  - Default: `{{ param.default }}`
+  {% endif %}
+{% endfor %}
+
+**Returns:** `{{ api.return_type }}` - {{ api.return_description }}
+
+{% if api.example %}
+**Example:**
+
+```{{ api.example_language }}
+{{ api.example }}
+```
+{% endif %}
+
+{% if api.errors %}
+**Possible Errors:**
+
+{% for error in api.errors %}
+- `{{ error.code }}`: {{ error.description }}
+{% endfor %}
+{% endif %}
+
+---
+
+{% endfor %}
+
+## Usage Examples
+
+{% for example in project.examples %}
+### {{ example.title }}
+
+{{ example.description }}
+
+```{{ example.language }}
+{{ example.code }}
+```
+
+{% if example.output %}
+**Output:**
+
+```
+{{ example.output }}
+```
+{% endif %}
+
+{% if example.notes %}
+> **Note:** {{ example.notes }}
+{% endif %}
+
+{% endfor %}
+
+---
+
+## Troubleshooting
+
+{% for issue in project.troubleshooting %}
+### {{ issue.problem }}
+
+**Symptoms:** {{ issue.symptoms }}
+
+**Cause:** {{ issue.cause }}
+
+**Solution:**
+
+{% for solution in issue.solutions %}
+{{ loop.index }}. {{ solution }}
+{% endfor %}
+
+{% if issue.related_issues %}
+**See also:**
+{% for related in issue.related_issues %}
+- [{{ related.title }}](#{{ related.id }})
+{% endfor %}
+{% endif %}
+
+---
+
+{% endfor %}
+
+## FAQ
+
+{% for faq in project.faqs %}
+**Q: {{ faq.question }}**
+
+A: {{ faq.answer }}
+
+{% endfor %}
+
+---
+
+## Contributing
+
+{{ project.contributing_text }}
+
+### Development Setup
+
+{% for step in project.dev_setup %}
+{{ loop.index }}. {{ step }}
+{% endfor %}
+
+### Testing
+
+```bash
+{{ project.test_command }}
+```
+
+---
+
+## Changelog
+
+{% for release in project.releases %}
+### Version {{ release.version }} ({{ release.date }})
+
+{% for change_type in ["Added", "Changed", "Fixed", "Removed"] %}
+{% set changes = release.changes | selectattr("type", "equalto", change_type) %}
+{% if changes %}
+**{{ change_type }}:**
+
+{% for change in changes %}
+- {{ change.description }}{% if change.issue %} ([#{{ change.issue }}]({{ project.issue_url }}/{{ change.issue }})){% endif %}
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+
+{% endfor %}
+
+---
+
+## License
+
+{{ project.license }}
+
+---
+
+## Support
+
+{% for support in project.support_channels %}
+- **{{ support.type }}:** {{ support.value }}
+{% endfor %}
+
+*Generated from template version {{ template.version }}*

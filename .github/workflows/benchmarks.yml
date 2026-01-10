@@ -4,9 +4,14 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 5 * * 1'
+  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
-  benchmarks:
+  # Fast regression gate using asv continuous against origin/main for temple package
+  perf-regression:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,17 +22,69 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install ASV and temple package
         run: |
           python -m pip install --upgrade pip
           pip install asv==0.6.5
-          pip install -e .
+          pip install -e temple
+
+      - name: Run asv continuous (temple) against origin/main with 10% threshold
+        working-directory: temple
+        run: |
+          set -o pipefail
+          asv continuous origin/main HEAD --quick --factor 1.10 --split --only-changed | tee /tmp/asv_continuous.txt
+          python - << 'PY'
+          import sys
+          p = '/tmp/asv_continuous.txt'
+          worse = 0
+          with open(p, 'r', encoding='utf-8') as f:
+              lines = f.readlines()
+          # Find 'WORSE' section and count rows until blank line or next header
+          i = 0
+          while i < len(lines):
+              if lines[i].strip().upper().startswith('WORSE'):
+                  i += 1
+                  # Skip header lines if present
+                  while i < len(lines) and (lines[i].strip().startswith('-----') or lines[i].strip()=='' ):
+                      i += 1
+                  # Count table-like rows containing '|'
+                  while i < len(lines) and lines[i].strip() and not lines[i].strip().upper().startswith(('BETTER','SAME')):
+                      if '|' in lines[i]:
+                          worse += 1
+                      i += 1
+                  break
+              i += 1
+          if worse > 0:
+              print(f"Found {worse} regressions beyond threshold.")
+              sys.exit(1)
+          else:
+              print("No meaningful regressions detected.")
+          PY
+
+  # Scheduled/publish job to generate HTML reports (temple package)
+  benchmarks:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ASV and temple package
+        run: |
+          python -m pip install --upgrade pip
+          pip install asv==0.6.5
+          pip install -e temple
 
       - name: Prepare ASV machine mapping
         run: |
           HOSTNAME=$(hostname)
           SRC="asv/machines/ci_machine.json"
-          mkdir -p asv/results
+          mkdir -p temple/asv/results
           if [ -f "$SRC" ]; then
             echo -n '{' > ~/.asv-machine.json
             printf '%s' "\"$HOSTNAME\"" >> ~/.asv-machine.json
@@ -36,19 +93,19 @@ jobs:
             echo -n ",\"version\": 1}" >> ~/.asv-machine.json
             MNAME=$(grep -m1 '"machine"' "$SRC" | sed -E "s/.*:\s*\"([^\"]+)\".*/\1/")
             [ -z "$MNAME" ] && MNAME="$HOSTNAME"
-            mkdir -p "asv/results/$MNAME"
-            cp "$SRC" "asv/results/$MNAME/machine.json"
+            mkdir -p "temple/asv/results/$MNAME"
+            cp "$SRC" "temple/asv/results/$MNAME/machine.json"
           fi
 
-      - name: Run quick benchmarks
+      - name: Run and publish temple benchmarks (HEAD)
+        working-directory: temple
         run: |
-          asv update || true
-          asv run --quick HEAD~1..HEAD || true
           asv run --quick HEAD || true
+          asv publish
 
-      - name: Upload ASV results
+      - name: Upload ASV results (temple)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: asv_results
-          path: asv/results
+          name: asv_results_temple
+          path: temple/asv/results

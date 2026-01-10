@@ -6,7 +6,11 @@ from temple.template_tokenizer import _compile_token_pattern
 
 def load_template_text(path):
     """Resolve path relative to repo root."""
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # Go up 3 levels: benchmarks -> asv -> temple -> repo root
+    bench_dir = os.path.dirname(os.path.abspath(__file__))
+    asv_dir = os.path.dirname(bench_dir)
+    temple_dir = os.path.dirname(asv_dir)
+    repo_root = os.path.dirname(temple_dir)
     full_path = os.path.join(repo_root, path)
     with open(full_path, "r", encoding="utf-8") as f:
         return f.read()
