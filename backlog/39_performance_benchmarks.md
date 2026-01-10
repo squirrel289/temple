@@ -1,8 +1,13 @@
 ---
 title: Performance Benchmarks and Profiling
 id: 39
-status: open
-related_commits: []
+status: complete
+related_commit:
+  - 40742b4  # feat(perf): add comprehensive ASV benchmarking suite (item 39)
+dependencies:
+  - "[[38_integration_and_e2e_tests.md]]"
+related_backlog:
+  - "[[40_ci_integration_and_docs.md]]"
 estimated_hours: 16
 priority: medium
 ---
@@ -13,15 +18,15 @@ Measure and improve performance for tokenizer, type checker, and serializers usi
 
 ## Tasks
 
-- Add benchmark harness using `asv` or `pytest-benchmark` under `asv/benchmarks/` and/or `benchmarks/`.
-- Create representative large templates and datasets to simulate real workloads.
-- Run profiling to identify hotspots and propose targeted optimizations.
-- Record baseline results and add instructions to reproduce locally.
+- ✅ Add benchmark harness using `asv` under `temple/asv/benchmarks/`.
+- ✅ Create representative large templates and datasets to simulate real workloads.
+- ✅ Run profiling to identify hotspots and propose targeted optimizations.
+- ✅ Record baseline results and add instructions to reproduce locally.
 
 ## Acceptance Criteria
 
-- Benchmarks runnable with `asv run` or `pytest --benchmark-only` and outputs stored under `asv/` or `benchmarks/results/`.
-- A short optimization plan is captured if hotspots are found.
+- ✅ Benchmarks runnable with `asv run` and outputs stored under `temple/asv/results/`.
+- ✅ Instructions and optimization plan documented in `temple/BENCHMARKING.md`.
 
 ## Notes
 
