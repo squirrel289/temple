@@ -1,8 +1,15 @@
 ---
 title: Integration & End-to-End Tests
 id: 38
-status: open
-related_commits: []
+status: complete
+related_commit:
+	- 506f463  # test: add integration coverage for json/html/yaml
+	- 77d875c  # test: add markdown integration pipeline
+dependencies:
+	- "[[19_unified_token_model.md]]"
+	- "[[37_typed_dsl_serializers.md]]"
+related_backlog:
+	- "[[39_performance_benchmarks.md]]"
 estimated_hours: 24
 priority: high
 ---
