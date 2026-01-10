@@ -6,19 +6,19 @@
 		},
 		{
 			"path": "temple",
-			"name": "temple-core",
+			"name": "core",
 			"settings": {
-				"python.defaultInterpreterPath": "${workspaceFolder:temple-core}/.venv/bin/python",
+				"python.defaultInterpreterPath": "${workspaceFolder:core}/.venv/bin/python",
 				"python.analysis.extraPaths": [
-					"${workspaceFolder:temple-core}/src"
+					"${workspaceFolder:core}/src"
 				]
 			}
 		},
 		{
 			"path": "temple-linter",
-			"name": "temple-linter",
+			"name": "linter",
 			"settings": {
-				"python.defaultInterpreterPath": "${workspaceFolder:temple-linter}/.venv/bin/python"
+				"python.defaultInterpreterPath": "${workspaceFolder:linter}/.venv/bin/python"
 			}
 		},
 		{
