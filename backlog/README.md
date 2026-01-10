@@ -23,10 +23,10 @@ The following 4 items form the critical path for the typed DSL compiler:
    - Deliverables: Diagnostic engine, source position mapping, error formatting
    - Completed: 2026-01-09
 
-4. **[37_typed_dsl_serializers.md](37_typed_dsl_serializers.md)** — Multi-Format Serializers (2 weeks)
-   - Status: `ready` (depends on 34, 35, 36)
-   - Deliverables: JSON, Markdown, HTML, YAML serializers
-   - Key: Valid output generation per format specifications
+4. **[archive/37_typed_dsl_serializers.md](archive/37_typed_dsl_serializers.md)** — Multi-Format Serializers (2 weeks)
+   - Status: ✅ `complete`
+   - Deliverables: JSON, Markdown, HTML, YAML serializers with type coercion
+   - Completed: 2026-01-09
 
 **Timeline**: 6.5 weeks development + 1.5 weeks integration/testing = **8 weeks total**
 
