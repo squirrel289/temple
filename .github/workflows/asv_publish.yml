@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -36,17 +36,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install asv==0.6.5
-          pip install -e .
-
-      - name: Patch asv version-compare bug (temporary)
-        run: |
-            python .github/scripts/patch_asv_version.py || true
-
-      - name: Prepare deterministic CI machine identity
-        run: |
-          # Copy checked-in sanitized machine JSON into asv/results so ASV recognizes this machine
-          mkdir -p asv/results/temple-ci-gh-actions
-          cp asv/machines/ci_machine.json asv/results/temple-ci-gh-actions/machine.json
+          pip install -e temple
 
       - name: Collect runner info
         run: |
@@ -61,37 +51,18 @@ jobs:
         with:
           name: pre_asv_results
           path: |
-            asv/results
+            temple/asv/results
             .github/runner_info.txt
 
+      - name: Configure deterministic CI machine identity
+        working-directory: temple
+        run: ../.github/scripts/configure_asv_machine.sh ../asv/machines/ci_machine.json
+
       - name: Run ASV benchmarks
+        working-directory: temple
         continue-on-error: true
         run: |
-          # Create ~/.asv-machine.json mapping the runner hostname to a checked-in
-          # machine JSON (use ci_machine.json)
-            HOSTNAME=$(hostname)
-            SRC="asv/machines/ci_machine.json"
-            if [ -f "$SRC" ]; then
-              # Build a JSON object with the runner hostname as a quoted key.
-              # Write mapping and include a version key so asv can parse the file.
-              echo -n '{' > ~/.asv-machine.json
-              printf '%s' "\"$HOSTNAME\"" >> ~/.asv-machine.json
-              echo -n ':' >> ~/.asv-machine.json
-              cat "$SRC" >> ~/.asv-machine.json
-              echo -n ",\"version\": 1}" >> ~/.asv-machine.json
-              MNAME=$(grep -m1 '"machine"' "$SRC" | sed -E "s/.*:\\s*\"([^\"]+)\".*/\\1/")
-              if [ -z "$MNAME" ]; then
-                MNAME="$HOSTNAME"
-              fi
-              mkdir -p "asv/results/$MNAME"
-              cp "$SRC" "asv/results/$MNAME/machine.json"
-              echo "Wrote ~/.asv-machine.json and asv/results/$MNAME/machine.json"
-            else
-              echo "No checked-in machine json found; ASV may prompt interactively"
-            fi
-
-          # Update ASV and run benchmarks. If ~/.asv-machine.json contains the
-          # host entry ASV should not prompt interactively.
+          # Update ASV and run benchmarks
           asv update || true
           # Run on last 5 commits to populate graphs with historical data
           asv run --quick HEAD~4..HEAD || true
@@ -99,11 +70,13 @@ jobs:
           asv run --quick HEAD || true
 
       - name: Generate ASV HTML report
+        working-directory: temple
         run: |
           # Publish benchmark results to HTML
           asv publish
 
       - name: Prepare versioned publish directory
+        working-directory: temple
         run: |
           TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
           PUBLISH_DIR=asv_publish/${TIMESTAMP}
@@ -120,12 +93,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: asv_results
-          path: asv/results
+          path: temple/asv/results
 
       - name: Upload HTML for Pages deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./asv/results/html
+          path: ./temple/asv/results/html
 
       - name: Deploy to GitHub Pages
         id: deployment

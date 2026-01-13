@@ -28,6 +28,10 @@ jobs:
           pip install asv==0.6.5
           pip install -e temple
 
+      - name: Configure deterministic CI machine identity
+        working-directory: temple
+        run: ../.github/scripts/configure_asv_machine.sh ../asv/machines/ci_machine.json
+
       - name: Run asv continuous (temple) against origin/main with 10% threshold
         working-directory: temple
         run: |
