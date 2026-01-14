@@ -1,12 +1,21 @@
 import json
 import re
-import tomllib
+import sys
 from pathlib import Path
+
+import pytest
 
 from temple.lark_parser import parse_template
 from temple.typed_renderer import evaluate_ast
 from temple.schema_checker import validate
 from html.parser import HTMLParser
+
+# tomllib is only available in Python 3.11+
+try:
+    import tomllib
+    HAS_TOMLLIB = True
+except ImportError:
+    HAS_TOMLLIB = False
 
 
 class _TagTextParser(HTMLParser):
@@ -137,6 +146,7 @@ def parse_structured_from_text(text: str) -> dict:
     return out
 
 
+@pytest.mark.skipif(not HAS_TOMLLIB, reason="tomllib requires Python 3.11+")
 def test_toml_positive():
     ctx = {
         "user": {
@@ -153,6 +163,7 @@ def test_toml_positive():
     assert diags == []
 
 
+@pytest.mark.skipif(not HAS_TOMLLIB, reason="tomllib requires Python 3.11+")
 def test_toml_negative():
     ctx = {
         "user": {
@@ -261,6 +272,7 @@ def test_text_negative():
     assert any(d["path"].endswith("/name") for d in diags)
 
 
+@pytest.mark.skipif(not HAS_TOMLLIB, reason="tomllib required for TOML validation in includes")
 def test_includes_match_extension():
     """Ensure include files roughly match their declared extension.
 
