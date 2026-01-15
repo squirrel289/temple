@@ -7,6 +7,7 @@ related_commits:
   - "506f463"  # Benchmarks integration
   - "77d875c"  # ASV publish workflow
   - "c4e8f2a"  # Extend docs.yml & create CONTRIBUTING.md
+  - "0a91167"  # Add pytest.mark.skipif for Python 3.10/3.11 tomllib compatibility
 dependencies:
   - "[[38_integration_and_e2e_tests.md]]"
   - "[[39_performance_benchmarks.md]]"
@@ -27,7 +28,8 @@ All CI workflows are in place and passing. Monorepo is fully integrated with Git
 ### CI Workflows (`.github/workflows/`)
 1. **tests.yml** — Python matrix tests (3.10, 3.11) for temple/ and temple-linter/
    - Triggers: push to main, pull requests
-   - Status: ✓ Passing
+   - TOML tests skipped on Python 3.10 (tomllib unavailable), run on 3.11+
+   - Status: ✓ Passing (247 passed on 3.10 / 250 passed on 3.11)
 
 2. **docs.yml** — Extended to build both documentation sets
    - `temple-linter/` Sphinx build with linkcheck (strict -W mode)
