@@ -17,13 +17,13 @@ def load_template_text(path):
 
 def bench_tokenize_small():
     """Tokenize small template."""
-    tpl = load_template_text("examples/bench/real_small.md.tmpl")
+    tpl = load_template_text("examples/templates/bench/real_small.md.tmpl")
     for _ in range(100):
         list(temple_tokenizer(tpl))
 
 
 def bench_tokenize_large():
     """Tokenize large template."""
-    tpl = load_template_text("examples/bench/real_large.html.tmpl")
+    tpl = load_template_text("examples/templates/bench/real_large.html.tmpl")
     for _ in range(10):
         list(temple_tokenizer(tpl))

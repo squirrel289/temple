@@ -47,7 +47,14 @@ class _CountingHTMLParser(HTMLParser):
         self.starttags += 1
 
 
-BASE_DIR = Path(__file__).parents[2] / "examples" / "dsl_examples"
+BASE_DIR = Path(__file__).parents[2] / "examples" / "templates"
+
+
+# Create a helper to get files from positive/negative subdirectories
+def get_template_path(filename, positive=True):
+    """Get the path to a template file in the positive or negative subdirectory."""
+    subdir = "positive" if positive else "negative"
+    return BASE_DIR / subdir / filename
 
 
 SCHEMA = {
@@ -66,9 +73,9 @@ SCHEMA = {
 def render_template_file(path: Path, ctx: dict):
     text = path.read_text()
     root = parse_template(text)
-    # load includes if present in examples/includes
+    # load includes if present in examples/templates/includes
     includes = {}
-    inc_dir = path.parents[0] / "includes"
+    inc_dir = BASE_DIR / "includes"
     if inc_dir.exists():
         for p in inc_dir.glob("*.tmpl"):
             inc_name = p.stem
@@ -157,7 +164,7 @@ def test_toml_positive():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(BASE_DIR / "toml_positive.toml.tmpl", ctx)
+    rendered, mapping = render_template_file(get_template_path("toml_positive.toml.tmpl", positive=True), ctx)
     parsed = tomllib.loads(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -173,7 +180,7 @@ def test_toml_negative():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(BASE_DIR / "toml_negative.toml.tmpl", ctx)
+    rendered, mapping = render_template_file(get_template_path("toml_negative.toml.tmpl", positive=False), ctx)
     parsed = tomllib.loads(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
@@ -189,7 +196,7 @@ def test_md_positive():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(BASE_DIR / "md_positive.md.tmpl", ctx)
+    rendered, mapping = render_template_file(get_template_path("md_positive.md.tmpl", positive=True), ctx)
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -204,7 +211,7 @@ def test_md_negative():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(BASE_DIR / "md_negative.md.tmpl", ctx)
+    rendered, mapping = render_template_file(get_template_path("md_negative.md.tmpl", positive=False), ctx)
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
@@ -220,7 +227,7 @@ def test_html_positive():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(BASE_DIR / "html_positive.html.tmpl", ctx)
+    rendered, mapping = render_template_file(get_template_path("html_positive.html.tmpl", positive=True), ctx)
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -235,7 +242,7 @@ def test_html_negative():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(BASE_DIR / "html_negative.html.tmpl", ctx)
+    rendered, mapping = render_template_file(get_template_path("html_negative.html.tmpl", positive=False), ctx)
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
@@ -251,7 +258,7 @@ def test_text_positive():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(BASE_DIR / "text_positive.txt.tmpl", ctx)
+    rendered, mapping = render_template_file(get_template_path("text_positive.txt.tmpl", positive=True), ctx)
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -266,7 +273,7 @@ def test_text_negative():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(BASE_DIR / "text_negative.txt.tmpl", ctx)
+    rendered, mapping = render_template_file(get_template_path("text_negative.txt.tmpl", positive=False), ctx)
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
