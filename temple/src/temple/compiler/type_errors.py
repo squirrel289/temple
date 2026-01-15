@@ -7,7 +7,7 @@ Maps type errors to source positions with actionable suggestions.
 
 from dataclasses import dataclass
 from typing import Optional, List, Any
-from .ast_nodes import SourceRange, Position
+from temple.diagnostics import SourceRange, Position
 
 
 class TypeErrorKind:

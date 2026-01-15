@@ -6,8 +6,7 @@ Formats diagnostic messages with source context, suggestions, and styling.
 """
 
 from typing import Optional, List, Dict, Any
-from .diagnostics import Diagnostic, DiagnosticSeverity
-from .ast_nodes import SourceRange, Position
+from temple.diagnostics import Diagnostic, DiagnosticSeverity, SourceRange, Position
 
 
 class ErrorFormatter:

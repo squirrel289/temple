@@ -14,10 +14,10 @@ import re
 import html
 from typing import Any, Dict, List, Optional, Set
 from temple.compiler.serializers.base import Serializer, SerializationContext, SerializationError
-from temple.compiler.ast_nodes import (
-    ASTNode, Text, Expression, If, For, Include, Block,
-    FunctionDef, FunctionCall
+from temple.typed_ast import (
+    Block, Text, Expression, If, For, Include
 )
+# Note: FunctionDef, FunctionCall not yet in typed_ast
 
 
 class HTMLSerializer(Serializer):

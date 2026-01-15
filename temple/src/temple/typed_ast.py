@@ -53,17 +53,26 @@ class Expression(Node):
 
 
 class If(Node):
-    def __init__(self, condition: str, body: "Block", else_body: Optional["Block"] = None, start: Optional[Tuple[int, int]] = None):
+    def __init__(self, condition: str, body: "Block", elif_parts: Optional[List[Tuple[str, "Block"]]] = None, else_body: Optional["Block"] = None, start: Optional[Tuple[int, int]] = None):
         super().__init__(start)
         self.condition = condition
         self.body = body
+        self.elif_parts = elif_parts or []
         self.else_body = else_body
 
     def evaluate(self, context: Dict[str, Any], includes: Dict[str, "Block"] | None = None, path: str = "", mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None) -> Any:
         cond_val = Expression(self.condition).evaluate(context, includes, path + "/cond", mapping)
         if cond_val:
             return self.body.evaluate(context, includes, path + "/body", mapping)
-        elif self.else_body:
+        
+        # Check elif branches
+        for idx, (elif_cond, elif_body) in enumerate(self.elif_parts):
+            elif_val = Expression(elif_cond).evaluate(context, includes, path + f"/elif[{idx}]/cond", mapping)
+            if elif_val:
+                return elif_body.evaluate(context, includes, path + f"/elif[{idx}]/body", mapping)
+        
+        # Check else branch
+        if self.else_body:
             return self.else_body.evaluate(context, includes, path + "/else", mapping)
         return None
 

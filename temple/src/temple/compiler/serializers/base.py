@@ -8,7 +8,8 @@ Serializers convert type-checked AST + input data into formatted output
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
-from temple.compiler.ast_nodes import ASTNode, SourceRange
+from temple.typed_ast import Block, Text, Expression, If, For, Include
+from temple.diagnostics import SourceRange
 from temple.compiler.types import BaseType
 
 

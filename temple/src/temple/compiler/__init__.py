@@ -3,25 +3,29 @@ temple.compiler
 Production-grade typed DSL compiler for Temple.
 
 This package implements:
-1. Parser (ast_nodes, parser.py) — item 34 ✅
+1. Parser (via lark_parser) — item 34 ✅
 2. Type system (types, schema, type_checker) — item 35 ✅
-3. Diagnostics (diagnostics, source_map, error_formatter) — item 36 ✅
+3. Diagnostics (via temple.diagnostics, source_map, error_formatter) — item 36 ✅
 4. Serializers (serializers/) — item 37 ✅
 """
 
-from temple.compiler.ast_nodes import (
-    Position,
-    SourceRange,
-    ASTNode,
+# AST nodes from typed_ast
+from temple.typed_ast import (
+    Block,
     Text,
     Expression,
     If,
     For,
     Include,
-    Block,
-    walk_ast,
 )
-from temple.compiler.parser import TypedTemplateParser
+# Diagnostics from temple core
+from temple.diagnostics import (
+    Position,
+    SourceRange,
+)
+# Parsing from lark_parser
+from temple.lark_parser import parse_template, parse_with_diagnostics
+# Type system
 from temple.compiler.types import (
     BaseType,
     StringType,
@@ -46,14 +50,8 @@ from temple.compiler.schema import (
 )
 from temple.compiler.type_checker import TypeChecker, TypeEnvironment
 from temple.compiler.type_errors import TypeError, TypeErrorCollector
-from temple.compiler.diagnostics import (
-    Diagnostic,
-    DiagnosticSeverity,
-    DiagnosticCollector,
-    SuppressionComment,
-)
-from temple.compiler.source_map import SourceMap, DiagnosticMapper, PositionTracker
-from temple.compiler.error_formatter import ErrorFormatter, ContextRenderer
+from temple.compiler.source_map import SourceMap
+from temple.compiler.error_formatter import ErrorFormatter
 from temple.compiler.serializers import (
     Serializer,
     SerializationError,
@@ -65,21 +63,19 @@ from temple.compiler.serializers import (
 )
 
 __all__ = [
-    # Position & Source Info
+    # Position & Source Info (from temple.diagnostics)
     "Position",
     "SourceRange",
-    # AST Nodes
-    "ASTNode",
+    # AST Nodes (from temple.typed_ast)
     "Text",
     "Expression",
     "If",
     "For",
     "Include",
     "Block",
-    # Utilities
-    "walk_ast",
-    # Parser
-    "TypedTemplateParser",
+    # Parser (from temple.lark_parser)
+    "parse_template",
+    "parse_with_diagnostics",
     # Type System (Item 35)
     "BaseType",
     "StringType",
