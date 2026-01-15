@@ -40,7 +40,7 @@ def create_statement_template(lines=100):
         if i % 10 == 0:
             parts.append("{% if condition %}")
         elif i % 10 == 9:
-            parts.append("{% endif %}")
+            parts.append("{% end %}")
         else:
             parts.append(f"Line {i}: content")
     return "\n".join(parts)
@@ -106,7 +106,7 @@ class BenchRendererWithValidation:
     def setup(self):
         """Prepare templates."""
         self.valid_template = create_statement_template(100)
-        self.invalid_template = "{% if cond %} content {% endfor %}"  # Mismatched
+        self.invalid_template = "{% if cond %} content {% end %}"  # Mismatched
         self.deep_nesting = create_statement_template(100)
     
     def time_render_with_validation(self):

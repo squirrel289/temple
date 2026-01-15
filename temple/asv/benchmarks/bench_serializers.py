@@ -17,7 +17,7 @@ def _make_block(nodes):
 
 def _build_template(sections: int = 20) -> str:
     parts = ["Hello {{ user.name }}"]
-    loop = "{% for job in user.jobs %}{{ job.title }} at {{ job.company }} {% endfor %}"
+    loop = "{% for job in user.jobs %}{{ job.title }} at {{ job.company }} {% end %}"
     for _ in range(sections):
         parts.append(loop)
     return "\n".join(parts)

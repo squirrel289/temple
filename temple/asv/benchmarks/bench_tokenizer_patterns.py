@@ -24,7 +24,7 @@ def create_dense_template(size=1000):
             text_content,
             "{{ var_b }}",
             " more text ",
-            "{% if condition %}{{ var_c }}{% endif %}",
+            "{% if condition %}{{ var_c }}{% end %}",
             "\n",
         ]
         lines.append("".join(parts))
@@ -38,7 +38,7 @@ def create_nested_template(depth=10):
         template += ("{% if level %}\n  nested content\n")
         template += ("  {{ nested }}\n")
     for i in range(depth):
-        template += ("{% endif %}\n")
+        template += ("{% end %}\n")
     return template
 
 

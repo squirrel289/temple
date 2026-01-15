@@ -5,7 +5,7 @@ from temple.lark_parser import parse_template
 from temple.typed_renderer import evaluate_ast
 
 
-BASE = Path(__file__).parents[2] / "examples" / "bench"
+BASE = Path(__file__).parents[2] / "examples" / "templates" / "bench"
 
 
 def load_template(name: str) -> str:
