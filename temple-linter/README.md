@@ -1,5 +1,7 @@
 # Temple Linter
 
+A declarative, type-safe transformation engine for structured data that validates and emits your target format.
+
 A Language Server Protocol (LSP) server for linting templated files. Integrates temple core's parser and type checker for comprehensive template validation with base format linting.
 
 ## Features

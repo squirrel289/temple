@@ -1,5 +1,9 @@
 # Temple: Meta-Templating System
 
+A declarative, type-safe transformation engine for structured data that validates and emits your target format.
+
+Elevator pitch: Declarative, schema-checked transformations for JSON/YAML/HTML — catch errors at author time and emit any target format. See ADR: [Market Role & Adapter Architecture](temple/docs/adr/003-market-role-and-adapter-architecture.md).
+
 A universal, format-agnostic meta-templating system for declaratively transforming structured data into text with real-time validation and developer tooling.
 
 ## 🏗️ Monorepo Structure
@@ -187,6 +191,10 @@ What remains:
 ## 📄 License
 
 [Add your license here]
+
+## Changelog
+
+- January 2026: Clarified market positioning and adapter architecture in [ADR-003](temple/docs/adr/003-market-role-and-adapter-architecture.md). Temple now targets declarative, type-safe transformations and defines an adapter contract for engine integrations (Jinja2 first).
 
 ## 🤝 Contributing
 

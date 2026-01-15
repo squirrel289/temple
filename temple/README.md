@@ -2,6 +2,8 @@
 
 ## Status: Active Development
 
+**Primary Purpose**: A declarative, type-safe transformation engine for structured data that validates and emits your target format.
+
 **Current State**: Production-ready tokenization engine with configurable delimiters and LRU-cached performance optimizations.
 
 **Package**: `temple` - Core library providing authoritative tokenization for Temple DSL

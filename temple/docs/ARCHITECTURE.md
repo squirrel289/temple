@@ -1,7 +1,11 @@
 # Temple: Sample Architecture
 
 ## Overview
+A declarative, type-safe transformation engine for structured data that validates and emits your target format.
+
 Temple is designed to be data format-agnostic, supporting JSON, XML, YAML, TOML, and future formats. The architecture is modular, with pluggable parsers, a unified query engine, and a consistent templating DSL overlaying the target output format.
+
+See ADR: [Market Role & Adapter Architecture](adr/003-market-role-and-adapter-architecture.md) for the project's market positioning and the planned adapter abstraction for integrating external template engines (Jinja2 first).
 
 ## Components
 
@@ -48,3 +52,7 @@ Input Data (JSON/XML/YAML/TOML) → [Parser] → Normalized Object Model → [Sc
 ---
 
 See `README.md` and `/backlog/temple.md` for vision, goals, and work items.
+
+### Changelog
+
+- January 2026: Added ADR-003 describing market positioning and adapter architecture; plan to ship Temple-native first and provide an adapter interface for engine integrations.

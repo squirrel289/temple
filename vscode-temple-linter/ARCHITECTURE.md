@@ -1,6 +1,8 @@
 # Temple Linter VS Code Integration Architecture
 
 ## Overview
+A declarative, type-safe transformation engine for structured data that validates and emits your target format.
+
 This document describes the architecture for integrating the `temple-linter` Python LSP server with a VS Code extension, using a Node.js LSP proxy to delegate base linting requests back to VS Code's in-process linters.
 
 ---
