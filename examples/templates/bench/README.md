@@ -42,7 +42,7 @@ asv preview
 
 ## Benchmark Configuration
 
-See [../../asv.conf.json](../../asv.conf.json) for benchmark configuration and [../../asv_benchmarks/](../../asv_benchmarks/) for benchmark implementations.
+See [../../asv/asv.conf.json](../../asv/asv.conf.json) for benchmark configuration and [../../asv/benchmarks/](../../asv/benchmarks/) for benchmark implementations.
 
 ## For General Usage
 
