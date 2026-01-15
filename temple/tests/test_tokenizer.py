@@ -25,12 +25,12 @@ def test_expression_token():
 
 
 def test_statement_token():
-    text = "{% if x %}42{% endif %}"
+    text = "{% if x %}42{% end %}"
     tokens = list(temple_tokenizer(text))
     assert tokens_to_tuples(tokens) == [
         ("statement", "if x", (0, 0), (0, 10)),
         ("text", "42", (0, 10), (0, 12)),
-        ("statement", "endif", (0, 12), (0, 23)),
+        ("statement", "end", (0, 12), (0, 21)),
     ]
 
 
@@ -101,7 +101,7 @@ def test_pattern_caching():
     assert _compile_token_pattern.cache_info().hits == 0
     
     # Second call with same delimiters - cache hit
-    text2 = "{% if y %}z{% endif %}"
+    text2 = "{% if y %}z{% end %}"
     tokens2 = list(temple_tokenizer(text2))
     assert len(tokens2) == 3
     assert _compile_token_pattern.cache_info().hits == 1

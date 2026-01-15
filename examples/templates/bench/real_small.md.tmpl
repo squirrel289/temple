@@ -8,7 +8,7 @@
 - Location: {{ user.location }}
 {% if user.website %}
 - Website: {{ user.website }}
-{% endif %}
+{% end %}
 
 ## About
 
@@ -18,7 +18,7 @@
 
 {% for skill in user.skills %}
 - {{ skill.name }} ({{ skill.level }})
-{% endfor %}
+{% end %}
 
 ## Recent Projects
 
@@ -27,9 +27,9 @@
 
 {{ project.description }}
 
-**Technologies:** {% for tech in project.technologies %}{{ tech }}{% if not loop.last %}, {% endif %}{% endfor %}
+**Technologies:** {% for tech in project.technologies %}{{ tech }}{% if not loop.last %}, {% end %}{% end %}
 
-{% endfor %}
+{% end %}
 
 ## Experience
 
@@ -44,10 +44,10 @@
 **Key Achievements:**
 {% for achievement in job.achievements %}
 - {{ achievement }}
-{% endfor %}
-{% endif %}
+{% end %}
+{% end %}
 
-{% endfor %}
+{% end %}
 
 ---
 

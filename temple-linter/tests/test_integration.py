@@ -51,7 +51,7 @@ class TestFullPipeline:
 {
   "name": "{{ user.name }}",
   "age": {{ user.age }},
-  "active": {% if user.active %}true{% else %}false{% endif %}
+  "active": {% if user.active %}true{% else %}false{% end %}
 }
 """
         # Mock successful base linting (no diagnostics)
@@ -104,7 +104,7 @@ version: {{ app.version }}
 dependencies:
   {% for dep in app.dependencies %}
   - {{ dep }}
-  {% endfor %}
+  {% end %}
 """
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
@@ -127,12 +127,12 @@ dependencies:
   <h1>Welcome, {{ user.name }}!</h1>
   {% else %}
   <h1>Please log in</h1>
-  {% endif %}
+  {% end %}
   
   <ul>
   {% for item in items %}
     <li>{{ item.name }}: ${{ item.price }}</li>
-  {% endfor %}
+  {% end %}
   </ul>
 </body>
 </html>
@@ -156,7 +156,7 @@ dependencies:
 
 {% for feature in project.features %}
 - **{{ feature.name }}**: {{ feature.description }}
-{% endfor %}
+{% end %}
 
 ## Installation
 
@@ -302,8 +302,8 @@ class TestEndToEnd:
       "id": {{ user.id }},
       "name": "{{ user.name }}",
       "email": "{{ user.email }}"
-    }{% if not loop.last %},{% endif %}
-    {% endfor %}
+    }{% if not loop.last %},{% end %}
+    {% end %}
   ]
 }
 """
@@ -329,8 +329,8 @@ services:
     ports:
       {% for port in service.ports %}
       - "{{ port }}"
-      {% endfor %}
-  {% endfor %}
+      {% end %}
+  {% end %}
 """
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
@@ -348,7 +348,7 @@ services:
 {
   "nested": {{ "{{literal}}" }},
   "quoted": "{{ 'string with \\"quotes\\"' }}",
-  "complex": {% if x > 5 and y < 10 %}true{% else %}false{% endif %}
+  "complex": {% if x > 5 and y < 10 %}true{% else %}false{% end %}
 }
 """
         mock_language_client.protocol.send_request.return_value.result.return_value = {
@@ -420,21 +420,6 @@ class TestSyntaxValidation:
         assert len(diagnostics) > 0
         assert any(d.severity == 1 for d in diagnostics)
 
-    def test_mismatched_blocks_error(self, orchestrator, mock_language_client):
-        """Test that mismatched block types produce errors."""
-        template = "{% if x %}content{% endfor %}"
-        
-        mock_language_client.protocol.send_request.return_value.result.return_value = {
-            "diagnostics": []
-        }
-        
-        diagnostics = orchestrator.lint_template(
-            template, "file:///test.tmpl", mock_language_client
-        )
-        
-        assert len(diagnostics) > 0
-        assert any(d.severity == 1 for d in diagnostics)
-
     def test_valid_syntax_no_errors(self, orchestrator, mock_language_client):
         """Test that valid template syntax produces no syntax errors."""
         template = """
@@ -442,8 +427,8 @@ class TestSyntaxValidation:
   {{ user.name }}
   {% for skill in user.skills %}
     - {{ skill }}
-  {% endfor %}
-{% endif %}
+  {% end %}
+{% end %}
 """
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []

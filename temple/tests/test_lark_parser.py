@@ -16,10 +16,10 @@ def test_parse_for_and_if():
 Active
 {% else %}
 Inactive
-{% endif %}
+{% end %}
 {% for x in items %}
 - {{ x }}
-{% endfor %}
+{% end %}
 """
     root = parse_template(tpl)
     # ensure parsing succeeds and returns a block

@@ -19,7 +19,7 @@ def test_render_passthrough_strips_expressions():
 
 def test_render_passthrough_strips_statements():
     """Test that statement blocks are stripped in passthrough mode."""
-    text = "before{% if x %}middle{% endif %}after"
+    text = "before{% if x %}middle{% end %}after"
     output, errors = render_passthrough(text)
     assert output == "beforemiddleafter"
     assert errors == []
@@ -35,21 +35,21 @@ def test_render_passthrough_strips_comments():
 
 def test_block_validator_valid_if():
     """Test validation of balanced if/endif."""
-    text = "{% if x %}content{% endif %}"
+    text = "{% if x %}content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert errors == []
 
 
 def test_block_validator_valid_for():
     """Test validation of balanced for/endfor."""
-    text = "{% for item in list %}content{% endfor %}"
+    text = "{% for item in list %}content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert errors == []
 
 
 def test_block_validator_valid_nested():
     """Test validation of nested blocks."""
-    text = "{% if x %}{% for i in list %}nested{% endfor %}{% endif %}"
+    text = "{% if x %}{% for i in list %}nested{% end %}{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert errors == []
 
@@ -72,7 +72,7 @@ def test_block_validator_unclosed_for():
 
 def test_block_validator_unexpected_endif():
     """Test detection of unexpected closing block."""
-    text = "content{% endif %}"
+    text = "content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert len(errors) == 1
     assert "Unexpected closing block" in errors[0]
@@ -80,7 +80,7 @@ def test_block_validator_unexpected_endif():
 
 def test_block_validator_mismatched_blocks():
     """Test detection of mismatched open/close."""
-    text = "{% if x %}content{% endfor %}"
+    text = "{% if x %}content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert len(errors) == 2
     assert "Mismatched block" in errors[0]
@@ -106,7 +106,7 @@ def test_render_passthrough_multiline():
     text = """line1
 {% if true %}
 line2
-{% endif %}
+{% end %}
 line3"""
     output, errors = render_passthrough(text)
     assert "line1" in output

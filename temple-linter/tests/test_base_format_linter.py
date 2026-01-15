@@ -50,7 +50,7 @@ def test_detect_fallback_txt(linter):
 
 
 def test_lint_base_format_returns_diagnostics(linter):
-    diagnostics = linter.lint_base_format("Hello {% if user %}{{ user.name }}{% endif %}")
+    diagnostics = linter.lint_base_format("Hello {% if user %}{{ user.name }}{% end %}")
     assert isinstance(diagnostics, list)
     assert diagnostics[0]["base_format"] == VSCODE_PASSTHROUGH
 

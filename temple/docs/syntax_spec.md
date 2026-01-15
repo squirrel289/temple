@@ -7,7 +7,7 @@ The Temple DSL overlays logic primitives directly onto the target output format 
 ### Logic Token Format
 - By default, all logic blocks use `{% ... %}` for statements and `{{ ... }}` for expressions.
 - Whitespace inside tokens is ignored.
-- Example: `{% if user.name %}Hello, {{ user.name }}!{% endif %}`
+- Example: `{% if user.name %}Hello, {{ user.name }}!{% end %}`
 
 ### User-Specified Tokens
 Users may configure custom delimiters for logic blocks and statements to avoid conflicts with the target format or to match personal/team preferences.
@@ -25,23 +25,23 @@ temple:
 ```markdown
 :: if user.name ::
 Hello, << user.name >>!
-:: endif ::
+:: end ::
 ```
 
 The temple system should allow these tokens to be set via configuration (YAML, JSON, CLI flags, etc.), and all logic parsing will respect the chosen delimiters.
 
 ## 2. Supported Logic Primitives
 - **Variable Insertion:** `{{ variable }}`
-- **Conditionals:** `{% if condition %}...{% elif condition %}...{% else %}...{% endif %}`
-- **Loops:** `{% for item in collection %}...{% endfor %}`
+-- **Conditionals:** `{% if condition %}...{% else if condition %}...{% else %}...{% end %}`
+- **Loops:** `{% for item in collection %}...{% end %}`
 - **Includes:** `{% include "filename.md" %}`
 - **User-Defined Functions:** `{% function name(args) %}...{% endfunction %}`
 - **Comments:** `{# This is a comment #}`
 
 All primitives support custom tokens. For example, with the configuration above:
 - **Variable Insertion:** `<< variable >>`
-- **Conditionals:** `[[ if condition ]]...[[ elif condition ]]...[[ else ]]...[[ endif ]]`
-- **Loops:** `[[ for item in collection ]]...[[ endfor ]]`
+-- **Conditionals:** `[[ if condition ]]...[[ else if condition ]]...[[ else ]]...[[ endif ]]`
+- **Loops:** `[[ for item in collection ]]...[[ end ]]`
 - **Includes:** `[[ include "filename.md" ]]`
 - **User-Defined Functions:** `[[ function name(args) ]]...[[ endfunction ]]`
 - **Comments:** `[## This is a comment ##]` (if comment tokens are also configurable)
@@ -54,12 +54,12 @@ All primitives support custom tokens. For example, with the configuration above:
 
 {% if user.name %}
 ## {{ user.name }}
-{% endif %}
+{% end %}
 
 {% for job in user.jobs %}
 ### {{ job.title }} at {{ job.company }}
 - {{ job.start }} - {{ job.end }}
-{% endfor %}
+{% end %}
 ```
 
 ### HTML
@@ -70,7 +70,7 @@ All primitives support custom tokens. For example, with the configuration above:
     <ul>
       {% for skill in user.skills %}
       <li>{{ skill }}</li>
-      {% endfor %}
+      {% end %}
     </ul>
   </body>
 </html>
@@ -85,8 +85,8 @@ All primitives support custom tokens. For example, with the configuration above:
     {
       "title": "{{ job.title }}",
       "company": "{{ job.company }}"
-    }{% if not loop.last %},{% endif %}
-    {% endfor %}
+    }{% if not loop.last %},{% end %}
+    {% end %}
   ]
 }
 ```
@@ -129,7 +129,7 @@ Text: "Hello {{ user.name }} world"
 ```
 Line 0: "Hello {% if user.name %}"
 Line 1: "  Welcome!"
-Line 2: "{% endif %}"
+Line 2: "{% end %}"
 ```
 - Token `{% if user.name %}`
 - `start`: (0, 6) - starts at column 6 of line 0
@@ -143,7 +143,7 @@ Line 2: "{% endif %}"
 ```
 Line 0: "{% for item in items %}"
 Line 1: "  {{ item }}"
-Line 2: "{% endfor %}"
+Line 2: "{% end %}"
 ```
 - Statement token: `start`: (0, 0), `end`: (0, 24)
 - Expression token: `start`: (1, 2), `end`: (1, 13)

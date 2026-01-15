@@ -13,8 +13,8 @@
 
 ### Query Usage in Templates
 - **Variable Insertion:** `{{ user.name }}` or `{{ user.jobs[0].title }}`
-- **Conditionals:** `{% if user.active %}...{% endif %}`
-- **Loops:** `{% for job in user.jobs %}...{% endfor %}`
+- **Conditionals:** `{% if user.active %}...{% end %}`
+- **Loops:** `{% for job in user.jobs %}...{% end %}`
 
 ### Query Consistency
 - Queries are designed to be format-agnostic, but actual support depends on the capabilities of the pluggable query engine and available adapters for each data format. The same syntax applies across formats only if supported by the engine and adapters.

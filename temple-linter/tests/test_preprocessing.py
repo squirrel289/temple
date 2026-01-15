@@ -12,7 +12,7 @@ from temple_linter.template_preprocessing import strip_template_tokens, _compile
 
 
 def test_strip_default_delimiters():
-    text = "Hello {% if user %}{{ user.name }}{% endif %}"
+    text = "Hello {% if user %}{{ user.name }}{% end %}"
     result = strip_template_tokens(text)
     assert result == "Hello "
 
@@ -29,7 +29,7 @@ def test_strip_custom_delimiters():
 
 
 def test_strip_with_replacement():
-    text = "Hello {% if user %}{{ user.name }}{% endif %}"
+    text = "Hello {% if user %}{{ user.name }}{% end %}"
     result = strip_template_tokens(text, replace_with="[REDACTED]")
     assert result == "Hello [REDACTED][REDACTED][REDACTED]"
 
@@ -49,7 +49,7 @@ def test_pattern_caching():
     assert _compile_strip_pattern.cache_info().hits == 0
     
     # Second call with same delimiters - cache hit
-    text2 = "{% if y %}{% endif %}"
+    text2 = "{% if y %}{% end %}"
     result2 = strip_template_tokens(text2)
     assert result2 == ""
     assert _compile_strip_pattern.cache_info().hits == 1

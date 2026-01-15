@@ -4,8 +4,7 @@ Convert temple core diagnostics to LSP format.
 """
 
 from typing import Optional
-from temple.compiler import Diagnostic, DiagnosticSeverity
-from temple.compiler.ast_nodes import SourceRange
+from temple.diagnostics import Diagnostic, DiagnosticSeverity, SourceRange
 from lsprotocol.types import (
     Diagnostic as LspDiagnostic,
     DiagnosticSeverity as LspSeverity,
@@ -25,8 +24,7 @@ def temple_to_lsp_diagnostic(diag: Diagnostic) -> LspDiagnostic:
         LSP Diagnostic for editor display
         
     Example:
-        >>> from temple.compiler import Diagnostic, DiagnosticSeverity
-        >>> from temple.compiler.ast_nodes import SourceRange, Position as TemplePosition
+        >>> from temple.diagnostics import Diagnostic, DiagnosticSeverity, SourceRange, Position as TemplePosition
         >>> temple_diag = Diagnostic(
         ...     message="Unclosed block",
         ...     severity=DiagnosticSeverity.ERROR,

@@ -10,8 +10,8 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 - [{{ section.title }}](#{{ section.id }})
   {% for subsection in section.subsections %}
   - [{{ subsection.title }}](#{{ subsection.id }})
-  {% endfor %}
-{% endfor %}
+  {% end %}
+{% end %}
 
 ---
 
@@ -30,12 +30,12 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 ```{{ feature.language }}
 {{ feature.code_example }}
 ```
-{% endif %}
+{% end %}
 
 **Status:** {{ feature.status }}
-{% if feature.availability %}**Available since:** {{ feature.availability }}{% endif %}
+{% if feature.availability %}**Available since:** {{ feature.availability }}{% end %}
 
-{% endfor %}
+{% end %}
 
 ---
 
@@ -44,11 +44,11 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 ### Prerequisites
 
 {% for req in project.requirements %}
-- {{ req.name }} ({{ req.version }}){% if req.optional %} *(optional)*{% endif %}
+- {{ req.name }} ({{ req.version }}){% if req.optional %} *(optional)*{% end %}
   {% if req.notes %}
   > {{ req.notes }}
-  {% endif %}
-{% endfor %}
+  {% end %}
+{% end %}
 
 ### Installation Steps
 
@@ -61,16 +61,16 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
    ```bash
    {{ step.command }}
    ```
-   {% endif %}
+   {% end %}
    
    {% if step.verification %}
    Verify by running:
    ```bash
    {{ step.verification }}
    ```
-   {% endif %}
+   {% end %}
    
-{% endfor %}
+{% end %}
 
 ---
 
@@ -93,12 +93,12 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 
 - **Type:** `{{ option.type }}`
 - **Default:** `{{ option.default }}`
-{% if option.required %}- **Required:** Yes{% endif %}
+{% if option.required %}- **Required:** Yes{% end %}
 {% if option.example %}
 - **Example:** `{{ option.example }}`
-{% endif %}
+{% end %}
 
-{% endfor %}
+{% end %}
 
 ---
 
@@ -112,11 +112,11 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 **Parameters:**
 
 {% for param in api.parameters %}
-- `{{ param.name }}` ({{ param.type }}){% if param.required %} **required**{% endif %}: {{ param.description }}
+- `{{ param.name }}` ({{ param.type }}){% if param.required %} **required**{% end %}: {{ param.description }}
   {% if param.default %}
   - Default: `{{ param.default }}`
-  {% endif %}
-{% endfor %}
+  {% end %}
+{% end %}
 
 **Returns:** `{{ api.return_type }}` - {{ api.return_description }}
 
@@ -126,19 +126,19 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 ```{{ api.example_language }}
 {{ api.example }}
 ```
-{% endif %}
+{% end %}
 
 {% if api.errors %}
 **Possible Errors:**
 
 {% for error in api.errors %}
 - `{{ error.code }}`: {{ error.description }}
-{% endfor %}
-{% endif %}
+{% end %}
+{% end %}
 
 ---
 
-{% endfor %}
+{% end %}
 
 ## Usage Examples
 
@@ -157,13 +157,13 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 ```
 {{ example.output }}
 ```
-{% endif %}
+{% end %}
 
 {% if example.notes %}
 > **Note:** {{ example.notes }}
-{% endif %}
+{% end %}
 
-{% endfor %}
+{% end %}
 
 ---
 
@@ -180,18 +180,18 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 
 {% for solution in issue.solutions %}
 {{ loop.index }}. {{ solution }}
-{% endfor %}
+{% end %}
 
 {% if issue.related_issues %}
 **See also:**
 {% for related in issue.related_issues %}
 - [{{ related.title }}](#{{ related.id }})
-{% endfor %}
-{% endif %}
+{% end %}
+{% end %}
 
 ---
 
-{% endfor %}
+{% end %}
 
 ## FAQ
 
@@ -200,7 +200,7 @@ Version {{ project.version }} | Last updated: {{ project.updated_at }}
 
 A: {{ faq.answer }}
 
-{% endfor %}
+{% end %}
 
 ---
 
@@ -212,7 +212,7 @@ A: {{ faq.answer }}
 
 {% for step in project.dev_setup %}
 {{ loop.index }}. {{ step }}
-{% endfor %}
+{% end %}
 
 ### Testing
 
@@ -227,19 +227,39 @@ A: {{ faq.answer }}
 {% for release in project.releases %}
 ### Version {{ release.version }} ({{ release.date }})
 
-{% for change_type in ["Added", "Changed", "Fixed", "Removed"] %}
-{% set changes = release.changes | selectattr("type", "equalto", change_type) %}
-{% if changes %}
-**{{ change_type }}:**
+**Added:**
 
-{% for change in changes %}
-- {{ change.description }}{% if change.issue %} ([#{{ change.issue }}]({{ project.issue_url }}/{{ change.issue }})){% endif %}
-{% endfor %}
+{% for change in release.changes %}
+{% if change.type == "Added" %}
+- {{ change.description }}{% if change.issue %} ([#{{ change.issue }}]({{ project.issue_url }}/{{ change.issue }})){% end %}
+{% end %}
+{% end %}
 
-{% endif %}
-{% endfor %}
+**Changed:**
 
-{% endfor %}
+{% for change in release.changes %}
+{% if change.type == "Changed" %}
+- {{ change.description }}{% if change.issue %} ([#{{ change.issue }}]({{ project.issue_url }}/{{ change.issue }})){% end %}
+{% end %}
+{% end %}
+
+**Fixed:**
+
+{% for change in release.changes %}
+{% if change.type == "Fixed" %}
+- {{ change.description }}{% if change.issue %} ([#{{ change.issue }}]({{ project.issue_url }}/{{ change.issue }})){% end %}
+{% end %}
+{% end %}
+
+**Removed:**
+
+{% for change in release.changes %}
+{% if change.type == "Removed" %}
+- {{ change.description }}{% if change.issue %} ([#{{ change.issue }}]({{ project.issue_url }}/{{ change.issue }})){% end %}
+{% end %}
+{% end %}
+
+{% end %}
 
 ---
 
@@ -253,6 +273,6 @@ A: {{ faq.answer }}
 
 {% for support in project.support_channels %}
 - **{{ support.type }}:** {{ support.value }}
-{% endfor %}
+{% end %}
 
 *Generated from template version {{ template.version }}*

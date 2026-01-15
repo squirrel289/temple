@@ -6,8 +6,8 @@ Integrates temple core parser for comprehensive syntax validation.
 """
 
 from typing import List, Dict, Any, Optional
-from temple.compiler import TypedTemplateParser, Diagnostic
-from temple.compiler.diagnostics import DiagnosticSeverity
+from temple.lark_parser import parse_with_diagnostics
+from temple.diagnostics import Diagnostic, DiagnosticSeverity, DiagnosticCollector, Position, SourceRange
 
 
 class TemplateLinter:
@@ -23,7 +23,6 @@ class TemplateLinter:
     
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
-        self.parser = TypedTemplateParser()
     
     def lint(self, text: str) -> List[Diagnostic]:
         """
@@ -38,24 +37,11 @@ class TemplateLinter:
         Example:
             >>> linter = TemplateLinter()
             >>> diagnostics = linter.lint("{% if user.active %}{{ user.name }}")
-            >>> len(diagnostics) > 0  # Missing {% endif %}
+            >>> len(diagnostics) > 0  # Missing {% end %}
             True
         """
-        try:
-            ast, diagnostics = self.parser.parse(text)
-            return diagnostics
-        except Exception as e:
-            # Convert unexpected errors to diagnostics
-            from temple.compiler.ast_nodes import Position, SourceRange
-            return [
-                Diagnostic(
-                    message=f"Parser error: {str(e)}",
-                    severity=DiagnosticSeverity.ERROR,
-                    source_range=SourceRange(Position(0, 0), Position(0, 0)),
-                    source="temple-linter",
-                    code="PARSER_ERROR"
-                )
-            ]
+        ast, diagnostics = parse_with_diagnostics(text)
+        return diagnostics
 
 
 # CLI entry point for LSP server usage

@@ -6,14 +6,14 @@
 ## {{ user.name }}
 
 - Age: {{ user.age }}
-- Active: {% if user.active %}Yes{% else %}No{% endif %}
+- Active: {% if user.active %}Yes{% else %}No{% end %}
 - Skills:
   {% for s in user.skills %}
-  - {{ s }}{% endfor %}
+  - {{ s }}{% end %}
 - Jobs:
   {% for job in user.jobs %}
-  - {{ job.title }} at {{ job.company }}{% if loop.last %} (current){% endif %}
-  {% endfor %}
+  - {{ job.title }} at {{ job.company }}{% if loop.last %} (current){% end %}
+  {% end %}
 
 {% include 'footer.html' %}
 

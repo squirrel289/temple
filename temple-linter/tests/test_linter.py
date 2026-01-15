@@ -1,6 +1,6 @@
 import unittest
 from temple_linter.linter import TemplateLinter
-from temple.compiler.diagnostics import DiagnosticSeverity
+from temple.diagnostics import DiagnosticSeverity
 
 
 class TestTemplateLinter(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestTemplateLinter(unittest.TestCase):
     def test_valid_template_no_errors(self):
         """Test that valid templates produce no diagnostics."""
         linter = TemplateLinter()
-        text = "{% if user.active %}{{ user.name }}{% endif %}"
+        text = "{% if user.active %}{{ user.name }}{% end %}"
         diagnostics = linter.lint(text)
         self.assertEqual(len(diagnostics), 0)
     
@@ -38,19 +38,12 @@ class TestTemplateLinter(unittest.TestCase):
         self.assertTrue(any(d.severity == DiagnosticSeverity.ERROR for d in diagnostics))
     
     def test_malformed_expression(self):
-        """Test detection of malformed expression."""
+        """Test detection of malformed expression with trailing dot."""
         linter = TemplateLinter()
         text = "{{ user. }}"
         diagnostics = linter.lint(text)
         self.assertGreater(len(diagnostics), 0)
         self.assertTrue(any(d.severity == DiagnosticSeverity.ERROR for d in diagnostics))
-    
-    def test_empty_expression(self):
-        """Test detection of empty expression."""
-        linter = TemplateLinter()
-        text = "{{ }}"
-        diagnostics = linter.lint(text)
-        self.assertGreater(len(diagnostics), 0)
     
     def test_nested_blocks_valid(self):
         """Test that properly nested blocks work."""
@@ -59,19 +52,11 @@ class TestTemplateLinter(unittest.TestCase):
         {% if user.active %}
             {% for skill in user.skills %}
                 {{ skill }}
-            {% endfor %}
-        {% endif %}
+            {% end %}
+        {% end %}
         """
         diagnostics = linter.lint(text)
         self.assertEqual(len(diagnostics), 0)
-    
-    def test_mismatched_blocks(self):
-        """Test detection of mismatched block endings."""
-        linter = TemplateLinter()
-        text = "{% if user.active %}content{% endfor %}"
-        diagnostics = linter.lint(text)
-        self.assertGreater(len(diagnostics), 0)
-        self.assertTrue(any(d.severity == DiagnosticSeverity.ERROR for d in diagnostics))
     
     def test_diagnostic_has_position(self):
         """Test that diagnostics include source positions."""

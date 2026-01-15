@@ -9,11 +9,11 @@ examples = {
     # Resume
     {% if user.name %}
     ## {{ user.name }}
-    {% endif %}
+    {% end %}
     {% for job in user.jobs %}
     ### {{ job.title }} at {{ job.company }}
     - {{ job.start }} - {{ job.end }}
-    {% endfor %}
+    {% end %}
     """,
     "invalid_markdown": """
     # Resume
@@ -22,7 +22,7 @@ examples = {
     {% for job in user.jobs %}
     ### {{ job.title }} at {{ job.company }}
     - {{ job.start }} - {{ job.end }}
-    {% endfor %}
+    {% end %}
     """,  # missing endif
     "valid_html": """
     <html>
@@ -31,7 +31,7 @@ examples = {
         <ul>
           {% for skill in user.skills %}
           <li>{{ skill }}</li>
-          {% endfor %}
+          {% end %}
         </ul>
       </body>
     </html>
@@ -55,8 +55,8 @@ examples = {
         {
           "title": "{{ job.title }}",
           "company": "{{ job.company }}"
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
+        }{% if not loop.last %},{% end %}
+        {% end %}
       ]
     }
     """,
@@ -68,7 +68,7 @@ examples = {
         {
           "title": "{{ job.title }}",
           "company": "{{ job.company }}"
-        }{% if not loop.last %},{% endif %}
+        }{% if not loop.last %},{% end %}
       ]
     }
     """,  # missing endfor

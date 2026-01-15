@@ -168,8 +168,8 @@ ast = parser.parse_template("""
   "active": {{ user.active }},
   "roles": [
     {% for role in user.roles -%}
-    "{{ role }}"{% if not loop.last %},{% endif %}
-    {% endfor %}
+    "{{ role }}"{% if not loop.last %},{% end %}
+    {% end %}
   ]
 }
 """)
@@ -220,7 +220,7 @@ ast = parser.parse_template("""
 ## Skills
 {% for skill in skills -%}
 - {{ skill }}
-{% endfor %}
+{% end %}
 """)
 
 data = {
@@ -251,13 +251,13 @@ serializer = HTMLSerializer(pretty=True, strict=False, sanitize=True)
 ast = parser.parse_template("""
 <div class="profile">
   <h1>{{ user.name }}</h1>
-  <p>Status: <span class="{% if user.active %}active{% else %}inactive{% endif %}">
-    {% if user.active %}Active{% else %}Inactive{% endif %}
+  <p>Status: <span class="{% if user.active %}active{% else %}inactive{% end %}">
+    {% if user.active %}Active{% else %}Inactive{% end %}
   </span></p>
   <ul>
     {% for role in user.roles -%}
     <li>{{ role }}</li>
-    {% endfor %}
+    {% end %}
   </ul>
 </div>
 """)
@@ -296,7 +296,7 @@ active: {{ user.active }}
 roles:
   {% for role in user.roles -%}
   - {{ role }}
-  {% endfor %}
+  {% end %}
 bio: |
   {{ user.bio }}
 """)
@@ -463,9 +463,9 @@ template = """
     {% for user in users -%}
     {
       "name": "{{ user.name }}",
-      "active": {{ user.active }}{% if not loop.last %},{% endif %}
+      "active": {{ user.active }}{% if not loop.last %},{% end %}
     }
-    {% endfor %}
+    {% end %}
   ]
 }
 """

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{{ site.description }}">
-    <meta name="keywords" content="{% for keyword in site.keywords %}{{ keyword }}{% if not loop.last %}, {% endif %}{% endfor %}">
+    <meta name="keywords" content="{% for keyword in site.keywords %}{{ keyword }}{% if not loop.last %}, {% end %}{% end %}">
     <meta name="author" content="{{ site.author }}">
     <title>{{ page.title }} | {{ site.name }}</title>
     
@@ -15,18 +15,18 @@
     <meta property="og:description" content="{{ page.description }}">
     {% if page.image %}
     <meta property="og:image" content="{{ site.url }}{{ page.image }}">
-    {% endif %}
+    {% end %}
     
     <!-- Stylesheets -->
     {% for stylesheet in site.stylesheets %}
-    <link rel="stylesheet" href="{{ stylesheet.url }}"{% if stylesheet.integrity %} integrity="{{ stylesheet.integrity }}" crossorigin="anonymous"{% endif %}>
-    {% endfor %}
+    <link rel="stylesheet" href="{{ stylesheet.url }}"{% if stylesheet.integrity %} integrity="{{ stylesheet.integrity }}" crossorigin="anonymous"{% end %}>
+    {% end %}
     
     {% if page.custom_css %}
     <style>
         {{ page.custom_css }}
     </style>
-    {% endif %}
+    {% end %}
 </head>
 <body class="{{ page.body_class }}" data-theme="{{ site.theme }}">
     
@@ -37,27 +37,27 @@
                 <div class="navbar-brand">
                     {% if site.logo %}
                     <img src="{{ site.logo }}" alt="{{ site.name }}" class="logo">
-                    {% endif %}
+                    {% end %}
                     <a href="/" class="site-title">{{ site.name }}</a>
                 </div>
                 
                 <div class="navbar-menu">
                     <ul class="nav-links">
                         {% for item in navigation.main %}
-                        <li class="nav-item{% if item.active %} active{% endif %}">
-                            <a href="{{ item.url }}"{% if item.external %} target="_blank" rel="noopener"{% endif %}>
-                                {% if item.icon %}<i class="{{ item.icon }}"></i>{% endif %}
+                        <li class="nav-item{% if item.active %} active{% end %}">
+                            <a href="{{ item.url }}"{% if item.external %} target="_blank" rel="noopener"{% end %}>
+                                {% if item.icon %}<i class="{{ item.icon }}"></i>{% end %}
                                 {{ item.label }}
                             </a>
                             {% if item.dropdown %}
                             <ul class="dropdown-menu">
                                 {% for subitem in item.dropdown %}
                                 <li><a href="{{ subitem.url }}">{{ subitem.label }}</a></li>
-                                {% endfor %}
+                                {% end %}
                             </ul>
-                            {% endif %}
+                            {% end %}
                         </li>
-                        {% endfor %}
+                        {% end %}
                     </ul>
                     
                     <div class="navbar-actions">
@@ -68,7 +68,7 @@
                                 <img src="{{ user.avatar }}" alt="{{ user.name }}">
                                 {% else %}
                                 <span>{{ user.initials }}</span>
-                                {% endif %}
+                                {% end %}
                             </button>
                             <div class="user-dropdown">
                                 <div class="user-info">
@@ -77,17 +77,17 @@
                                 </div>
                                 {% for action in user.menu_items %}
                                 <a href="{{ action.url }}" class="dropdown-item">
-                                    {% if action.icon %}<i class="{{ action.icon }}"></i>{% endif %}
+                                    {% if action.icon %}<i class="{{ action.icon }}"></i>{% end %}
                                     {{ action.label }}
                                 </a>
-                                {% endfor %}
+                                {% end %}
                                 <a href="/logout" class="dropdown-item logout">Logout</a>
                             </div>
                         </div>
                         {% else %}
                         <a href="/login" class="btn btn-outline">Login</a>
                         <a href="/signup" class="btn btn-primary">Sign Up</a>
-                        {% endif %}
+                        {% end %}
                     </div>
                 </div>
             </div>
@@ -98,18 +98,18 @@
             <div class="container">
                 <ol>
                     {% for crumb in page.breadcrumbs %}
-                    <li{% if loop.last %} class="active"{% endif %}>
+                    <li{% if loop.last %} class="active"{% end %}>
                         {% if not loop.last %}
                         <a href="{{ crumb.url }}">{{ crumb.label }}</a>
                         {% else %}
                         {{ crumb.label }}
-                        {% endif %}
+                        {% end %}
                     </li>
-                    {% endfor %}
+                    {% end %}
                 </ol>
             </div>
         </div>
-        {% endif %}
+        {% end %}
     </header>
     
     <!-- Main Content -->
@@ -120,17 +120,17 @@
                 <h1 class="hero-title">{{ page.hero.title }}</h1>
                 {% if page.hero.subtitle %}
                 <p class="hero-subtitle">{{ page.hero.subtitle }}</p>
-                {% endif %}
+                {% end %}
                 {% if page.hero.cta %}
                 <div class="hero-actions">
                     {% for cta in page.hero.cta %}
                     <a href="{{ cta.url }}" class="btn btn-{{ cta.style }}">{{ cta.text }}</a>
-                    {% endfor %}
+                    {% end %}
                 </div>
-                {% endif %}
+                {% end %}
             </div>
         </section>
-        {% endif %}
+        {% end %}
         
         <div class="container">
             <div class="content-layout">
@@ -143,15 +143,15 @@
                             {% if widget.type == "menu" %}
                             <ul class="sidebar-menu">
                                 {% for item in widget.items %}
-                                <li{% if item.active %} class="active"{% endif %}>
+                                <li{% if item.active %} class="active"{% end %}>
                                     <a href="{{ item.url }}">{{ item.label }}</a>
                                     {% if item.badge %}
                                     <span class="badge badge-{{ item.badge.type }}">{{ item.badge.text }}</span>
-                                    {% endif %}
+                                    {% end %}
                                 </li>
-                                {% endfor %}
+                                {% end %}
                             </ul>
-                            {% elif widget.type == "stats" %}
+                            {% else if widget.type == "stats" %}
                             <div class="stats-grid">
                                 {% for stat in widget.items %}
                                 <div class="stat-item">
@@ -161,70 +161,70 @@
                                     <div class="stat-change stat-{{ stat.change_type }}">
                                         {{ stat.change }}
                                     </div>
-                                    {% endif %}
+                                    {% end %}
                                 </div>
-                                {% endfor %}
+                                {% end %}
                             </div>
-                            {% elif widget.type == "html" %}
+                            {% else if widget.type == "html" %}
                             {{ widget.html }}
-                            {% endif %}
+                            {% end %}
                         </div>
                     </div>
-                    {% endfor %}
+                    {% end %}
                 </aside>
-                {% endif %}
+                {% end %}
                 
                 <div class="main-column">
                     {% if page.alerts %}
                     {% for alert in page.alerts %}
                     <div class="alert alert-{{ alert.type }}" role="alert">
-                        {% if alert.icon %}<i class="{{ alert.icon }}"></i>{% endif %}
+                        {% if alert.icon %}<i class="{{ alert.icon }}"></i>{% end %}
                         <div class="alert-content">
-                            {% if alert.title %}<strong>{{ alert.title }}</strong>{% endif %}
+                            {% if alert.title %}<strong>{{ alert.title }}</strong>{% end %}
                             {{ alert.message }}
                         </div>
                         {% if alert.dismissible %}
                         <button class="alert-close" aria-label="Close">&times;</button>
-                        {% endif %}
+                        {% end %}
                     </div>
-                    {% endfor %}
-                    {% endif %}
+                    {% end %}
+                    {% end %}
                     
                     <article class="content">
                         <header class="content-header">
                             <h1>{{ page.title }}</h1>
                             {% if page.subtitle %}
                             <p class="subtitle">{{ page.subtitle }}</p>
-                            {% endif %}
+                            {% end %}
                             
                             <div class="content-meta">
                                 {% if page.author %}
                                 <div class="meta-item author">
                                     {% if page.author.avatar %}
                                     <img src="{{ page.author.avatar }}" alt="{{ page.author.name }}" class="author-avatar">
-                                    {% endif %}
+                                    {% end %}
                                     <span>By <a href="{{ page.author.url }}">{{ page.author.name }}</a></span>
                                 </div>
-                                {% endif %}
+                                {% end %}
                                 {% if page.date %}
                                 <div class="meta-item date">
                                     <i class="icon-calendar"></i>
                                     <time datetime="{{ page.date }}">{{ page.date_formatted }}</time>
                                 </div>
-                                {% endif %}
+                                {% end %}
                                 {% if page.reading_time %}
                                 <div class="meta-item reading-time">
                                     <i class="icon-clock"></i>
                                     <span>{{ page.reading_time }} min read</span>
                                 </div>
-                                {% endif %}
+                                {% end %}
                                 {% if page.tags %}
                                 <div class="meta-item tags">
                                     {% for tag in page.tags %}
                                     <a href="/tags/{{ tag.slug }}" class="tag">{{ tag.name }}</a>
-                                    {% endfor %}
+                                    {% end %}
                                 </div>
-                                {% endif %}
+                                {% end %}
                             </div>
                         </header>
                         
@@ -246,9 +246,9 @@
                                             <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                                             {% if item.badge %}
                                             <span class="item-badge badge-{{ item.badge.type }}">{{ item.badge.text }}</span>
-                                            {% endif %}
+                                            {% end %}
                                         </div>
-                                        {% endif %}
+                                        {% end %}
                                         
                                         <div class="item-content">
                                             <h3 class="item-title">
@@ -256,12 +256,12 @@
                                                 <a href="{{ item.url }}">{{ item.title }}</a>
                                                 {% else %}
                                                 {{ item.title }}
-                                                {% endif %}
+                                                {% end %}
                                             </h3>
                                             
                                             {% if item.subtitle %}
                                             <p class="item-subtitle">{{ item.subtitle }}</p>
-                                            {% endif %}
+                                            {% end %}
                                             
                                             <p class="item-description">{{ item.description }}</p>
                                             
@@ -269,12 +269,12 @@
                                             <div class="item-metadata">
                                                 {% for meta in item.metadata %}
                                                 <span class="meta-{{ meta.type }}">
-                                                    {% if meta.icon %}<i class="{{ meta.icon }}"></i>{% endif %}
+                                                    {% if meta.icon %}<i class="{{ meta.icon }}"></i>{% end %}
                                                     {{ meta.value }}
                                                 </span>
-                                                {% endfor %}
+                                                {% end %}
                                             </div>
-                                            {% endif %}
+                                            {% end %}
                                             
                                             {% if item.actions %}
                                             <div class="item-actions">
@@ -282,14 +282,14 @@
                                                 <a href="{{ action.url }}" class="btn btn-{{ action.style }} btn-sm">
                                                     {{ action.label }}
                                                 </a>
-                                                {% endfor %}
+                                                {% end %}
                                             </div>
-                                            {% endif %}
+                                            {% end %}
                                         </div>
                                     </div>
-                                    {% endfor %}
+                                    {% end %}
                                 </div>
-                                {% endif %}
+                                {% end %}
                                 
                                 {% if section.code_blocks %}
                                 {% for code in section.code_blocks %}
@@ -299,17 +299,17 @@
                                         <span class="code-title">{{ code.title }}</span>
                                         {% if code.language %}
                                         <span class="code-language">{{ code.language }}</span>
-                                        {% endif %}
+                                        {% end %}
                                         <button class="code-copy" data-code="{{ code.id }}">Copy</button>
                                     </div>
-                                    {% endif %}
+                                    {% end %}
                                     <pre><code class="language-{{ code.language }}">{{ code.content }}</code></pre>
                                 </div>
-                                {% endfor %}
-                                {% endif %}
+                                {% end %}
+                                {% end %}
                             </section>
-                            {% endfor %}
-                            {% endif %}
+                            {% end %}
+                            {% end %}
                         </div>
                         
                         {% if page.comments_enabled %}
@@ -323,7 +323,7 @@
                             </form>
                             {% else %}
                             <p><a href="/login">Login</a> to leave a comment.</p>
-                            {% endif %}
+                            {% end %}
                             
                             <div class="comments-list">
                                 {% for comment in page.comments %}
@@ -333,7 +333,7 @@
                                         <img src="{{ comment.author.avatar }}" alt="{{ comment.author.name }}">
                                         {% else %}
                                         <span>{{ comment.author.initials }}</span>
-                                        {% endif %}
+                                        {% end %}
                                     </div>
                                     <div class="comment-content">
                                         <div class="comment-header">
@@ -354,7 +354,7 @@
                                             <button class="comment-action" data-action="delete">
                                                 <i class="icon-trash"></i> Delete
                                             </button>
-                                            {% endif %}
+                                            {% end %}
                                         </div>
                                         
                                         {% if comment.replies %}
@@ -366,7 +366,7 @@
                                                     <img src="{{ reply.author.avatar }}" alt="{{ reply.author.name }}">
                                                     {% else %}
                                                     <span>{{ reply.author.initials }}</span>
-                                                    {% endif %}
+                                                    {% end %}
                                                 </div>
                                                 <div class="comment-content">
                                                     <div class="comment-header">
@@ -376,21 +376,21 @@
                                                     <div class="comment-body">{{ reply.text }}</div>
                                                 </div>
                                             </div>
-                                            {% endfor %}
+                                            {% end %}
                                         </div>
-                                        {% endif %}
+                                        {% end %}
                                     </div>
                                 </div>
-                                {% endfor %}
+                                {% end %}
                             </div>
                             
                             {% if page.has_more_comments %}
                             <button class="btn btn-outline load-more" data-page="{{ page.next_comments_page }}">
                                 Load More Comments
                             </button>
-                            {% endif %}
+                            {% end %}
                         </section>
-                        {% endif %}
+                        {% end %}
                         
                         {% if page.related_content %}
                         <section class="related-content">
@@ -402,7 +402,7 @@
                                     <a href="{{ item.url }}" class="related-image">
                                         <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                                     </a>
-                                    {% endif %}
+                                    {% end %}
                                     <div class="related-content">
                                         <h3><a href="{{ item.url }}">{{ item.title }}</a></h3>
                                         <p>{{ item.excerpt }}</p>
@@ -411,10 +411,10 @@
                                         </div>
                                     </div>
                                 </article>
-                                {% endfor %}
+                                {% end %}
                             </div>
                         </section>
-                        {% endif %}
+                        {% end %}
                     </article>
                 </div>
             </div>
@@ -431,14 +431,14 @@
                     <ul>
                         {% for link in column.links %}
                         <li>
-                            <a href="{{ link.url }}"{% if link.external %} target="_blank" rel="noopener"{% endif %}>
+                            <a href="{{ link.url }}"{% if link.external %} target="_blank" rel="noopener"{% end %}>
                                 {{ link.label }}
                             </a>
                         </li>
-                        {% endfor %}
+                        {% end %}
                     </ul>
                 </div>
-                {% endfor %}
+                {% end %}
                 
                 {% if footer.social %}
                 <div class="footer-column">
@@ -448,10 +448,10 @@
                         <a href="{{ social.url }}" class="social-link" aria-label="{{ social.platform }}" target="_blank" rel="noopener">
                             <i class="{{ social.icon }}"></i>
                         </a>
-                        {% endfor %}
+                        {% end %}
                     </div>
                 </div>
-                {% endif %}
+                {% end %}
             </div>
             
             <div class="footer-bottom">
@@ -460,23 +460,23 @@
                 <div class="legal-links">
                     {% for link in footer.legal_links %}
                     <a href="{{ link.url }}">{{ link.label }}</a>
-                    {% endfor %}
+                    {% end %}
                 </div>
-                {% endif %}
+                {% end %}
             </div>
         </div>
     </footer>
     
     <!-- Scripts -->
     {% for script in site.scripts %}
-    <script src="{{ script.url }}"{% if script.defer %} defer{% endif %}{% if script.async %} async{% endif %}{% if script.integrity %} integrity="{{ script.integrity }}" crossorigin="anonymous"{% endif %}></script>
-    {% endfor %}
+    <script src="{{ script.url }}"{% if script.defer %} defer{% end %}{% if script.async %} async{% end %}{% if script.integrity %} integrity="{{ script.integrity }}" crossorigin="anonymous"{% end %}></script>
+    {% end %}
     
     {% if page.custom_js %}
     <script>
         {{ page.custom_js }}
     </script>
-    {% endif %}
+    {% end %}
     
     <!-- Analytics -->
     {% if site.analytics %}
@@ -488,6 +488,6 @@
         'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
         })(window,document,'script','dataLayer','{{ site.analytics.gtm_id }}');
     </script>
-    {% endif %}
+    {% end %}
 </body>
 </html>

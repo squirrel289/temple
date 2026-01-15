@@ -1,25 +1,34 @@
 // Minimal grammar for Temple prototype (supports text, expressions, if, for, include, comment)
 start: block
-block: (text | expression | if_block | for_block | include)*
+block: (text | expression | if_block | for_block | include | set_statement)*
 
 text: TEXT
 
 expression: OPEN_EXPR
 
-if_block: OPEN_IF block (OPEN_ELSE block)? OPEN_ENDIF
 
-for_block: OPEN_FOR block OPEN_ENDFOR
+// Support else if branches in if blocks
+if_block: OPEN_IF block else_if_chain? (OPEN_ELSE block)? OPEN_END
+
+// zero or more else if branches
+else_if_chain: (OPEN_ELSE_IF block)+
+
+for_block: OPEN_FOR block OPEN_END
 
 include: OPEN_INCLUDE
+set_statement: OPEN_SET
 
 // Terminals capture full tag text, transformer will parse internals
 OPEN_EXPR: /\{\{[^}]*\}\}/
 OPEN_IF: /\{\%[^%]*if[^%]*\%\}/
+// Match `{% else if ... %}` as a single token for else-if branches
+OPEN_ELSE_IF: /\{\%\s*else\s+if[^%]*\%\}/
 OPEN_ELSE: /\{\%[^%]*else[^%]*\%\}/
-OPEN_ENDIF: /\{\%[^%]*endif[^%]*\%\}/
 OPEN_FOR: /\{\%[^%]*for[^%]*\%\}/
-OPEN_ENDFOR: /\{\%[^%]*endfor[^%]*\%\}/
+// Single end token for all block types
+OPEN_END: /\{\%[^%]*end[^%]*\%\}/
 OPEN_INCLUDE: /\{\%[^%]*include[^%]*\%\}/
+OPEN_SET: /\{\%[^%]*set[^%]*\%\}/
 OPEN_COMMENT: /\{#[\s\S]*?#\}/
 
 // TEXT matches any characters up to the next template opening sequence

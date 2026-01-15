@@ -1,7 +1,7 @@
 
 age = {{ user.age }}
-active = {% if user.active %}true{% else %}false{% endif %}
-skills = [ "{{ user.skills.0 }}"{% if user.skills.1 %}, "{{ user.skills.1 }}"{% endif %} ]
+active = {% if user.active %}true{% else %}false{% end %}
+skills = [ "{{ user.skills.0 }}"{% if user.skills.1 %}, "{{ user.skills.1 }}"{% end %} ]
 
 {% include 'header.toml' %}
 
@@ -11,8 +11,8 @@ title = "{{ job.title }}"
 company = "{{ job.company }}"
 {% if loop.last %}
 # last job marker
-{% endif %}
-{% endfor %}
+{% end %}
+{% end %}
 
 {% include 'footer.toml' %}
 

@@ -14,7 +14,7 @@ related_commit: null
 # Implement Control Flow Rendering
 
 ## Goal
-Support `{% if %} / {% elif %} / {% else %} / {% endif %}` and `{% for %} / {% endfor %}` in the renderer.
+Support `{% if %} / {% else if %} / {% else %} / {% end %}` and `{% for %} / {% end %}` in the renderer.
 
 ## Deliverables
 - Conditional evaluation with truthiness rules
