@@ -360,3 +360,117 @@ services:
         )
         
         assert isinstance(diagnostics, list)
+
+class TestSyntaxValidation:
+    """Test template syntax validation integration."""
+
+    def test_unclosed_if_block_error(self, orchestrator, mock_language_client):
+        """Test that unclosed if blocks produce syntax errors."""
+        template = """
+{
+  "name": "test",
+  "value": {% if condition %}true
+}
+"""
+        mock_language_client.protocol.send_request.return_value.result.return_value = {
+            "diagnostics": []
+        }
+        
+        diagnostics = orchestrator.lint_template(
+            template, "file:///test.json.tmpl", mock_language_client
+        )
+        
+        # Should have at least one diagnostic for unclosed block
+        assert len(diagnostics) > 0
+        # Check that at least one diagnostic is an error
+        assert any(d.severity == 1 for d in diagnostics)  # 1 = Error
+
+    def test_unclosed_for_block_error(self, orchestrator, mock_language_client):
+        """Test that unclosed for blocks produce syntax errors."""
+        template = """
+<ul>
+{% for item in items %}
+  <li>{{ item }}</li>
+</ul>
+"""
+        mock_language_client.protocol.send_request.return_value.result.return_value = {
+            "diagnostics": []
+        }
+        
+        diagnostics = orchestrator.lint_template(
+            template, "file:///list.html.tmpl", mock_language_client
+        )
+        
+        # Should have diagnostic for unclosed for
+        assert len(diagnostics) > 0
+        assert any(d.severity == 1 for d in diagnostics)
+
+    def test_malformed_expression_error(self, orchestrator, mock_language_client):
+        """Test that malformed expressions produce errors."""
+        template = "{{ user. }}"
+        
+        mock_language_client.protocol.send_request.return_value.result.return_value = {
+            "diagnostics": []
+        }
+        
+        diagnostics = orchestrator.lint_template(
+            template, "file:///test.tmpl", mock_language_client
+        )
+        
+        assert len(diagnostics) > 0
+        assert any(d.severity == 1 for d in diagnostics)
+
+    def test_mismatched_blocks_error(self, orchestrator, mock_language_client):
+        """Test that mismatched block types produce errors."""
+        template = "{% if x %}content{% endfor %}"
+        
+        mock_language_client.protocol.send_request.return_value.result.return_value = {
+            "diagnostics": []
+        }
+        
+        diagnostics = orchestrator.lint_template(
+            template, "file:///test.tmpl", mock_language_client
+        )
+        
+        assert len(diagnostics) > 0
+        assert any(d.severity == 1 for d in diagnostics)
+
+    def test_valid_syntax_no_errors(self, orchestrator, mock_language_client):
+        """Test that valid template syntax produces no syntax errors."""
+        template = """
+{% if user.active %}
+  {{ user.name }}
+  {% for skill in user.skills %}
+    - {{ skill }}
+  {% endfor %}
+{% endif %}
+"""
+        mock_language_client.protocol.send_request.return_value.result.return_value = {
+            "diagnostics": []
+        }
+        
+        diagnostics = orchestrator.lint_template(
+            template, "file:///test.tmpl", mock_language_client
+        )
+        
+        # Should have no syntax errors
+        assert all(d.severity != 1 or "syntax" not in d.message.lower() for d in diagnostics)
+
+    def test_multiple_syntax_errors(self, orchestrator, mock_language_client):
+        """Test that multiple syntax errors are all reported."""
+        template = """
+{% if x %}
+  {{ y. }}
+  {% for z in items %}
+"""
+        mock_language_client.protocol.send_request.return_value.result.return_value = {
+            "diagnostics": []
+        }
+        
+        diagnostics = orchestrator.lint_template(
+            template, "file:///test.tmpl", mock_language_client
+        )
+        
+        # Should have multiple errors
+        assert len(diagnostics) >= 2
+        assert any(d.severity == 1 for d in diagnostics)

@@ -1,24 +1,61 @@
 """
 linter.py
 Core linting logic for templated files.
+
+Integrates temple core parser for comprehensive syntax validation.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from temple.compiler import TypedTemplateParser, Diagnostic
+from temple.compiler.diagnostics import DiagnosticSeverity
 
 
 class TemplateLinter:
+    """
+    Template linter with syntax validation using temple core parser.
+    
+    Validates template syntax and returns diagnostics for:
+    - Unclosed blocks (if, for, etc.)
+    - Malformed expressions
+    - Invalid statements
+    - Syntax errors
+    """
+    
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
-
-    def lint(self, text: str) -> List[Dict[str, Any]]:
+        self.parser = TypedTemplateParser()
+    
+    def lint(self, text: str) -> List[Diagnostic]:
         """
-        Lint the given templated text and return diagnostics.
+        Parse template and return syntax diagnostics.
+        
+        Args:
+            text: Template content to validate
+            
+        Returns:
+            List of Diagnostic objects with syntax errors
+            
+        Example:
+            >>> linter = TemplateLinter()
+            >>> diagnostics = linter.lint("{% if user.active %}{{ user.name }}")
+            >>> len(diagnostics) > 0  # Missing {% endif %}
+            True
         """
-        # Placeholder: integrate with temple for preprocessing
-        # and with base format linters
-        diagnostics: List[Dict[str, Any]] = []
-        # ... linting logic ...
-        return diagnostics
+        try:
+            ast, diagnostics = self.parser.parse(text)
+            return diagnostics
+        except Exception as e:
+            # Convert unexpected errors to diagnostics
+            from temple.compiler.ast_nodes import Position, SourceRange
+            return [
+                Diagnostic(
+                    message=f"Parser error: {str(e)}",
+                    severity=DiagnosticSeverity.ERROR,
+                    source_range=SourceRange(Position(0, 0), Position(0, 0)),
+                    source="temple-linter",
+                    code="PARSER_ERROR"
+                )
+            ]
 
 
 # CLI entry point for LSP server usage

@@ -11,6 +11,7 @@ from temple_linter.base_format_linter import BaseFormatLinter
 from temple_linter.services.token_cleaning_service import TokenCleaningService
 from temple_linter.services.base_linting_service import BaseLintingService
 from temple_linter.services.diagnostic_mapping_service import DiagnosticMappingService
+from temple_linter.diagnostic_converter import temple_to_lsp_diagnostic
 
 
 class LintOrchestrator:
@@ -87,6 +88,16 @@ class LintOrchestrator:
         return all_diagnostics
     
     def _lint_template_syntax(self, text: str) -> List[Diagnostic]:
-        """Lint template syntax and logic."""
-        diagnostics_data = self.template_linter.lint(text)
-        return [Diagnostic(**d) for d in diagnostics_data]
+        """
+        Lint template syntax and logic.
+        
+        Converts temple core diagnostics to LSP format.
+        
+        Args:
+            text: Template content
+            
+        Returns:
+            List of LSP Diagnostic objects
+        """
+        temple_diagnostics = self.template_linter.lint(text)
+        return [temple_to_lsp_diagnostic(d) for d in temple_diagnostics]
