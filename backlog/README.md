@@ -54,23 +54,74 @@ After the MVP is complete:
 2. **Query Language** — JMESPath support, schema-aware query validation
 3. **User-Defined Functions** — Template reusability, custom operators
 
+### Post-MVP Work: Temple-Linter Integration (Items 42-47)
+
+Following completion of the typed DSL compiler MVP (items 34-37) and documentation (items 38-41), the next phase integrates temple core functionality into temple-linter:
+
+5. **[42_integrate_temple_core_dependency.md](42_integrate_temple_core_dependency.md)** — Add temple as dependency (2 hours)
+   - Status: 🔄 `not_started`
+   - Priority: HIGH
+   - Deliverables: Update pyproject.toml, verify imports, update dev setup docs
+
+6. **[43_implement_template_syntax_validation.md](43_implement_template_syntax_validation.md)** — Parser integration (8 hours)
+   - Status: 🔄 `not_started`
+   - Priority: HIGH
+   - Depends on: #42
+   - Deliverables: Replace TemplateLinter stub with real parser, detect syntax errors
+
+7. **[44_implement_semantic_validation.md](44_implement_semantic_validation.md)** — Type checker integration (12 hours)
+   - Status: 🔄 `not_started`
+   - Priority: HIGH
+   - Depends on: #42, #43
+   - Deliverables: Schema loading, undefined variable detection, type mismatch checking
+
+8. **[45_implement_lsp_language_features.md](45_implement_lsp_language_features.md)** — IDE features (16 hours)
+   - Status: 🔄 `not_started`
+   - Priority: MEDIUM
+   - Depends on: #42, #43, #44
+   - Deliverables: Completions, hover, go-to-definition, find references, rename
+
+9. **[46_integration_and_performance_tests.md](46_integration_and_performance_tests.md)** — E2E testing (10 hours)
+   - Status: 🔄 `not_started`
+   - Priority: MEDIUM
+   - Depends on: #42, #43, #44, #45
+   - Deliverables: Integration tests, performance benchmarks, regression tests
+
+10. **[47_documentation_updates_for_core_integration.md](47_documentation_updates_for_core_integration.md)** — Docs (6 hours)
+    - Status: 🔄 `not_started`
+    - Priority: MEDIUM
+    - Depends on: #42, #43, #44, #45
+    - Deliverables: Updated README, architecture docs, user guide, API reference, migration guide
+
+**Temple-Linter Integration Timeline**: 54 hours (≈7 days) for complete temple core integration
+
 ---
 
 ## Structure
 
 ```
 backlog/
-├── README.md                          (this file)
-├── temple.md                          (project vision & scope)
-├── 34_typed_dsl_parser.md            (active: parser & AST)
-├── 35_typed_dsl_type_system.md       (active: type system)
-├── 36_typed_dsl_diagnostics.md       (active: diagnostics)
-├── 37_typed_dsl_serializers.md       (active: output generation)
+├── README.md                                    (this file)
+├── temple.md                                    (project vision & scope)
+├── 42_integrate_temple_core_dependency.md      (temple-linter: add dependency)
+├── 43_implement_template_syntax_validation.md  (temple-linter: parser integration)
+├── 44_implement_semantic_validation.md         (temple-linter: type checker)
+├── 45_implement_lsp_language_features.md       (temple-linter: IDE features)
+├── 46_integration_and_performance_tests.md     (temple-linter: testing)
+├── 47_documentation_updates_for_core_integration.md (temple-linter: docs)
 └── archive/
-    ├── 30_typed_dsl_prototype.md     (spike: reference implementation)
-    ├── 32_spikes_docs_and_hooks.md   (spike: archived)
-    ├── 33_decision_snapshot.md       (decision: why typed DSL, risks, future work)
-    └── 01-29_*.md                    (obsolete: old prototype approach)
+    ├── 30_typed_dsl_prototype.md               (spike: reference implementation)
+    ├── 32_spikes_docs_and_hooks.md             (spike: archived)
+    ├── 33_decision_snapshot.md                 (decision: why typed DSL)
+    ├── 34_typed_dsl_parser.md                  (completed: parser & AST)
+    ├── 35_typed_dsl_type_system.md             (completed: type system)
+    ├── 36_typed_dsl_diagnostics.md             (completed: diagnostics)
+    ├── 37_typed_dsl_serializers.md             (completed: serializers)
+    ├── 38_integration_and_e2e_tests.md         (completed: testing)
+    ├── 39_performance_benchmarks.md            (completed: benchmarks)
+    ├── 40_ci_integration_and_docs.md           (completed: CI/docs)
+    ├── 41_canonical_examples_and_docs.md       (completed: examples)
+    └── 01-29_*.md                              (obsolete: old prototype)
 ```
 
 ---
@@ -105,13 +156,31 @@ backlog/
 
 ## Status Summary
 
+### Typed DSL Compiler MVP (Completed)
+
+| Item | Title | Status | Effort | Completed |
+|------|-------|--------|--------|-----------|
+| 34 | Parser & AST | ✅ complete | 2w | 2026-01-09 |
+| 35 | Type System | ✅ complete | 1.5w | 2026-01-09 |
+| 36 | Diagnostics | ✅ complete | 1w | 2026-01-09 |
+| 37 | Serializers | ✅ complete | 2w | 2026-01-09 |
+| 38 | Integration Tests | ✅ complete | 1w | 2026-01-11 |
+| 39 | Benchmarks | ✅ complete | 1w | 2026-01-11 |
+| 40 | CI & Docs | ✅ complete | 1w | 2026-01-13 |
+| 41 | Examples & Docs | ✅ complete | 1w | 2026-01-15 |
+| **MVP Total** | | ✅ | **10w** | |
+
+### Temple-Linter Integration (Not Started)
+
 | Item | Title | Status | Effort | Blocker |
 |------|-------|--------|--------|---------|
-| 34 | Parser & AST | ready | 2w | None — **Start immediately** |
-| 35 | Type System | ready | 1.5w | 34 |
-| 36 | Diagnostics | ready | 1w | 34, 35 |
-| 37 | Serializers | ready | 2w | 34, 35, 36 |
-| **MVP Total** | | | **8w** | |
+| 42 | Core Dependency | 🔄 not_started | 2h | None |
+| 43 | Syntax Validation | 🔄 not_started | 8h | #42 |
+| 44 | Semantic Validation | 🔄 not_started | 12h | #42, #43 |
+| 45 | LSP Features | 🔄 not_started | 16h | #42, #43, #44 |
+| 46 | Integration Tests | 🔄 not_started | 10h | #42-#45 |
+| 47 | Documentation | 🔄 not_started | 6h | #42-#45 |
+| **Linter Total** | | 🔄 | **54h (~7d)** | |
 
 ---
 
