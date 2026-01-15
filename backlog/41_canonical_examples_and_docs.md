@@ -2,7 +2,8 @@
 title: Canonical Examples & Developer Docs
 id: 41
 status: completed
-related_commits: []
+related_commits: 
+  - '11ee6f2' # docs: add sample script and restructure examples for clarity and contributor experience
 estimated_hours: 8
 priority: medium
 ---
@@ -13,18 +14,33 @@ Provide clear, runnable examples and developer-facing documentation for serializ
 
 ## Status: COMPLETED ✓
 
-All deliverables created and integrated with existing codebase. Updated to use working dsl_examples with lark_parser/typed_renderer.
+All deliverables created and integrated with existing codebase. Examples restructured for clarity and contributor experience. Include mechanism verified and working across all 4 formats.
 
 ## Deliverables
 
-### 1. DSL Examples Enhancement (`examples/dsl_examples/`)
-- ✓ `sample_data.json` — Standardized input data used by all examples
-- ✓ `run_example.py` — Reusable script to render all format examples (HTML, Markdown, Text, TOML)
-- ✓ Utilizes existing verified templates: `html_positive.html.tmpl`, `md_positive.md.tmpl`, `text_positive.txt.tmpl`, `toml_positive.toml.tmpl`
-- ✓ Uses proven working implementation: `lark_parser.parse_template()` and `typed_renderer.evaluate_ast()`
-- ✓ Handles includes/ directory for headers/footers
+### 1. Examples Restructuring for Clarity (`examples/`)
+- ✓ **New Structure**: `templates/{positive,negative,includes,bench}` with root-level `run_example.py` and `sample_data.json`
+- ✓ **Positive Examples** (4 files): Working templates for HTML, Markdown, Text, TOML with includes
+- ✓ **Negative Examples** (4 files): Templates demonstrating validation errors
+- ✓ **Includes** (8 files): Reusable headers/footers for each format (header.html.tmpl, footer.html.tmpl, etc.)
+- ✓ **Benchmarks** (3 files): Performance testing templates
+- ✓ **Outputs** (4 files): Expected output files for validation testing
+- ✓ **run_example.py** — Reusable script to render all format examples with `--compare` validation flag
+- ✓ **sample_data.json** — Standardized input data (user profile with skills, jobs, etc.)
+- ✓ **README.md** — Directory structure guide with contributing guidelines and quickstart
 
-### 2. Diagnostics API Documentation (`temple-linter/docs/diagnostics_api.md`)
+### 2. Include Mechanism Verification ✓
+- ✓ **Parser Integration**: `lark_parser` correctly extracts include names from `{% include 'name' %}` syntax via regex
+- ✓ **File Naming**: Include files (e.g., `header.html.tmpl`) are loaded and keyed correctly via `Path.stem`
+- ✓ **Resolution**: Template references (e.g., `{% include 'header.html' %}`) correctly match dictionary keys from loaded files
+- ✓ **Validation**: All 4 positive examples render with includes and produce expected output
+  - HTML: header/footer rendering with profile summary
+  - Markdown: header/footer with structured content
+  - Text: header/footer with plain text
+  - TOML: header/footer with table sections
+- ✓ **Output Verification**: `run_example.py all --compare` passes for all 4 formats
+
+### 3. Diagnostics API Documentation (`temple-linter/docs/diagnostics_api.md`)
 - ✓ Diagnostic types: Severity levels, `Diagnostic` dataclass, `DiagnosticCollector`
 - ✓ Error categories: Syntax, type, semantic errors with code examples
 - ✓ Formatting: `ErrorFormatter` for human-readable messages with source context
@@ -33,8 +49,8 @@ All deliverables created and integrated with existing codebase. Updated to use w
 - ✓ Practical examples: Undefined variables, type mismatches, base format errors
 - ✓ Error suppression syntax and acceptance criteria
 
-### 3. Examples Quickstart Guide (`examples/README.md`)
-- ✓ Directory structure overview updated to reflect dsl_examples/
+### 4. Examples Quickstart Guide (`examples/README.md`)
+- ✓ Directory structure overview for new `templates/{positive,negative,includes,bench}` organization
 - ✓ Python setup instructions
 - ✓ Runnable DSL examples for all 4 formats (HTML, Markdown, Text, TOML)
 - ✓ Usage instructions for run_example.py script
@@ -43,22 +59,40 @@ All deliverables created and integrated with existing codebase. Updated to use w
 
 ## Acceptance Criteria ✓
 
-- ✓ Examples render with local commands and produce expected output
-- ✓ run_example.py script works for all formats (HTML, Markdown, Text, TOML)
-- ✓ sample_data.json provides standardized input data
-- ✓ Examples use verified working implementation (lark_parser/typed_renderer)
+- ✓ New examples structure provides clear categorization (positive/negative/includes/bench/outputs)
+- ✓ All examples render with root-level `python examples/run_example.py` command
+- ✓ Include mechanism verified: templates with includes render correctly and match expected output
+- ✓ run_example.py script works for all formats (HTML, Markdown, Text, TOML) with --compare validation
+- ✓ sample_data.json provides standardized input data matching test suite
+- ✓ Directory organization is self-documenting with clear file naming conventions
+- ✓ Examples README includes contributing guidelines and setup instructions
 - ✓ Diagnostics API documentation covers extension points and integration patterns
 - ✓ Error handling and diagnostics mapping explained with practical examples
-- ✓ Examples README includes contributing guidelines and setup instructions
 
 ## Implementation Notes
 
-### Examples Organization
-- Examples use existing `examples/dsl_examples/` with verified templates
-- `sample_data.json` contains standardized user profile data matching test suite
-- `run_example.py` script provides consistent interface for rendering all formats
-- Uses `lark_parser.parse_template()` and `typed_renderer.evaluate_ast()` (proven working)
-- Handles includes/ directory for template composition (headers/footers)
+### Examples Organization (RESTRUCTURED)
+Previously: `examples/dsl_examples/`, `examples/typed/`, scattered files
+Now: Unified `examples/` structure with clear subdirectories:
+```
+examples/
+├── templates/          # All template files organized by category
+│   ├── positive/       # 4 working examples (html, md, text, toml)
+│   ├── negative/       # 4 error/validation examples
+│   ├── includes/       # 8 reusable includes (header/footer per format)
+│   └── bench/          # 3 performance benchmarks
+├── outputs/            # 4 expected output files for validation
+├── run_example.py      # Root-level entry point (was in dsl_examples/)
+├── sample_data.json    # Standardized input (was in dsl_examples/)
+└── README.md           # Structure guide & contributing guidelines
+```
+
+### Include Mechanism (VERIFIED)
+- File naming: `header.html.tmpl`, `footer.toml.tmpl`, etc. in `templates/includes/`
+- Parser extraction: `{% include 'header.html' %}` → extracts `'header.html'`
+- Dictionary keying: `Path.stem` converts `header.html.tmpl` → `'header.html'` key
+- Resolution: Template include name matches dictionary key (verified working)
+- Validation: All 4 formats render with includes producing expected output
 
 ### Documentation Coverage
 - **Diagnostics API:** 550+ lines covering error types, formatting, mapping, LSP integration, practical examples
@@ -72,43 +106,49 @@ All deliverables created and integrated with existing codebase. Updated to use w
 
 ## Files Created/Modified
 
-### New Files
-- `examples/dsl_examples/sample_data.json` — Standardized input data
-- `examples/dsl_examples/run_example.py` — Reusable rendering script
+### New Files Created
+- `examples/templates/positive/` — 4 working template examples
+- `examples/templates/negative/` — 4 validation error examples
+- `examples/templates/includes/` — 8 include files (header/footer per format)
+- `examples/templates/bench/` — 3 performance templates with README
+- `examples/outputs/` — 4 expected output files for validation
+- `examples/run_example.py` — Root-level rendering script (moved from dsl_examples/)
+- `examples/sample_data.json` — Standardized input data (moved from dsl_examples/)
+- `examples/README.md` — Structure guide with quickstart and contributing guidelines
 - `temple-linter/docs/diagnostics_api.md` — Comprehensive diagnostics documentation
+- `temple/docs/serializers.md` — Serializer API documentation
+- `temple/examples/README.md` — Temple core examples guide
 
-### Modified Files
-- `examples/README.md` — Updated with dsl_examples structure and run_example.py usage
-
-### Removed Files
-- `examples/serializer_examples/` — Removed unverified templates in favor of working dsl_examples
+### Directories Removed/Reorganized
+- Removed: `examples/dsl_examples/` (structure moved to `examples/templates/`)
+- Removed: `examples/typed/` (no active usage, archived backlog only)
+- Reorganized: All template files consolidated under `examples/templates/` with clear categorization
 
 ## Testing
 
-All exampl
-
-All examples tested and verified:
+All examples tested and verified working:
 ```bash
 # Test individual format
-python examples/dsl_examples/run_example.py html
-python examples/dsl_examples/run_example.py md
-python examples/dsl_examples/run_example.py text
-python examples/dsl_examples/run_example.py toml
+python examples/run_example.py html
+python examples/run_example.py md
+python examples/run_example.py text
+python examples/run_example.py toml
 
-# Test all formats
-python examples/dsl_examples/run_example.py all
+# Test all formats with output validation
+python examples/run_example.py all --compare
+
+# Expected results (all ✓):
+# ✓ Output matches expected result (html_positive.html.output)
+# ✓ Output matches expected result (md_positive.md.output)
+# ✓ Output matches expected result (text_positive.txt.output)
+# ✓ Output matches expected result (toml_positive.toml.output)
 
 # Run full test suite
 pytest temple/tests/test_example_templates.py
 ```
 
-## Next Steps
-
-- Consider adding more complex examples showcasing advanced features
-- Add inline comments to existing templates explaining DSL features
-- Create example-specific documentation for each format's unique capabilities
-es verified:
-1. Templates parse without errors
-2. Serialization produces expected output matching `.output` files
-3. API examples in docs are syntactically correct
-4. Links between docs pages are accurate
+### Verification Results
+- **Include Mechanism**: ✓ VERIFIED — All 4 formats render includes correctly
+- **Output Validation**: ✓ VERIFIED — All outputs match expected files
+- **File Organization**: ✓ VERIFIED — Templates, includes, outputs properly organized
+- **Entry Point**: ✓ VERIFIED — root-level `python examples/run_example.py` is discoverable and functional
