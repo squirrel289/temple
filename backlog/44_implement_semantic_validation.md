@@ -11,6 +11,7 @@ test_results: null
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
   - [[43_implement_template_syntax_validation.md]] ⏳
+    - [[54_complete_temple_native.md]] ⏳
 related_backlog:
   - archive/02_query_language_and_schema.md (schema validation spec)
 related_spike:

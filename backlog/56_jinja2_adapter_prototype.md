@@ -1,11 +1,11 @@
 ---
 title: Jinja2 Adapter Prototype
-id: 51
+id: 56
 status: proposed
 related_commit:
   - 6d8c044  # ADAPTER_SPEC.md added
 dependencies:
-  - "[[50_adapter_spec_impl.md]]"
+  - "[[55_adapter_spec_impl.md]]"
 estimated_hours: 40
 priority: high
 ---

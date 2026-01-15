@@ -1,6 +1,6 @@
 ---
 title: Complete Temple-native Templating & Linting
-id: 49
+id: 54
 status: proposed
 related_commit:
   - 6d8c044  # docs(adr): clarify market role and adapter architecture (ADR-003); add adapter spec; archive backlog/48_jinja_integration.md

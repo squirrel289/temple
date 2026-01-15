@@ -1,6 +1,6 @@
 ---
 title: Implement Adapter Interface & SDK
-id: 50
+id: 55
 status: proposed
 related_commit:
   - 6d8c044  # added ADAPTER_SPEC.md and ADR-003

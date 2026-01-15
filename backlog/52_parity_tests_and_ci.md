@@ -5,8 +5,8 @@ status: proposed
 related_commit:
   - 6d8c044
 dependencies:
-  - "[[49_complete_temple_native.md]]"
-  - "[[51_jinja2_adapter_prototype.md]]"
+  - "[[54_complete_temple_native.md]]"
+  - "[[56_jinja2_adapter_prototype.md]]"
 estimated_hours: 16
 priority: medium
 ---
