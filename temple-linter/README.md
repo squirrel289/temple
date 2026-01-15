@@ -1,38 +1,112 @@
 # Temple Linter
 
-A Language Server Protocol (LSP) server for linting templated files. Uses the core `temple` tokenizer to validate template syntax (DSL tokens) and delegates base format linting (JSON, YAML, HTML, etc.) to VS Code's native linters.
+A Language Server Protocol (LSP) server for linting templated files. Integrates temple core's parser and type checker for comprehensive template validation with base format linting.
 
 ## Features
 
-✨ **Template-Aware Linting**: Validates template syntax using `temple.template_tokenizer`  
-🔍 **Format Detection**: Automatic detection of JSON, YAML, HTML, XML, TOML, Markdown  
-🚀 **Performance**: LRU-cached tokenization from temple core (10x+ speedup)  
-🎨 **Configurable**: Custom temple file extensions via VS Code settings  
+✨ **Syntax Validation**: Parse templates and detect unclosed blocks, malformed expressions  
+🔍 **Semantic Validation**: Type checking with schema support (undefined variables, type mismatches)  
+🚀 **Performance**: LRU-cached parsing and type checking from temple core  
+🎨 **Format Detection**: Automatic detection of JSON, YAML, HTML, XML, TOML, Markdown  
 🔌 **VS Code Integration**: Seamless integration with VS Code's native linters  
 📊 **Complete Diagnostics**: Combines template and base format diagnostics with accurate position mapping
 
 ## Dependencies
 
-- **temple>=0.1.0**: Core tokenization engine (REQUIRED)
+- **temple>=0.1.0**: Core templating engine with parser, type checker, and diagnostics (REQUIRED)
 - **pygls>=1.0.0**: LSP server framework
+- **Python 3.8+**: Required for temple core compatibility
 
-## Quick Start
+## Installation
+
+### Prerequisites
+
+First, install temple core:
 
 ```bash
-# Install temple core first
 cd ../temple
 pip install -e .
+```
 
-# Install temple-linter
+### Install Temple Linter
+
+```bash
 cd ../temple-linter
-pip install -r requirements.txt
 pip install -e .
+```
 
-# Install VS Code extension
+This will automatically install all dependencies including temple core.
+
+### Verify Installation
+
+```bash
+# Verify imports work
+python -c "from temple_linter import TypedTemplateParser, Diagnostic; print('✅ Installation successful')"
+
+# Start LSP server (for testing)
+python -m temple_linter.lsp_server
+```
+
+### Development Setup
+
+For development with live changes:
+
+```bash
+# Install both packages in editable mode
+cd ../temple && pip install -e .
+cd ../temple-linter && pip install -e .
+
+# Install dev dependencies
+pip install pytest pytest-cov
+```
+
+### VS Code Extension
+
+```bash
 cd ../vscode-temple-linter
 npm install
 npm run compile
 # Press F5 in VS Code to launch Extension Development Host
+```
+
+## Usage
+
+### Importing Temple Core APIs
+
+Temple-linter re-exports commonly used temple core types for convenience:
+
+```python
+from temple_linter import (
+    TypedTemplateParser,    # Parse templates
+    TypeChecker,            # Type checking
+    Diagnostic,             # Error reporting
+    DiagnosticSeverity,     # Error levels
+    Schema,                 # Schema definitions
+    SchemaParser,           # Schema parsing
+    Block, Expression,      # AST nodes
+    If, For, Include, Text
+)
+
+# Parse a template
+parser = TypedTemplateParser()
+ast, diagnostics = parser.parse("{% if user.active %}{{ user.name }}{% endif %}")
+
+# Type check with schema
+schema = Schema.from_dict({
+    "type": "object",
+    "properties": {
+        "user": {
+            "type": "object",
+            "properties": {
+                "active": {"type": "boolean"},
+                "name": {"type": "string"}
+            }
+        }
+    }
+})
+
+type_checker = TypeChecker(schema)
+type_diagnostics = type_checker.check(ast)
 ```
 
 ## Architecture
