@@ -1,10 +1,15 @@
 ---
 title: "ADR-002 Phase 3: Reorganize Test Structure"
 id: 50
-status: proposed
-related_commit: []
+status: completed
+related_commit:
+  - 06366df  # test: reorganize compiler tests into functional groupings (ADR-002 Phase 3)
 dependencies:
   - "[[49_adr_002_phase_2_consolidate_imports.md]]"
+related_backlog:
+  - "[[51_adr_002_phase_4_remove_redundant.md]]"
+estimated_hours: 2
+priority: high
 related_backlog:
   - "[[51_adr_002_phase_4_remove_redundant_code.md]]"
 estimated_hours: 2

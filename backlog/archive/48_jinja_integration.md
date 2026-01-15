@@ -2,10 +2,15 @@
 title: Jinja2 Filters Integration
 id: 48
 status: proposed
-related_commit: []
+related_commit:
+  - 035d45c  # docs(adr): document parser consolidation architecture decision (ADR-002)
 dependencies:
   - "[[19_unified_token_model.md]]"
   - "[[37_typed_dsl_serializers.md]]"
+related_backlog:
+  - "[[38_integration_and_e2e_tests.md]]"
+estimated_hours: 24
+priority: high
 related_backlog:
   - "[[38_integration_and_e2e_tests.md]]"
 estimated_hours: 24

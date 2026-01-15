@@ -1,10 +1,13 @@
 ---
 title: "ADR-002 Phase 4: Remove Redundant Parser Modules"
 id: 51
-status: proposed
-related_commit: []
+status: completed
+related_commit:
+  - 74e174c  # refactor: remove redundant parser implementation (ADR-002 Phase 4)
 dependencies:
   - "[[50_adr_002_phase_3_reorganize_tests.md]]"
+estimated_hours: 1
+priority: high
 estimated_hours: 1
 priority: high
 ---

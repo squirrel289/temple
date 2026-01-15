@@ -1,10 +1,15 @@
 ---
 title: "ADR-002 Phase 2: Consolidate Compiler Imports"
 id: 49
-status: proposed
-related_commit: []
+status: completed
+related_commit:
+  - be64512  # refactor(compiler): consolidate to single parser architecture (ADR-002 Phase 2)
 dependencies:
   - "[[002-consolidate-to-single-parser.md]]"
+related_backlog:
+  - "[[50_adr_002_phase_3_reorganize_tests.md]]"
+estimated_hours: 2
+priority: high
 related_backlog:
   - "[[50_adr_002_phase_3_reorganize_tests.md]]"
   - "[[51_adr_002_phase_4_remove_redundant_code.md]]"

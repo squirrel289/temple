@@ -13,6 +13,7 @@ related_spike:
   - archive/30_typed_dsl_prototype.md (reference implementation)
 related_commit:
   - e14cfc8  # feat(compiler): implement type system, schema validation, and type checker
+  - 06366df  # test: reorganize compiler tests (ADR-002 Phase 3 - type system tests preserved)
 completed_date: 2026-01-09
 ---
 

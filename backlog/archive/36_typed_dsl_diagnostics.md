@@ -8,6 +8,7 @@ actual_effort: 1 day
 completed_date: 2026-01-09
 related_commit:
   - d391a99  # feat(compiler): implement error diagnostics, source mapping, and error formatting
+  - be64512  # refactor(compiler): consolidate to single parser architecture (ADR-002 Phase 2)
 test_results: 47 tests passing
 dependencies:
   - [[34_typed_dsl_parser.md]] ✅
