@@ -80,16 +80,19 @@ def test_block_validator_unexpected_endif():
 
 def test_block_validator_mismatched_blocks():
     """Test detection of mismatched open/close."""
-    text = "{% if x %}content{% end %}"
+    # With canonical single-`end` closers, an explicit 'endfor' is not treated
+    # as a closer. The opener remains unclosed, so only an Unclosed block
+    # diagnostic should be produced.
+    text = "{% if x %}content{% endfor %}"
     output, errors = render_passthrough(text, validate_blocks=True)
-    assert len(errors) == 2
-    assert "Mismatched block" in errors[0]
-    assert "Unclosed block" in errors[1]
+    assert len(errors) == 1
+    assert "Unclosed block" in errors[0]
 
 
 def test_block_validator_function_blocks():
     """Test validation of function/endfunction."""
-    text = "{% function test() %}content{% endfunction %}"
+    # Use canonical 'end' closer for function blocks.
+    text = "{% function test() %}content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert errors == []
 
@@ -122,7 +125,7 @@ def test_block_validator_custom_delimiters():
         "expression": ("<:", ":>"),
         "comment": ("<#", "#>"),
     }
-    text = "<< if x >>content<< endif >>"
+    text = "<< if x >>content<< end >>"
     output, errors = render_passthrough(text, delimiters=custom_delims, validate_blocks=True)
     assert errors == []
     assert "content" in output

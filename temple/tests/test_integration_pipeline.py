@@ -15,6 +15,7 @@ from temple.compiler.serializers.markdown_serializer import MarkdownSerializer
 from temple.compiler.serializers.json_serializer import JSONSerializer
 from temple.compiler.serializers.html_serializer import HTMLSerializer
 from temple.compiler.serializers.yaml_serializer import YAMLSerializer
+from temple.compiler.parser import TypedTemplateParser
 
 
 def _make_block(nodes):
@@ -117,7 +118,9 @@ def test_json_pipeline_happy_path():
 
 def test_html_pipeline_happy_path():
     """End-to-end HTML serialization (escaped text)."""
-    template = "Hello {{ user.name }}{% for tag in user.tags %} Tag: {{ tag }}{% endfor %}"
+    template = (
+        "Hello {{ user.name }}{% for tag in user.tags %} Tag: {{ tag }}{% endfor %}"
+    )
     data = {"user": {"name": "Alice", "tags": ["dev", "ops"]}}
 
     parser = TypedTemplateParser()
