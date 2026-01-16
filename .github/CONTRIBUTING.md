@@ -29,6 +29,18 @@ Welcome! This guide walks you through the Temple development workflow, including
    pytest temple-linter/tests/ -v
    ```
 
+### Install Git hooks (recommended)
+
+After cloning the repository, enable the repository-tracked git hooks so you get the pre-push checks locally:
+
+```bash
+cd temple
+./scripts/install-hooks.sh
+```
+
+The install script sets `core.hooksPath` to the tracked `.githooks/` directory. The recommended way to enable hooks for all future clones on your machine is to install them into your global git template directory (instructions below). This avoids needing repository-specific commit markers.
+
+
 ## CI/Workflow Overview
 
 Temple uses **four primary GitHub Actions workflows** to validate code:
@@ -201,6 +213,25 @@ asv continuous origin/main HEAD  # Compare against main branch
 - **Linter**: Edit `temple-linter/requirements.txt`
 - **Extension**: Edit `vscode-temple-linter/package.json`
 - **After update**: Reinstall locally (`pip install -e .` or `npm install`)
+### Install Git hooks (recommended)
+
+After cloning the repository, enable the repository-tracked git hooks so you get the pre-push checks locally:
+
+```bash
+cd temple
+./scripts/install-hooks.sh
+```
+
+The install script sets `core.hooksPath` to the tracked `.githooks/` directory. To make hooks apply for new clones on your machine, copy them into your global git template directory (see below) so you don't need per-repo configuration.
+
+If you prefer a machine-wide setup so future clones receive hooks automatically, install the hooks into your global git template directory (one-time per machine):
+
+```bash
+mkdir -p ~/.git-templates/hooks
+cp -R .githooks/* ~/.git-templates/hooks/
+git config --global init.templateDir "$HOME/.git-templates"
+```
+
 
 ## Getting Help
 

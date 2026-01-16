@@ -91,7 +91,7 @@ from temple_linter import (
 
 # Parse a template
 parser = TypedTemplateParser()
-ast, diagnostics = parser.parse("{% if user.active %}{{ user.name }}{% endif %}")
+ast, diagnostics = parser.parse("{% if user.active %}{{ user.name }}{% end %}")
 
 # Type check with schema
 schema = Schema.from_dict({
@@ -149,8 +149,8 @@ Temple uses Jinja-like syntax by default:
   "version": "{{ project.version }}",
   "dependencies": {
     {% for dep, ver in project.deps.items() %}
-    "{{ dep }}": "{{ ver }}"{% if not loop.last %},{% endif %}
-    {% endfor %}
+    "{{ dep }}": "{{ ver }}"{% if not loop.last %},{% end %}
+    {% end %}
   }
 }
 ```
@@ -166,8 +166,8 @@ services:
     ports:
       {% for port in service.ports %}
       - "{{ port }}"
-      {% endfor %}
-  {% endfor %}
+      {% end %}
+  {% end %}
 ```
 
 #### HTML Template (`page.html.tmpl`)
@@ -183,7 +183,7 @@ services:
     <h1>Welcome, {{ user.name }}!</h1>
     {% else %}
     <a href="/login">Log in</a>
-    {% endif %}
+    {% end %}
 </body>
 </html>
 ```

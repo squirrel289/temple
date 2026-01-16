@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-commit hook: run tests affected by staged Python files.
+# Blocks the commit if affected tests fail.
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+echo "Running pre-commit: affected-tests"
+
+PYTHON=python
+if [[ -x "$(pwd)/.hooks-venv/bin/python" ]]; then
+  PYTHON="$(pwd)/.hooks-venv/bin/python"
+else
+  if command -v python >/dev/null 2>&1; then
+    PYTHON=python
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON=python3
+  else
+    echo "python not found in PATH; skipping test checks (allowing commit)." >&2
+    exit 0
+  fi
+fi
+
+# Get staged python files
+STAGED_FILES=$(git diff --name-only --cached --relative -- '*.py' || true)
+if [[ -z "$STAGED_FILES" ]]; then
+  echo "No staged Python files; skipping tests."
+  exit 0
+fi
+
+# Build pytest -k pattern from basenames (without extension)
+patterns=()
+while IFS= read -r f; do
+  base="$(basename "$f" .py)"
+  patterns+=("$base")
+done <<< "$STAGED_FILES"
+
+# Deduplicate
+IFS=$'\n' read -r -d '' -a uniq_patterns < <(printf "%s\n" "${patterns[@]}" | awk '!seen[$0]++' && printf '\0')
+
+K_EXPR=""
+for p in "${uniq_patterns[@]}"; do
+  if [[ -z "$K_EXPR" ]]; then
+    K_EXPR="$p"
+  else
+    K_EXPR="$K_EXPR or $p"
+  fi
+done
+
+echo "Running pytest for changed modules: $K_EXPR"
+"$PYTHON" -m pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings
+
+echo "Pre-commit checks passed."
+exit 0

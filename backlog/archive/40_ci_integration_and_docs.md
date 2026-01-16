@@ -8,6 +8,8 @@ related_commits:
   - "77d875c"  # ASV publish workflow
   - "c4e8f2a"  # Extend docs.yml & create CONTRIBUTING.md
   - "0a91167"  # Add pytest.mark.skipif for Python 3.10/3.11 tomllib compatibility
+  - "1008bbc"  # chore(ci): update workflows and contributing with shared CI scripts
+  - "89c5cd1"  # ci: make CI scripts opt-in for dependency installs; installer calls scripts to populate .hooks-venv
 dependencies:
   - "[[38_integration_and_e2e_tests.md]]"
   - "[[39_performance_benchmarks.md]]"

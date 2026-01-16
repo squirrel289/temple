@@ -191,7 +191,7 @@ def test_type_mismatch():
         }
     })
     
-    text = "{% if age %}...{% endif %}"  # number in boolean context
+    text = "{% if age %}...{% end %}"  # number in boolean context
     linter = TemplateLinter()
     diagnostics = linter.lint(text, schema=schema)
     

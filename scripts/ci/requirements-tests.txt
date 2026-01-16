@@ -1,0 +1,5 @@
+-e temple
+-e temple-linter
+pytest
+pytest-benchmark
+lark

@@ -5,6 +5,6 @@
     {
       "title": "{{ job.title }}",
       "company": "{{ job.company }}"
-    }{% if not loop.last %},{% endif %}
+    }{% if not loop.last %},{% end %}
   ]
 }

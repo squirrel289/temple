@@ -3,7 +3,7 @@ Tests for error formatting.
 """
 
 import pytest
-from temple.compiler.error_formatter import ErrorFormatter
+from temple.compiler.error_formatter import ErrorFormatter, ContextRenderer
 from temple.diagnostics import Diagnostic, DiagnosticSeverity, Position, SourceRange
 
 

@@ -7,18 +7,18 @@ services:
     ports:
       {% for port in service.ports %}
       - "{{ port }}"
-      {% endfor %}
-    {% endif %}
+      {% end %}
+    {% end %}
     {% if service.environment %}
     environment:
       {% for key, value in service.environment.items() %}
       {{ key }}: {{ value }}
-      {% endfor %}
-    {% endif %}
+      {% end %}
+    {% end %}
     {% if service.volumes %}
     volumes:
       {% for volume in service.volumes %}
       - {{ volume }}
-      {% endfor %}
-    {% endif %}
-  {% endfor %}
+      {% end %}
+    {% end %}
+  {% end %}

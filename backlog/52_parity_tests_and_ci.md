@@ -3,7 +3,8 @@ title: Parity Tests & CI for Native vs Adapter
 id: 52
 status: proposed
 related_commit:
-  - 6d8c044
+  - 6d8c044 # docs(adr): clarify market role and adapter architecture (ADR-003); add adapter spec; archive backlog/48_jinja_integration.md
+  - 1008bbc  # chore(ci): update workflows and contributing with shared CI scripts
 dependencies:
   - "[[54_complete_temple_native.md]]"
   - "[[56_jinja2_adapter_prototype.md]]"

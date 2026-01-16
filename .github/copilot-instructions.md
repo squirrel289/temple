@@ -93,7 +93,7 @@ pip install -r requirements.txt
 pytest tests/
 
 # CLI usage example (temple-linter)
-python -m src.temple_linter.linter --lint --input "{% if x %}hello{% endif %}"
+python -m src.temple_linter.linter --lint --input "{% if x %}hello{% end %}"
 ```
 
 ### VS Code Extension

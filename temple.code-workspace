@@ -36,6 +36,9 @@
 			"**/.pytest_cache": true,
 			"**/node_modules": true,
 			"**/dist": true
+		},
+		"chat.tools.terminal.autoApprove": {
+			"pytest": true
 		}
 	},
 	"extensions": {

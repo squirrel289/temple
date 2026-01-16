@@ -105,12 +105,26 @@ temple:
 # Resume
 {% if user.name %}
 ## {{ user.name }}
-{% endif %}
+{% end %}
 
 {% for job in user.jobs %}
 ### {{ job.title }} at {{ job.company }}
-{% endfor %}
+{% end %}
 ```
+
+### Optional: Install Git hooks (recommended)
+
+To get the repository's pre-push checks locally, run the install script bundled with the repo. For a machine-global install (so new clones automatically receive hooks), use the `--global` option:
+
+```bash
+# Per-repo (current repo only)
+./scripts/install-hooks.sh
+
+# Install into your global git template so future clones receive hooks
+./scripts/install-hooks.sh --global
+```
+
+The script copies hooks into `~/.git-templates/hooks` and sets `git config --global init.templateDir "$HOME/.git-templates"` when using `--global`.
 
 ### Supported Output Formats
 - Markdown (`.md`)

@@ -107,7 +107,7 @@ Generated during parsing phase.
 # Example: Unclosed block
 source_range = SourceRange(Position(5, 0), Position(5, 12))
 diag = Diagnostic(
-    message="Unclosed block: expected 'endif' after 'if' statement",
+    message="Unclosed block: expected 'end' after 'if' statement",
     severity=DiagnosticSeverity.ERROR,
     source_range=source_range,
     source="parser",
@@ -211,7 +211,7 @@ print(formatted)
 #     5 | {% if user.name %}
 #     6 |   Hello, {{ user.name }}!
 #            ^^^^^^^^^^^^^^^^
-#     7 | {% endif %}
+#     7 | {% end %}
 
 # Format multiple diagnostics
 diagnostics = [diag1, diag2, diag3]
@@ -351,7 +351,7 @@ Suppress specific errors with comments:
 {% if not user.name %}
   {# @suppress UNDEFINED_VARIABLE #}
   Name is not available
-{% endif %}
+{% end %}
 
 {# @suppress UNUSED_VARIABLE #}
 {% set temp = some_value %}
@@ -394,7 +394,7 @@ Diagnostic(
 ```template
 {% for item in user.roles %}
   {{ item }}
-{% endfor %}
+{% end %}
 ```
 
 **With data:** `{"user": {"roles": "admin"}}`

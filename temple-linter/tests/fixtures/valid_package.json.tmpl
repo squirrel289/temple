@@ -6,12 +6,12 @@
   "license": "{{ project.license }}",
   "dependencies": {
     {% for dep, version in project.dependencies.items() %}
-    "{{ dep }}": "{{ version }}"{% if not loop.last %},{% endif %}
-    {% endfor %}
+    "{{ dep }}": "{{ version }}"{% if not loop.last %},{% end %}
+    {% end %}
   },
   "scripts": {
     {% for name, command in project.scripts.items() %}
-    "{{ name }}": "{{ command }}"{% if not loop.last %},{% endif %}
-    {% endfor %}
+    "{{ name }}": "{{ command }}"{% if not loop.last %},{% end %}
+    {% end %}
   }
 }

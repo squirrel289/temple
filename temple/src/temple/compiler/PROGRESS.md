@@ -58,7 +58,7 @@ Output: Token(type=EXPRESSION, value="x", start=(0,0), end=(0,7))
 
 ### 3. Parser (`parser.py`)
 ```
-Input:  "{% if x %}yes{% endif %}"
+Input:  "{% if x %}yes{% end %}"
 Output: If(condition="x", body=[Text("yes")], source_range=...)
 ```
 
@@ -71,10 +71,10 @@ Output: If(condition="x", body=[Text("yes")], source_range=...)
 - ParseError with source context
 
 **Constructs Supported:**
-- Conditionals: `{% if %} ... {% elif %} ... {% else %} ... {% endif %}`
-- Loops: `{% for var in iterable %} ... {% endfor %}`
+- Conditionals: `{% if %} ... {% elif %} ... {% else %} ... {% end %}`
+- Loops: `{% for var in iterable %} ... {% end %}`
 - Includes: `{% include "path" %}`
-- Blocks: `{% block name %} ... {% endblock %}`
+- Blocks: `{% block name %} ... {% end %}`
 - Expressions: `{{ expression }}`
 - Comments: `{# ignored #}`
 
@@ -112,7 +112,7 @@ Output: If(condition="x", body=[Text("yes")], source_range=...)
 ## 🎯 What's Left (Week 2)
 
 1. **Error messages improvements**
-   - More helpful error suggestions (e.g., "did you forget {% endif %}?")
+   - More helpful error suggestions (e.g., "did you forget {% end %}?")
    - Better error context in recovery
 
 2. **Advanced DSL features (optional, depends on complexity)**

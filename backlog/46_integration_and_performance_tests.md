@@ -52,7 +52,7 @@ class TestE2EIntegration:
         {% if user.active %}
           {{ user.name }}
           {{ user.missing_field }}  <!-- Semantic error -->
-        {% endfor %}  <!-- Syntax error: mismatched block -->
+        {% end %}  <!-- Syntax error: mismatched block -->
         
         <div class="invalid">  <!-- Base format error -->
         '''
@@ -120,7 +120,7 @@ class TestE2EIntegration:
         template = '''
         {% if user.active %}
           {{ user.name }}
-        <!-- Missing endif, but we should still catch other errors -->
+        <!-- Missing end, but we should still catch other errors -->
         {{ undefined_var }}
         '''
         
@@ -329,7 +329,7 @@ def test_regression_multiline_expression():
 
 def test_regression_nested_conditionals():
     """Regression: Deep nesting caused stack overflow."""
-    template = "{% if a %}" * 100 + "content" + "{% endif %}" * 100
+    template = "{% if a %}" * 100 + "content" + "{% end %}" * 100
     
     linter = TemplateLinter()
     diagnostics = linter.lint(template)
