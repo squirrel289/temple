@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-push hook: run a fast test collection and a quick pytest smoke test
+# Exit non-zero to block the push if tests fail.
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+echo "Running pre-push checks: pytest --maxfail=1 --disable-warnings -q"
+
+if ! command -v python >/dev/null 2>&1; then
+  echo "python not found in PATH; skipping tests (allowing push)." >&2
+  exit 0
+fi
+
+python -m pytest --maxfail=1 --disable-warnings -q
+
+echo "Pre-push checks passed."
+exit 0
