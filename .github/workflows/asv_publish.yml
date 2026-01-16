@@ -37,8 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install asv==0.6.5
-          pip install -e temple
+          python -m pip install -r scripts/ci/requirements-bench.txt
 
       - name: Collect runner info
         run: |
@@ -98,6 +97,7 @@ jobs:
           path: temple/asv/results
 
       - name: Upload HTML for Pages deployment
+        if: always()
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./temple/asv/results/html

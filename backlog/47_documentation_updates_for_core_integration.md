@@ -109,7 +109,7 @@ from temple.compiler import Schema
 linter = TemplateLinter()
 
 # Lint template
-template = "{% if user.active %}{{ user.name }}{% endif %}"
+template = "{% if user.active %}{{ user.name }}{% end %}"
 diagnostics = linter.lint(template)
 
 # With schema
@@ -436,14 +436,14 @@ Right-click variable → Rename Symbol.
   Active user: {{ user.name }}
 {% else %}
   Inactive user
-{% endif %}
+{% end %}
 ```
 
 ### Loops
 ```handlebars
 {% for item in items %}
   - {{ item.name }}
-{% endfor %}
+{% end %}
 ```
 
 ### Includes

@@ -14,7 +14,7 @@ related_commit: null
 # User Functions and Includes
 
 ## Goal
-Support `{% function name(args) %}...{% endfunction %}` and `{% include "path" %}` primitives.
+Support `{% function name(args) %}...{% end %}` and `{% include "path" %}` primitives.
 
 ## Deliverables
 - Function definition/registry and invocation

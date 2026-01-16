@@ -24,4 +24,4 @@ jobs:
       - name: Run tests via shared script
         run: |
           chmod +x ./scripts/ci/tests.sh
-          ./scripts/ci/tests.sh
+          ./scripts/ci/tests.sh --with-deps

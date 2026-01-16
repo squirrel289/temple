@@ -35,15 +35,15 @@ The temple system should allow these tokens to be set via configuration (YAML, J
 -- **Conditionals:** `{% if condition %}...{% else if condition %}...{% else %}...{% end %}`
 - **Loops:** `{% for item in collection %}...{% end %}`
 - **Includes:** `{% include "filename.md" %}`
-- **User-Defined Functions:** `{% function name(args) %}...{% endfunction %}`
+- **User-Defined Functions:** `{% function name(args) %}...{% end %}`
 - **Comments:** `{# This is a comment #}`
 
 All primitives support custom tokens. For example, with the configuration above:
 - **Variable Insertion:** `<< variable >>`
--- **Conditionals:** `[[ if condition ]]...[[ else if condition ]]...[[ else ]]...[[ endif ]]`
+-- **Conditionals:** `[[ if condition ]]...[[ else if condition ]]...[[ else ]]...[[ end ]]`
 - **Loops:** `[[ for item in collection ]]...[[ end ]]`
 - **Includes:** `[[ include "filename.md" ]]`
-- **User-Defined Functions:** `[[ function name(args) ]]...[[ endfunction ]]`
+- **User-Defined Functions:** `[[ function name(args) ]]...[[ end ]]`
 - **Comments:** `[## This is a comment ##]` (if comment tokens are also configurable)
 
 ## 3. Example Templates
@@ -176,7 +176,7 @@ See `temple-linter/src/temple_linter/diagnostics.py` for implementation details.
 ```markdown
 {% function format_date(date) %}
 {{ date | date("YYYY-MM-DD") }}
-{% endfunction %}
+{% end %}
 ```
 
 ### Usage

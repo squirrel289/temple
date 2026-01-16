@@ -16,7 +16,7 @@ Error reporting is designed to be clear, actionable, and reference both the quer
    - Format errors: (optional) Invalid base format detected by pluggable adapter.
 
 4. Actionable Messages:
-   - Each error message describes the problem and suggests a fix (e.g., "Unmatched endif: did you forget to close an 'if' block?").
+   - Each error message describes the problem and suggests a fix (e.g., "Unmatched end: did you forget to close an 'if' block?").
    - Messages reference the exact location in the template.
 
 5. Best-Effort Output:

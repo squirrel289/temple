@@ -147,7 +147,7 @@ def test_malformed_expression():
 
 def test_valid_template():
     """Test that valid templates produce no diagnostics."""
-    text = "{% if user.active %}{{ user.name }}{% endif %}"
+    text = "{% if user.active %}{{ user.name }}{% end %}"
     linter = TemplateLinter()
     diagnostics = linter.lint(text)
     assert len(diagnostics) == 0
@@ -163,7 +163,7 @@ def test_lsp_syntax_validation():
     # Create LSP server with document
     server = create_test_lsp_server()
     doc_uri = "file:///test.html.tmpl"
-    text = "{% if user.active %}{{ user.name }}"  # Missing endif
+    text = "{% if user.active %}{{ user.name }}"  # Missing end
     
     # Trigger diagnostics
     diagnostics = server.text_document_diagnostic(doc_uri, text)
@@ -186,12 +186,12 @@ def test_lsp_syntax_validation():
 ## Error Cases to Handle
 
 1. **Unclosed blocks:**
-   - `{% if x %}...` (missing `{% endif %}`)
-   - `{% for item in items %}...` (missing `{% endfor %}`)
+   - `{% if x %}...` (missing `{% end %}`)
+   - `{% for item in items %}...` (missing `{% end %}`)
 
 2. **Mismatched blocks:**
-   - `{% if x %}...{% endfor %}` (endif expected)
-   - `{% for x in y %}...{% endif %}` (endfor expected)
+   - `{% if x %}...{% end %}` (end expected)
+   - `{% for x in y %}...{% end %}` (end expected)
 
 3. **Malformed expressions:**
    - `{{ user. }}` (incomplete path)

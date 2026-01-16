@@ -9,7 +9,7 @@ Authors: Temple maintainers
 # Context
 
 Temple templates previously allowed multiple closing-token variants for
-control-flow blocks: `{% endfor %}`, `{% endif %}`, `{% endfunction %}`, etc.
+control-flow blocks: `{% end %}`, `{% end %}`, `{% end %}`, etc.
 These `end<suffix>` variants required special-case handling in the parser,
 block validator, and diagnostics mapping layer. Multiple variants also
 increased cognitive load for users and complexity for tooling that maps
@@ -25,8 +25,8 @@ Concretely:
 - The `temple` validator and renderer will treat only the exact keyword
   `end` as the semantic block closer. Other tokens that begin with `end` will
   be treated as plain statements.
-- Tooling and diagnostics will no longer attempt to interpret `endfor`,
-  `endif`, `endfunction` as closers; templates using those variants must be
+- Tooling and diagnostics will no longer attempt to interpret `end`,
+  `end`, `end` as closers; templates using those variants must be
   migrated to `{% end %}`.
 
 # Rationale
@@ -57,7 +57,7 @@ Concretely:
 
 # Migration
 
-Search-and-replace instances of `{% endfor %}`, `{% endif %}`, `{% endfunction %}`
+Search-and-replace instances of `{% end %}`, `{% end %}`, `{% end %}`
 and similar to `{% end %}`. Update examples and docs to use the canonical form.
 
 # References
