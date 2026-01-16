@@ -13,7 +13,7 @@ This repository contains three interconnected components:
 ### 1. **temple/** - Core Templating Engine (Specification Phase)
 The heart of the Temple system: template DSL parser, query engine, rendering engine, and schema validation.
 
-- **Language**: Python 3.8+
+- **Language**: Python 3.10+
 - **Status**: Architecture & specification phase
 - **Key Features**:
   - Pluggable data format parsers (JSON, XML, YAML, TOML)
@@ -26,7 +26,7 @@ The heart of the Temple system: template DSL parser, query engine, rendering eng
 ### 2. **temple-linter/** - LSP Server & Template Linting (Active Development)
 Language Server Protocol (LSP) implementation for template-aware linting and diagnostics.
 
-- **Language**: Python 3.8+
+- **Language**: Python 3.10+
 - **Status**: Active development
 - **Key Features**:
   - Template tokenization with configurable delimiters
@@ -50,8 +50,10 @@ Visual Studio Code extension providing real-time linting via LSP proxy to native
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- **Python 3.8+** (for `temple` and `temple-linter`)
+- ### Prerequisites
+- **Python 3.10+** (for `temple` and `temple-linter`)
+
+> CI uses Python 3.11; using Python 3.11 locally is recommended to match CI runs.
 - **Node.js 14+** (for `vscode-temple-linter`)
 - **VS Code** (optional, for extension development)
 
