@@ -7,14 +7,19 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
-echo "Running pre-push checks: pytest --maxfail=1 --disable-warnings -q"
+echo "Running pre-push checks: benchmarks + docs"
 
-if ! command -v python >/dev/null 2>&1; then
-  echo "python not found in PATH; skipping tests (allowing push)." >&2
-  exit 0
+HOOKS_VENV="$(pwd)/.hooks-venv"
+if [[ -d "$HOOKS_VENV" && -x "$HOOKS_VENV/bin/python" ]]; then
+  echo "Using hooks venv: $HOOKS_VENV"
+  export PATH="$HOOKS_VENV/bin:$PATH"
 fi
 
-python -m pytest --maxfail=1 --disable-warnings -q
+echo "1/2: Running benchmark validations (subset)."
+./scripts/ci/benchmarks_quick.sh
+
+echo "2/2: Building docs (Sphinx)."
+./scripts/ci/docs_build.sh
 
 echo "Pre-push checks passed."
 exit 0
