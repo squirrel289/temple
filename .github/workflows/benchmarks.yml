@@ -26,8 +26,7 @@ jobs:
       - name: Install ASV and temple package
         run: |
           python -m pip install --upgrade pip
-          pip install asv==0.6.5
-          pip install -e temple
+          python -m pip install -r scripts/ci/requirements-bench.txt
 
       - name: Configure deterministic CI machine identity
         working-directory: temple
@@ -82,8 +81,7 @@ jobs:
       - name: Install ASV and temple package
         run: |
           python -m pip install --upgrade pip
-          pip install asv==0.6.5
-          pip install -e temple
+          python -m pip install -r scripts/ci/requirements-bench.txt
 
       - name: Prepare ASV machine mapping
         run: |
