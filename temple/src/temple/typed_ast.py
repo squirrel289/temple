@@ -50,8 +50,7 @@ class Text(Node):
     def __init__(self, text: str, start: Optional[Tuple[int, int]] = None):
         super().__init__(start)
         self.text = text
-        # Backwards-compatible alias
-        self.value = text
+        # canonical: use `text`
 
     def evaluate(
         self,
@@ -69,15 +68,12 @@ class Expression(Node):
         expr: Optional[str] = None,
         start: Optional[Tuple[int, int]] = None,
         source_range: Optional["SourceRange"] = None,
-        value: Optional[str] = None,
         **kwargs,
     ):
         # Accept both `expr` and legacy `value` kwarg, and optional `source_range` for compatibility
-        expr_val = expr if expr is not None else value
+        expr_val = expr
         super().__init__(start)
         self.expr = expr_val
-        # Backwards-compatible alias
-        self.value = expr_val
         # Allow explicit source_range to be passed by callers (type checker, tests)
         if source_range is not None:
             self.source_range = source_range
@@ -128,11 +124,9 @@ class If(Node):
         # Normalize body to a Block instance (tests expect .body.nodes)
         if isinstance(body, Block):
             self.body = body
-            self.body_block = body
         else:
             nodes = body if body is not None else []
             self.body = Block(nodes, start)
-            self.body_block = self.body
         # Handle positional `start` accidentally passed as `elif_parts` (legacy call sites)
         if (
             isinstance(elif_parts, tuple)
@@ -146,31 +140,23 @@ class If(Node):
         # Support both legacy `elif_parts` and new `else_if_parts`
         parts = else_if_parts if else_if_parts is not None else (elif_parts or [])
         # Normalize elif/else_if bodies to Blocks
-        normalized = []
-        self.else_if_blocks = []
+        normalized: List[Tuple[str, Block]] = []
         for c, b in parts:
             if isinstance(b, Block):
                 normalized.append((c, b))
-                self.else_if_blocks.append((c, b))
             else:
                 bnodes = b if b is not None else []
                 blk = Block(bnodes, start)
                 normalized.append((c, blk))
-                self.else_if_blocks.append((c, blk))
         self.else_if_parts = normalized
-        # Backwards-compatible alias expected by older code/tests
-        self.elif_parts = self.else_if_parts
         # Normalize else_body to Block or None
         if isinstance(else_body, Block):
             self.else_body = else_body
-            self.else_body_block = else_body
         elif else_body is None:
             self.else_body = None
-            self.else_body_block = None
         else:
             bn = else_body if isinstance(else_body, list) else [else_body]
             self.else_body = Block(bn, start)
-            self.else_body_block = self.else_body
 
     def evaluate(
         self,
@@ -183,21 +169,19 @@ class If(Node):
             context, includes, path + "/cond", mapping
         )
         if cond_val:
-            return self.body_block.evaluate(context, includes, path + "/body", mapping)
+            return self.body.evaluate(context, includes, path + "/body", mapping)
         # Check else-if branches
-        for idx, (else_if_cond, else_if_body_nodes) in enumerate(self.else_if_parts):
+        for idx, (else_if_cond, else_if_body_blk) in enumerate(self.else_if_parts):
             elif_val = Expression(else_if_cond).evaluate(
                 context, includes, path + f"/else_if[{idx}]/cond", mapping
             )
             if elif_val:
-                return self.else_if_blocks[idx][1].evaluate(
+                return else_if_body_blk.evaluate(
                     context, includes, path + f"/else_if[{idx}]/body", mapping
                 )
         # Check else branch
         if self.else_body:
-            return self.else_body_block.evaluate(
-                context, includes, path + "/else", mapping
-            )
+            return self.else_body.evaluate(context, includes, path + "/else", mapping)
         return None
 
 
@@ -212,17 +196,18 @@ class For(Node):
         super().__init__(start)
         # Accept keyword args used in tests: var, iterable
         self.var = var
-        self.var_name = var
         self.iterable = iterable
-        self.iterable_expr = iterable
+        # Compatibility aliases for older code/tests that expect legacy names
+        self.var_name = self.var
+        self.iterable_expr = self.iterable
         # Body may be a Block or a list of nodes; normalize to Block
         if isinstance(body, Block):
             self.body = body
-            self.body_block = body
         else:
             nodes = body if body is not None else []
             self.body = Block(nodes, start)
-            self.body_block = self.body
+        # legacy alias
+        self.body_block = self.body
 
     def evaluate(
         self,
@@ -231,7 +216,7 @@ class For(Node):
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> List[Any]:
-        iterable = Expression(self.iterable_expr).evaluate(
+        iterable = Expression(self.iterable).evaluate(
             context, includes, path + "/iter", mapping
         )
         if iterable is None:
@@ -244,7 +229,7 @@ class For(Node):
         results = []
         for idx, item in enumerate(iterable):
             local_ctx = dict(context)
-            local_ctx[self.var_name] = item
+            local_ctx[self.var] = item
             # loop helper
             loop = {
                 "index": idx + 1,
@@ -256,8 +241,8 @@ class For(Node):
                 "length": length,
             }
             local_ctx["loop"] = loop
-            val = self.body_block.evaluate(
-                local_ctx, includes, path + f"/for[{self.var_name}][{idx}]", mapping
+            val = self.body.evaluate(
+                local_ctx, includes, path + f"/for[{self.var}][{idx}]", mapping
             )
             if isinstance(val, list):
                 results.extend(val)
