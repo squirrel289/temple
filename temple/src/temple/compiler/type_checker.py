@@ -6,9 +6,22 @@ Walks AST, assigns types, validates against schema.
 """
 
 from typing import Dict, Any, Optional, List
-from temple.typed_ast import Node as ASTNode, Block, Text, Expression, If, For, Include
+from temple.typed_ast import (
+    Node as ASTNode,
+    Block,
+    Text,
+    Expression,
+    If,
+    For,
+    Include,
+)
 
-# Note: FunctionDef and FunctionCall not yet in typed_ast - need to add or remove usage
+# FunctionDef/FunctionCall are optional in `typed_ast` — import if present
+try:
+    from temple.typed_ast import FunctionDef, FunctionCall
+except Exception:
+    FunctionDef = None
+    FunctionCall = None
 from .types import (
     BaseType,
     StringType,
