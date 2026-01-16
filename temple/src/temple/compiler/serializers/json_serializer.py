@@ -10,17 +10,14 @@ Produces valid JSON respecting schema types, with proper handling of:
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from temple.compiler.serializers.base import (
     Serializer,
     SerializationContext,
     SerializationError,
 )
 from temple.compiler.serializers.base import ASTNode
-# Ensure optional function node names exist (may be missing in typed_ast)
-from temple.compiler.serializers.base import FunctionDef, FunctionCall
 from temple.typed_ast import Block, Text, Expression, If, For, Include
-# Note: FunctionDef, FunctionCall not yet in typed_ast
 
 
 class JSONSerializer(Serializer):
@@ -114,12 +111,6 @@ class JSONSerializer(Serializer):
             return self._evaluate_block(node.nodes, context)
 
         elif isinstance(node, Include):
-            return None
-
-        elif isinstance(node, FunctionDef):
-            return None
-
-        elif isinstance(node, FunctionCall):
             return None
 
         else:

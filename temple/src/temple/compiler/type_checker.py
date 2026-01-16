@@ -14,20 +14,13 @@ from temple.typed_ast import (
     If,
     For,
     Include,
+    FunctionDef,
+    FunctionCall,
 )
 
-# FunctionDef/FunctionCall are optional in `typed_ast` — import if present
-try:
-    from temple.typed_ast import FunctionDef, FunctionCall
-except Exception:
-    FunctionDef = None
-    FunctionCall = None
 from .types import (
     BaseType,
     StringType,
-    NumberType,
-    BooleanType,
-    NullType,
     ArrayType,
     ObjectType,
     AnyType,
@@ -204,7 +197,7 @@ class TypeChecker:
         # For now, accept any type (JavaScript-like truthiness)
 
         # Check body
-        for child in node.body:
+        for child in self._iter_nodes(node.body):
             self._check_node(child, env)
 
         # Check elif parts
@@ -212,12 +205,12 @@ class TypeChecker:
             self._check_expression(
                 Expression(expr=elif_cond, source_range=node.source_range), env
             )
-            for child in elif_body.nodes if isinstance(elif_body, Block) else elif_body:
+            for child in self._iter_nodes(elif_body):
                 self._check_node(child, env)
 
         # Check else body
         if node.else_body:
-            for child in node.else_body.nodes:
+            for child in self._iter_nodes(node.else_body):
                 self._check_node(child, env)
 
         return AnyType()
@@ -253,7 +246,7 @@ class TypeChecker:
         loop_env.bind(node.var, item_type)
 
         # Check body in loop scope
-        for child in node.body.nodes:
+        for child in self._iter_nodes(node.body):
             self._check_node(child, loop_env)
 
         return AnyType()
@@ -267,7 +260,7 @@ class TypeChecker:
     def _check_block(self, node: Block, env: TypeEnvironment) -> BaseType:
         """Check a block definition."""
         # Check body
-        for child in node.body:
+        for child in self._iter_nodes(node.body):
             self._check_node(child, env)
         return AnyType()
 
@@ -281,7 +274,7 @@ class TypeChecker:
             func_env.bind(arg, AnyType())
 
         # Check function body
-        for child in node.body:
+        for child in self._iter_nodes(node.body):
             self._check_node(child, func_env)
 
         return AnyType()
@@ -293,10 +286,31 @@ class TypeChecker:
         # Check arguments
         for arg in node.args:
             self._check_expression(
-                Expression(value=arg, source_range=node.source_range), env
+                Expression(expr=arg, source_range=node.source_range), env
             )
 
         return AnyType()
+
+    def _iter_nodes(self, obj):
+        """Normalize access to node lists or Block-like containers.
+
+        Accepts: list, Block with `.nodes`, object with `.body` (list or Block), or None.
+        Returns an iterable of child nodes.
+        """
+        if obj is None:
+            return []
+        if isinstance(obj, list):
+            return obj
+        if hasattr(obj, "nodes"):
+            return getattr(obj, "nodes") or []
+        if hasattr(obj, "body"):
+            body = getattr(obj, "body")
+            if isinstance(body, list):
+                return body
+            if hasattr(body, "nodes"):
+                return getattr(body, "nodes") or []
+        # Fallback: treat single node as a one-element list
+        return [obj]
 
     def validate_output_schema(self, ast: ASTNode) -> bool:
         """

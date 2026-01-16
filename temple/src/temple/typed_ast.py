@@ -11,30 +11,34 @@ class Node:
         # `start` may be a (line, col) tuple or a SourceRange
         self.start = None
         self.source_range = None
-        if start is not None:
-            # If a SourceRange is provided, prefer that
-            try:
-                if isinstance(start, SourceRange):
-                    self.source_range = start
-                    self.start = (start.start.line, start.start.col)
-                else:
-                    # Assume a (line, col) tuple
-                    line, col = start
-                    self.start = (line, col)
-                    self.source_range = SourceRange(
-                        Position(line, col), Position(line, col)
-                    )
-            except Exception:
-                # Fallback: try to coerce to tuple
-                try:
-                    line, col = tuple(start)
-                    self.start = (line, col)
-                    self.source_range = SourceRange(
-                        Position(line, col), Position(line, col)
-                    )
-                except Exception:
-                    self.start = None
-                    self.source_range = None
+        if start is None:
+            return
+        # Prefer SourceRange, accept (line, col) tuples or objects with .start.{line,col}
+        if isinstance(start, SourceRange):
+            self.source_range = start
+            self.start = (start.start.line, start.start.col)
+        elif (
+            isinstance(start, (tuple, list))
+            and len(start) == 2
+            and all(isinstance(x, int) for x in start)
+        ):
+            line, col = start
+            self.start = (line, col)
+            self.source_range = SourceRange(Position(line, col), Position(line, col))
+        elif hasattr(start, "line") and hasattr(start, "col"):
+            line = getattr(start, "line")
+            col = getattr(start, "col")
+            if isinstance(line, int) and isinstance(col, int):
+                self.start = (line, col)
+                self.source_range = SourceRange(
+                    Position(line, col), Position(line, col)
+                )
+            else:
+                self.start = None
+                self.source_range = None
+        else:
+            self.start = None
+            self.source_range = None
 
     def evaluate(
         self,
@@ -188,9 +192,9 @@ class If(Node):
 class For(Node):
     def __init__(
         self,
-        var: str = None,
-        iterable: str = None,
-        body: "Block" = None,
+        var: Optional[str] = None,
+        iterable: Optional[str] = None,
+        body: Optional["Block"] = None,
         start: Optional[Tuple[int, int]] = None,
     ):
         super().__init__(start)
@@ -402,6 +406,15 @@ class ObjectNode(Node):
         return out
 
 
+# Placeholder classes until they are implemented in typed_ast
+class FunctionDef(Node):
+    pass
+
+
+class FunctionCall(Node):
+    pass
+
+
 __all__ = [
     "Node",
     "Text",
@@ -413,4 +426,6 @@ __all__ = [
     "Array",
     "ObjectNode",
     "TemplateError",
+    "FunctionDef",
+    "FunctionCall",
 ]
