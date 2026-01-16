@@ -43,7 +43,7 @@ class Node:
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> Any:
@@ -59,7 +59,7 @@ class Text(Node):
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> str:
@@ -103,7 +103,7 @@ class Expression(Node):
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> Any:
@@ -165,7 +165,7 @@ class If(Node):
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> Any:
@@ -216,7 +216,7 @@ class For(Node):
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> List[Any]:
@@ -263,7 +263,7 @@ class Include(Node):
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> Any:
@@ -327,7 +327,7 @@ class Block(Node):
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> Any:
@@ -358,7 +358,7 @@ class Array(Node):
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> List[Any]:
@@ -389,7 +389,7 @@ class ObjectNode(Node):
     def evaluate(
         self,
         context: Dict[str, Any],
-        includes: Dict[str, "Block"] | None = None,
+        includes: Optional[Dict[str, "Block"]] = None,
         path: str = "",
         mapping: Optional[List[Tuple[str, Tuple[int, int]]]] = None,
     ) -> Dict[str, Any]:
