@@ -18,6 +18,7 @@ from temple.compiler.serializers.base import (
     SerializationContext,
     SerializationError,
 )
+from temple.compiler.serializers.base import ASTNode
 from temple.typed_ast import Block, Text, Expression, If, For, Include
 # Note: FunctionDef, FunctionCall not yet in typed_ast
 
