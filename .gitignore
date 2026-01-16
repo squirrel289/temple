@@ -287,3 +287,8 @@ temple-linter/tests/*.out
 *.tmp
 *.bak
 *.backup
+.hooks-venv
+# Ignore built Sphinx docs anywhere in the repo (do not commit generated site artifacts)
+# Matches any path that ends with docs/_build/ and its contents
+**/docs/_build/
+**/docs/_build/**
