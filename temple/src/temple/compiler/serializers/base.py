@@ -9,6 +9,10 @@ Serializers convert type-checked AST + input data into formatted output
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from temple.typed_ast import Block, Text, Expression, If, For, Include
+# Alias the core AST node type for type hints used in serializers.
+# Importing as `ASTNode` keeps existing type hints stable and avoids
+# NameError during test collection when annotations are evaluated.
+from temple.typed_ast import Node as ASTNode
 from temple.diagnostics import SourceRange
 from temple.compiler.types import BaseType
 
