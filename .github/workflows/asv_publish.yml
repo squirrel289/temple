@@ -7,8 +7,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 4 * * 1'  # weekly on Monday at 04:00 UTC
-  pull_request:
-    branches: [ main ]
 
 permissions:
   contents: write
@@ -34,10 +32,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install dependencies (via shared script)
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r scripts/ci/requirements-bench.txt
+          chmod +x ./scripts/ci/benchmarks_quick.sh
+          ./scripts/ci/benchmarks_quick.sh --install-deps-only
 
       - name: Collect runner info
         run: |

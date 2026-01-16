@@ -10,7 +10,7 @@ Produces valid YAML with proper handling of:
 - Anchors and references
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from temple.compiler.serializers.base import (
     Serializer,
     SerializationContext,
@@ -18,7 +18,6 @@ from temple.compiler.serializers.base import (
 )
 from temple.compiler.serializers.base import ASTNode
 from temple.typed_ast import Block, Text, Expression, If, For, Include
-# Note: FunctionDef, FunctionCall not yet in typed_ast
 
 
 class YAMLSerializer(Serializer):
@@ -105,7 +104,7 @@ class YAMLSerializer(Serializer):
             if not isinstance(iterable, (list, tuple)):
                 if self.strict:
                     raise SerializationError(
-                        f"For loop requires iterable", node.source_range
+                        "For loop requires iterable", node.source_range
                     )
                 return []
 
@@ -123,7 +122,7 @@ class YAMLSerializer(Serializer):
                         **context.current_scope,
                     }
                 )
-                result = self._evaluate_block(node.body, context)
+                result = self._evaluate_block(list(node.body), context)
                 context.pop_scope()
 
                 if result is not None:

@@ -20,7 +20,6 @@ from temple.compiler.serializers.base import (
 )
 from temple.compiler.serializers.base import ASTNode
 from temple.typed_ast import Block, Text, Expression, If, For, Include
-# Note: FunctionDef, FunctionCall not yet in typed_ast
 
 
 class HTMLSerializer(Serializer):
@@ -124,7 +123,7 @@ class HTMLSerializer(Serializer):
             if not isinstance(iterable, (list, tuple)):
                 if self.strict:
                     raise SerializationError(
-                        f"For loop requires iterable", node.source_range
+                        "For loop requires iterable", node.source_range
                     )
                 return ""
 

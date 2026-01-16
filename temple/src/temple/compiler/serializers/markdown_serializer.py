@@ -11,7 +11,7 @@ Produces valid Markdown with proper handling of:
 - Tables (future)
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 from temple.compiler.serializers.base import (
     Serializer,
     SerializationContext,
@@ -19,7 +19,6 @@ from temple.compiler.serializers.base import (
 )
 from temple.compiler.serializers.base import ASTNode
 from temple.typed_ast import Block, Text, Expression, If, For, Include
-# Note: FunctionDef, FunctionCall not yet in typed_ast
 
 
 class MarkdownSerializer(Serializer):
@@ -107,7 +106,7 @@ class MarkdownSerializer(Serializer):
             if not isinstance(iterable, (list, tuple)):
                 if self.strict:
                     raise SerializationError(
-                        f"For loop requires iterable", node.source_range
+                        "For loop requires iterable", node.source_range
                     )
                 return ""
 
