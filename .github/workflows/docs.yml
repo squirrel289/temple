@@ -22,7 +22,7 @@ jobs:
       - name: Build docs via shared script
         run: |
           chmod +x ./scripts/ci/docs_build.sh
-          ./scripts/ci/docs_build.sh
+          ./scripts/ci/docs_build.sh --with-deps
 
       - name: Check for broken links
         working-directory: temple-linter/docs

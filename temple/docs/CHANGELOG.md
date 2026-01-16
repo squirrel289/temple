@@ -4,10 +4,10 @@
 
 - Change: Control-flow blocks now use a single canonical closer `{% end %}`.
   Rationale: Simplifies parsing and rendering logic; avoids proliferation of
-  `endfor`/`endif`/`endfunction` variants which previously required special
+  `end`/`end`/`end` variants which previously required special
   handling during validation and diagnostics.
 
-- Compatibility: Templates using `endfor`, `endif`, `endfunction`, or other
+- Compatibility: Templates using `end`, `end`, `end`, or other
   `end<suffix>` variants will no longer be treated as closers. Such tokens are
   preserved as plain statements; their openers will be reported as unclosed
   blocks if not closed by a canonical `{% end %}`.

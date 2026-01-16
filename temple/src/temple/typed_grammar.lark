@@ -25,8 +25,8 @@ OPEN_IF: /\{\%[^%]*if[^%]*\%\}/
 OPEN_ELSE_IF: /\{\%\s*else\s+if[^%]*\%\}/
 OPEN_ELSE: /\{\%[^%]*else[^%]*\%\}/
 OPEN_FOR: /\{\%[^%]*for[^%]*\%\}/
-// Single end token for all block types
-OPEN_END: /\{\%[^%]*end[^%]*\%\}/
+// Single end token for all block types — match exact 'end' closer only
+OPEN_END: /\{\%\s*end\s*\%\}/
 OPEN_INCLUDE: /\{\%[^%]*include[^%]*\%\}/
 OPEN_SET: /\{\%[^%]*set[^%]*\%\}/
 OPEN_COMMENT: /\{#[\s\S]*?#\}/

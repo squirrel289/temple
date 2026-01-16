@@ -33,7 +33,7 @@ def test_markdown_pipeline_happy_path():
     template = (
         "Hello {{ user.name }}\n"
         "{% for job in user.jobs %}- {{ job.title }} at {{ job.company }}\n"
-        "{% endfor %}"
+        "{% end %}"
     )
     data = {
         "user": {
@@ -90,7 +90,7 @@ def test_markdown_pipeline_reports_type_errors():
 
 def test_json_pipeline_happy_path():
     """End-to-end JSON serialization with looped titles."""
-    template = "{% for job in user.jobs %}{{ job.title }}{% endfor %}"
+    template = "{% for job in user.jobs %}{{ job.title }}{% end %}"
     data = {
         "user": {
             "jobs": [
@@ -118,9 +118,7 @@ def test_json_pipeline_happy_path():
 
 def test_html_pipeline_happy_path():
     """End-to-end HTML serialization (escaped text)."""
-    template = (
-        "Hello {{ user.name }}{% for tag in user.tags %} Tag: {{ tag }}{% endfor %}"
-    )
+    template = "Hello {{ user.name }}{% for tag in user.tags %} Tag: {{ tag }}{% end %}"
     data = {"user": {"name": "Alice", "tags": ["dev", "ops"]}}
 
     parser = TypedTemplateParser()
@@ -143,7 +141,7 @@ def test_html_pipeline_happy_path():
 
 def test_yaml_pipeline_happy_path():
     """End-to-end YAML serialization for a simple list."""
-    template = "{% for job in user.jobs %}{{ job.title }}{% endfor %}"
+    template = "{% for job in user.jobs %}{{ job.title }}{% end %}"
     data = {
         "user": {
             "jobs": [

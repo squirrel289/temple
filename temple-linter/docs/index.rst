@@ -18,7 +18,7 @@ Architecture
 
 The linting workflow consists of five coordinated services:
 
-1. **Template Linting**: Validates template syntax and logic (if/for/endif matching)
+1. **Template Linting**: Validates template syntax and logic (if/for/end matching)
 2. **Token Cleaning**: Strips DSL tokens while tracking original positions
 3. **Base Linting**: Delegates to VS Code's native linters (JSON, YAML, Markdown, etc.)
 4. **Diagnostic Mapping**: Maps diagnostic positions from cleaned content back to original
@@ -84,13 +84,13 @@ All tokens use a unified position model with ``(line, col)`` tuples:
 
 Example::
 
-    "Hello {% if x %}world{% endif %}"
+    "Hello {% if x %}world{% end %}"
     
     Tokens:
     - Token(type='text', value='Hello ', start=(0,0), end=(0,6))
     - Token(type='statement', value='if x', start=(0,6), end=(0,16))
     - Token(type='text', value='world', start=(0,16), end=(0,21))
-    - Token(type='statement', value='endif', start=(0,21), end=(0,31))
+    - Token(type='statement', value='end', start=(0,21), end=(0,31))
 
 Configurable Delimiters
 ------------------------

@@ -75,7 +75,7 @@ Create files with `.tmpl` or `.template` extensions:
 Temple uses Jinja-like syntax:
 
 ```
-{% if condition %}...{% endif %}   # Statements
+{% if condition %}...{% end %}   # Statements
 {{ variable }}                      # Expressions
 {# comment #}                       # Comments
 ```
@@ -90,8 +90,8 @@ Create `package.json.tmpl`:
   "version": "{{ project.version }}",
   "dependencies": {
     {% for dep, ver in project.deps.items() %}
-    "{{ dep }}": "{{ ver }}"{% if not loop.last %},{% endif %}
-    {% endfor %}
+    "{{ dep }}": "{{ ver }}"{% if not loop.last %},{% end %}
+    {% end %}
   }
 }
 ```
@@ -117,7 +117,7 @@ servers:
   {% for server in servers %}
   - name: {{ server.name }}
     url: {{ server.url }}
-  {% endfor %}
+  {% end %}
 ```
 
 ## Supported Formats
@@ -138,7 +138,7 @@ Unknown formats automatically pass through to VS Code for detection.
 ### Template Linting
 
 Validates template-specific syntax:
-- Unclosed blocks: `{% if %}` without `{% endif %}`
+- Unclosed blocks: `{% if %}` without `{% end %}`
 - Invalid statements: `{% invalid %}`
 - Malformed expressions: `{{ unclosed`
 - Mismatched delimiters

@@ -43,14 +43,18 @@ class BlockValidator:
             if token.type != "statement":
                 continue
 
-            keyword = token.value.split()[0].lower() if token.value else ""
+            # Token value (trimmed) and first keyword
+            raw_value = token.value.strip() if token.value else ""
+            keyword = raw_value.split()[0].lower() if raw_value else ""
 
             # Opening block
             if keyword in self.BLOCK_OPENS:
                 self.stack.append((keyword, token.start[0], token.start[1]))
 
-            # Closing block: only the generic 'end' token is treated as a closer.
-            elif keyword == "end":
+            # Closing block: only the generic 'end' token (exact match)
+            # is treated as a closer. Variants like 'end if' are not
+            # considered canonical closers.
+            elif raw_value.lower() == "end":
                 if not self.stack:
                     errors.append(
                         f"Unexpected closing block '{keyword}' at "

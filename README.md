@@ -105,11 +105,11 @@ temple:
 # Resume
 {% if user.name %}
 ## {{ user.name }}
-{% endif %}
+{% end %}
 
 {% for job in user.jobs %}
 ### {{ job.title }} at {{ job.company }}
-{% endfor %}
+{% end %}
 ```
 
 ### Optional: Install Git hooks (recommended)
