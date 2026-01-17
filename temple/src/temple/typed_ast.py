@@ -9,36 +9,28 @@ class TemplateError(Exception):
 class Node:
     def __init__(self, start: Optional[object] = None):
         # `start` may be a (line, col) tuple or a SourceRange
-        self.start = None
-        self.source_range = None
-        if start is None:
-            return
-        # Prefer SourceRange, accept (line, col) tuples or objects with .start.{line,col}
-        if isinstance(start, SourceRange):
-            self.source_range = start
-            self.start = (start.start.line, start.start.col)
-        elif (
-            isinstance(start, (tuple, list))
-            and len(start) == 2
-            and all(isinstance(x, int) for x in start)
-        ):
-            line, col = start
-            self.start = (line, col)
-            self.source_range = SourceRange(Position(line, col), Position(line, col))
-        elif hasattr(start, "line") and hasattr(start, "col"):
-            line = getattr(start, "line")
-            col = getattr(start, "col")
-            if isinstance(line, int) and isinstance(col, int):
-                self.start = (line, col)
-                self.source_range = SourceRange(
-                    Position(line, col), Position(line, col)
-                )
-            else:
-                self.start = None
-                self.source_range = None
-        else:
             self.start = None
             self.source_range = None
+            if start is None:
+                return
+
+            # Try to normalize allowed inputs into a canonical SourceRange.
+            try:
+                if isinstance(start, SourceRange):
+                    sr = make_source_range(source_range=start)
+                elif isinstance(start, (tuple, list)):
+                    sr = make_source_range(start=tuple(start))
+                else:
+                    # Allow duck conversion for Node but prefer explicit ranges.
+                    sr = make_source_range(source_range=start, allow_duck=True)
+            except Exception:
+                # Do not crash callers here; leave as unset but warn.
+                self.start = None
+                self.source_range = None
+                return
+
+            self.source_range = sr
+            self.start = (sr.start.line, sr.start.column)
 
     def evaluate(
         self,
@@ -192,12 +184,17 @@ class If(Node):
 class For(Node):
     def __init__(
         self,
-        var: Optional[str] = None,
-        iterable: Optional[str] = None,
+        var: Optional[str],
+        iterable: Optional[str],
         body: Optional["Block"] = None,
         start: Optional[Tuple[int, int]] = None,
     ):
         super().__init__(start)
+        # Require var and iterable to be provided to avoid silent runtime errors.
+        if var is None:
+            raise TemplateError("For loop 'var' parameter is required")
+        if iterable is None:
+            raise TemplateError("For loop 'iterable' parameter is required")
         # Accept keyword args used in tests: var, iterable
         self.var = var
         self.iterable = iterable
