@@ -24,8 +24,11 @@ class Node:
             else:
                 # Allow duck conversion for Node but prefer explicit ranges.
                 sr = make_source_range(source_range=start, allow_duck=True)
-        except Exception:
-            # Do not crash callers here; leave as unset but warn.
+        except (TypeError, ValueError):
+            # Do not crash callers here; if the provided `start` cannot be
+            # coerced into a SourceRange, leave positions unset. This avoids
+            # hard crashes for legacy call sites while we migrate callers to
+            # provide canonical ranges.
             self.start = None
             self.source_range = None
             return

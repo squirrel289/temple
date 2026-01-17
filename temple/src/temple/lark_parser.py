@@ -6,7 +6,6 @@ import re
 from .typed_ast import Block, Text, Expression, If, For, Include
 from .diagnostics import (
     Diagnostic,
-    DiagnosticSeverity,
     DiagnosticCollector,
     Position,
     SourceRange,
