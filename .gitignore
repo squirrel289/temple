@@ -3,6 +3,11 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
+# GitHub Ephemeral Files
+# -----------------------------------------------------------------------------
+.gh_*/
+
+# -----------------------------------------------------------------------------
 # Python (temple/, temple-linter/)
 # -----------------------------------------------------------------------------
 
@@ -66,13 +71,12 @@ coverage.xml
 
 # Environments
 .env
-.venv
 env/
-venv/
 ENV/
-env.bak/
-venv.bak/
-.venv*/
+*venv*/
+!*[a-zA-Z]venv*/
+!*venv[a-zA-Z]*/
+
 
 # mypy
 .mypy_cache/
@@ -287,7 +291,6 @@ temple-linter/tests/*.out
 *.tmp
 *.bak
 *.backup
-.hooks-venv
 # Ignore built Sphinx docs anywhere in the repo (do not commit generated site artifacts)
 # Matches any path that ends with docs/_build/ and its contents
 **/docs/_build/
