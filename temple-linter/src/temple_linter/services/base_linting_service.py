@@ -75,10 +75,26 @@ class BaseLintingService:
                 if isinstance(d, Diagnostic):
                     valid_diagnostics.append(d)
                 elif isinstance(d, dict):
+                    # Ensure minimal required fields exist for LSP Diagnostic construction
+                    diag_dict = dict(d)
+                    if "range" not in diag_dict or diag_dict.get("range") is None:
+                        # synthesize a zero-length range at start of file
+                        diag_dict["range"] = {
+                            "start": {"line": 0, "character": 0},
+                            "end": {"line": 0, "character": 0},
+                        }
+                    if "message" not in diag_dict:
+                        diag_dict["message"] = ""
+
                     try:
-                        valid_diagnostics.append(Diagnostic(**d))
-                    except Exception:
-                        # Skip uncoercible diagnostics quietly
+                        valid_diagnostics.append(Diagnostic(**diag_dict))
+                    except Exception as exc:
+                        # Log and skip uncoercible diagnostics
+                        self.logger.warning(
+                            "Skipping invalid base diagnostic from extension: %s; error: %s",
+                            diag_dict,
+                            exc,
+                        )
                         continue
             
             return valid_diagnostics
