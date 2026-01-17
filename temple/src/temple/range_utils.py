@@ -85,4 +85,6 @@ def make_source_range(
             except Exception:
                 pass
 
-    raise ValueError("No valid source position provided; pass `source_range` or `start`/`end` tuples")
+    raise ValueError(
+        "No valid source position provided; pass `source_range` or `start`/`end` tuples"
+    )
