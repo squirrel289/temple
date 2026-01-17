@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any, Tuple
 from enum import Enum
 
+from .range_utils import make_source_range
+
 
 @dataclass
 class Position:
@@ -80,7 +82,7 @@ class Diagnostic:
     source_range: Optional[SourceRange] = None
     severity: DiagnosticSeverity = DiagnosticSeverity.ERROR
     code: Optional[str] = None
-    source: str = "temple-compiler"
+    source: str = "temple"
     related_information: List[DiagnosticRelatedInformation] = field(
         default_factory=list
     )
@@ -91,16 +93,20 @@ class Diagnostic:
     end: Optional[Tuple[int, int]] = None
 
     def __post_init__(self):
-        # If source_range not provided but start tuple is given, synthesize SourceRange
-        if self.source_range is None and self.start is not None:
-            s_line, s_col = self.start
-            start_pos = Position(s_line, s_col)
-            if self.end is not None:
-                e_line, e_col = self.end
-                end_pos = Position(e_line, e_col)
-            else:
-                end_pos = start_pos
-            self.source_range = SourceRange(start_pos, end_pos)
+        # Normalize and validate source_range/start/end into a canonical SourceRange.
+        try:
+            self.source_range = make_source_range(
+                source_range=self.source_range, start=self.start, end=self.end
+            )
+        except Exception as e:
+            # Fail fast: Diagnostics must have a valid source range.
+            raise ValueError(
+                f"Diagnostic missing or invalid source position: {e}. Provide `source_range` or `start`/`end` tuples."
+            )
+
+        # Canonical tuples for convenience
+        self.start = (self.source_range.start.line, self.source_range.start.column)
+        self.end = (self.source_range.end.line, self.source_range.end.column)
 
     def to_lsp(self) -> Dict[str, Any]:
         """Convert to LSP Diagnostic format.
