@@ -82,7 +82,7 @@ class Diagnostic:
     source_range: Optional[SourceRange] = None
     severity: DiagnosticSeverity = DiagnosticSeverity.ERROR
     code: Optional[str] = None
-    source: str = "temple"
+    source: str = "temple-compiler"
     related_information: List[DiagnosticRelatedInformation] = field(
         default_factory=list
     )

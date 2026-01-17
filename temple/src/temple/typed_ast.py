@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 from temple.diagnostics import Position, SourceRange
+from temple.range_utils import make_source_range
 
 
 class TemplateError(Exception):
@@ -9,28 +10,28 @@ class TemplateError(Exception):
 class Node:
     def __init__(self, start: Optional[object] = None):
         # `start` may be a (line, col) tuple or a SourceRange
+        self.start = None
+        self.source_range = None
+        if start is None:
+            return
+
+        # Try to normalize allowed inputs into a canonical SourceRange.
+        try:
+            if isinstance(start, SourceRange):
+                sr = make_source_range(source_range=start)
+            elif isinstance(start, (tuple, list)):
+                sr = make_source_range(start=tuple(start))
+            else:
+                # Allow duck conversion for Node but prefer explicit ranges.
+                sr = make_source_range(source_range=start, allow_duck=True)
+        except Exception:
+            # Do not crash callers here; leave as unset but warn.
             self.start = None
             self.source_range = None
-            if start is None:
-                return
+            return
 
-            # Try to normalize allowed inputs into a canonical SourceRange.
-            try:
-                if isinstance(start, SourceRange):
-                    sr = make_source_range(source_range=start)
-                elif isinstance(start, (tuple, list)):
-                    sr = make_source_range(start=tuple(start))
-                else:
-                    # Allow duck conversion for Node but prefer explicit ranges.
-                    sr = make_source_range(source_range=start, allow_duck=True)
-            except Exception:
-                # Do not crash callers here; leave as unset but warn.
-                self.start = None
-                self.source_range = None
-                return
-
-            self.source_range = sr
-            self.start = (sr.start.line, sr.start.column)
+        self.source_range = sr
+        self.start = (sr.start.line, sr.start.column)
 
     def evaluate(
         self,
