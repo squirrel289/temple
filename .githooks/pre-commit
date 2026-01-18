@@ -30,6 +30,19 @@ if [[ -z "$STAGED_FILES" ]]; then
   exit 0
 fi
 
+# Run ruff checks (no autofix) on staged Python files to prevent accidental
+# formatting changes from being committed by editor auto-formatters. This runs
+# `ruff check` (no `--fix`) and fails the commit if violations are found.
+if command -v ruff >/dev/null 2>&1; then
+  echo "Running ruff check on staged files"
+  ruff check $STAGED_FILES || {
+    echo "Ruff found issues. Run 'ruff check' to see details or 'ruff format' locally to fix.'" >&2
+    exit 1
+  }
+else
+  echo "ruff not installed; skipping ruff checks"
+fi
+
 # Build pytest -k pattern from basenames (without extension)
 patterns=()
 while IFS= read -r f; do
