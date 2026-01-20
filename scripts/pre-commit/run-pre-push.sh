@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
-HOOKS_VENV="$(pwd)/.hooks-venv"
+HOOKS_VENV="$(pwd)/.ci-venv"
 if [[ -d "$HOOKS_VENV" && -x "$HOOKS_VENV/bin/python" ]]; then
   echo "Using hooks venv: $HOOKS_VENV"
   export PATH="$HOOKS_VENV/bin:$PATH"

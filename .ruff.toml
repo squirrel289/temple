@@ -3,5 +3,5 @@
 line-length = 88
 exclude = [".venv", "env", "__pycache__", "temple-linter/docs/_build"]
 
-[per-file-ignores]
+[lint.per-file-ignores]
 "temple-linter/docs/**" = ["F401", "F403"]

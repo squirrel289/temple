@@ -103,13 +103,13 @@ We use `pre-commit` to manage repository hooks. To set up hooks locally (recomme
 ./scripts/setup-hooks.sh
 
 # (optional) activate the venv for manual runs
-source .hooks-venv/bin/activate
+source .ci-venv/bin/activate
 
 # run hooks across the repo to validate your environment
-.hooks-venv/bin/pre-commit run --all-files
+.ci-venv/bin/pre-commit run --all-files
 ```
 
-The helper installs `pre-commit` and `ruff` into a local `.hooks-venv` and registers the hooks defined in `.pre-commit-config.yaml`. This keeps hook tooling isolated from your system Python and avoids mutating files during commits.
+The helper installs `pre-commit` and `ruff` into a local `.ci-venv` and registers the hooks defined in `.pre-commit-config.yaml`. This keeps hook tooling isolated from your system Python and avoids mutating files during commits.
 
 
 ## CI/Workflow Overview
@@ -285,12 +285,12 @@ asv continuous origin/main HEAD  # Compare against main branch
 - **After update**: Reinstall locally (`pip install -e .` or `npm install`)
 ### Install Git hooks (recommended)
 
-Use `pre-commit` to manage and run hooks in this repository. The repository provides a setup helper that creates a local `.hooks-venv` and installs the required tooling:
+Use `pre-commit` to manage and run hooks in this repository. The repository provides a setup helper that creates a local `.ci-venv` and installs the required tooling:
 
 ```bash
 ./scripts/setup-hooks.sh
-source .hooks-venv/bin/activate  # optional
-.hooks-venv/bin/pre-commit run --all-files
+source .venv/bin/activate  # optional
+.venv/bin/pre-commit run --all-files
 ```
 
 This avoids needing to change `core.hooksPath` and keeps hook tooling isolated from your system Python. If you prefer to install hooks globally, see `pre-commit` documentation for machine-global setup.

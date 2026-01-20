@@ -70,12 +70,12 @@ if [[ $GLOBAL -eq 1 ]]; then
   exit 0
 fi
 
-# Local setup: create .hooks-venv and install tooling, then register pre-commit hooks
-HOOKS_VENV="$REPO_ROOT/.hooks-venv"
+# Local setup: create .ci-venv and install tooling, then register pre-commit hooks
+HOOKS_VENV="$REPO_ROOT/.ci-venv"
 if [[ -d "$HOOKS_VENV" ]]; then
-  echo ".hooks-venv already exists; using existing environment"
+  echo ".ci-venv already exists; using existing environment"
 else
-  echo "Creating .hooks-venv..."
+  echo "Creating .ci-venv..."
   if command -v python >/dev/null 2>&1; then
     PYTHON=python
   elif command -v python3 >/dev/null 2>&1; then
@@ -87,7 +87,7 @@ else
   "$PYTHON" -m venv "$HOOKS_VENV"
 fi
 
-echo "Upgrading pip and installing tools into .hooks-venv"
+echo "Upgrading pip and installing tools into .ci-venv"
 "$HOOKS_VENV/bin/python" -m pip install --upgrade pip
 "$HOOKS_VENV/bin/python" -m pip install pre-commit ruff
 
@@ -103,8 +103,8 @@ fi
 
 cat <<'EOF'
 Setup complete.
-- To activate the venv: `source .hooks-venv/bin/activate`
-- To run hooks manually: `.hooks-venv/bin/pre-commit run --all-files`
+- To activate the venv: `source .ci-venv/bin/activate`
+- To run hooks manually: `.ci-venv/bin/pre-commit run --all-files`
 EOF
 
 exit 0
