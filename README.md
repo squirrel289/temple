@@ -116,17 +116,20 @@ temple:
 
 ### Optional: Install Git hooks (recommended)
 
-To get the repository's pre-push checks locally, run the install script bundled with the repo. For a machine-global install (so new clones automatically receive hooks), use the `--global` option:
+We manage repository hooks with `pre-commit`. To set up hooks locally (recommended), use the provided helper which creates a local `.hooks-venv` and installs `pre-commit` and `ruff`:
 
 ```bash
-# Per-repo (current repo only)
-./scripts/install-hooks.sh
+# create the hooks venv and install tooling
+./scripts/setup-hooks.sh
 
-# Install into your global git template so future clones receive hooks
-./scripts/install-hooks.sh --global
+# (optional) activate the venv for manual runs
+source .hooks-venv/bin/activate
+
+# run all hooks across the repository to validate your environment
+.hooks-venv/bin/pre-commit run --all-files
 ```
 
-The script copies hooks into `~/.git-templates/hooks` and sets `git config --global init.templateDir "$HOME/.git-templates"` when using `--global`.
+If you prefer the system-wide `pre-commit` installation, install `pre-commit` and run `pre-commit install` instead. The helper keeps tooling isolated in `.hooks-venv` and avoids mutating files during commits.
 
 ### Supported Output Formats
 - Markdown (`.md`)

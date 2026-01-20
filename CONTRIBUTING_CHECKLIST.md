@@ -124,6 +124,18 @@ pytest tests/test_lark_parser_advanced.py -q -vv
 python -m pyflakes temple/temple/src/temple/lark_parser.py
 ```
 
----
 
 If anything here is out of date for this repo, please open a PR updating this file with the exact commands your CI uses (include workflow file reference).
+
+## Install Git hooks (recommended)
+
+Use the repository's helper to create a local hooks venv and install `pre-commit` hooks:
+
+```bash
+./scripts/setup-hooks.sh
+source .hooks-venv/bin/activate  # optional
+.hooks-venv/bin/pre-commit run --all-files
+```
+
+This keeps hook tooling isolated in `.hooks-venv`, matching the new contributor workflow.
+```

@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Pre-push hook: run a fast test collection and a quick pytest smoke test
-# Exit non-zero to block the push if tests fail.
-
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
-
-echo "Running pre-push checks: benchmarks + docs"
 
 HOOKS_VENV="$(pwd)/.hooks-venv"
 if [[ -d "$HOOKS_VENV" && -x "$HOOKS_VENV/bin/python" ]]; then
@@ -21,5 +16,4 @@ echo "1/2: Running benchmark validations (subset)."
 echo "2/2: Building docs (Sphinx)."
 ./scripts/ci/docs_build.sh
 
-echo "Pre-push checks passed."
 exit 0

@@ -35,10 +35,81 @@ After cloning the repository, enable the repository-tracked git hooks so you get
 
 ```bash
 cd temple
-./scripts/install-hooks.sh
+./scripts/setup-hooks.sh
 ```
 
-The install script sets `core.hooksPath` to the tracked `.githooks/` directory. The recommended way to enable hooks for all future clones on your machine is to install them into your global git template directory (instructions below). This avoids needing repository-specific commit markers.
+The repository uses `pre-commit` to manage hooks. To install hooks globally so future clones receive them automatically, install `pre-commit` (for example via `brew install pre-commit` on macOS) and run:
+
+```bash
+pre-commit init-templatedir "$HOME/.git-templates"
+pre-commit install --install-hooks --template-dir "$HOME/.git-templates"
+```
+
+This will configure a global git template directory that includes the repository's hook configuration. If you prefer the one-shot approach, the helper script also supports `--global` which will attempt a `pre-commit`-based global install.
+
+
+## CI/Workflow Overview
+
+Temple uses **four primary GitHub Actions workflows** to validate code:
+
+### 1. **tests.yml** — Python Tests (on push & PR)
+- **Runs**: `pytest` across Python 3.10, 3.11
+- **Scope**: `temple/` and `temple-linter/` packages
+- **Trigger**: Push to `main`, pull requests to `main`
+- **Status Badge**: Appears in PR checks
+
+**Local equivalent:**
+```bash
+cd temple && pytest tests/ -v
+cd ../temple-linter && pytest tests/ -v
+```
+# Contributing to Temple
+
+Welcome! This guide walks you through the Temple development workflow, including CI integration and test execution.
+
+## Development Setup
+
+### Local Environment
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/temple.git
+   cd temple
+   ```
+
+2. Install dependencies for core and linter (Python 3.8+):
+   ```bash
+   # Core temple package
+   cd temple && pip install -e . && cd ..
+   
+   # Linter (depends on core)
+   cd temple-linter && pip install -r requirements.txt && cd ..
+   
+   # VS Code extension (Node.js 16+)
+   cd vscode-temple-linter && npm install && npm run compile && cd ..
+   ```
+
+3. Verify installation:
+   ```bash
+   pytest temple/tests/ -v
+   pytest temple-linter/tests/ -v
+   ```
+
+### Install Git hooks (recommended)
+
+We use `pre-commit` to manage repository hooks. To set up hooks locally (recommended):
+
+```bash
+# create a local hooks venv and install tooling
+./scripts/setup-hooks.sh
+
+# (optional) activate the venv for manual runs
+source .hooks-venv/bin/activate
+
+# run hooks across the repo to validate your environment
+.hooks-venv/bin/pre-commit run --all-files
+```
+
+The helper installs `pre-commit` and `ruff` into a local `.hooks-venv` and registers the hooks defined in `.pre-commit-config.yaml`. This keeps hook tooling isolated from your system Python and avoids mutating files during commits.
 
 
 ## CI/Workflow Overview
@@ -96,8 +167,7 @@ cd temple && asv continuous origin/main HEAD
 
 ### ASV (Airspeed Velocity) Configuration
 - **Location**: `temple/asv.conf.json`
-- **Key Settings**:
-  - `repo: ".."` — Relative path for CI portability
+- **Key Settings**n+  - `repo: ".."` — Relative path for CI portability
   - `branches: ["main"]` — Track main branch only
   - `build_cache_size: 8` — Limit build artifacts
   - `default_benchmark_mode: "whole"` — Full benchmark runs
@@ -162,8 +232,8 @@ Temple is organized as a **single-root monorepo** with three interconnected comp
 temple/                      # Python core templating engine
 ├── src/temple/
 │   ├── template_tokenizer.py    # Authoritative tokenizer (LRU cached)
-│   ├── template_renderer.py     # Rendering engine
-│   └── __init__.py              # Public exports
+  │   ├── template_renderer.py     # Rendering engine
+  │   └── __init__.py              # Public exports
 ├── tests/test_tokenizer.py
 ├── docs/ARCHITECTURE.md         # Core documentation (Markdown)
 └── asv.conf.json                # ASV benchmark config
@@ -171,8 +241,8 @@ temple/                      # Python core templating engine
 temple-linter/              # LSP server for template linting
 ├── src/temple_linter/
 │   ├── lsp_server.py            # Language Server Protocol
-│   ├── template_preprocessing.py # Token stripping for base format lint
-│   └── diagnostics.py           # Error mapping
+  │   ├── template_preprocessing.py # Token stripping for base format lint
+  │   └── diagnostics.py           # Error mapping
 ├── tests/test_*.py
 └── docs/                        # Sphinx documentation
     ├── conf.py
@@ -215,22 +285,15 @@ asv continuous origin/main HEAD  # Compare against main branch
 - **After update**: Reinstall locally (`pip install -e .` or `npm install`)
 ### Install Git hooks (recommended)
 
-After cloning the repository, enable the repository-tracked git hooks so you get the pre-push checks locally:
+Use `pre-commit` to manage and run hooks in this repository. The repository provides a setup helper that creates a local `.hooks-venv` and installs the required tooling:
 
 ```bash
-cd temple
-./scripts/install-hooks.sh
+./scripts/setup-hooks.sh
+source .hooks-venv/bin/activate  # optional
+.hooks-venv/bin/pre-commit run --all-files
 ```
 
-The install script sets `core.hooksPath` to the tracked `.githooks/` directory. To make hooks apply for new clones on your machine, copy them into your global git template directory (see below) so you don't need per-repo configuration.
-
-If you prefer a machine-wide setup so future clones receive hooks automatically, install the hooks into your global git template directory (one-time per machine):
-
-```bash
-mkdir -p ~/.git-templates/hooks
-cp -R .githooks/* ~/.git-templates/hooks/
-git config --global init.templateDir "$HOME/.git-templates"
-```
+This avoids needing to change `core.hooksPath` and keeps hook tooling isolated from your system Python. If you prefer to install hooks globally, see `pre-commit` documentation for machine-global setup.
 
 
 ## Getting Help
@@ -238,7 +301,4 @@ git config --global init.templateDir "$HOME/.git-templates"
 - **Questions**: Open a GitHub Discussion
 - **Bugs**: File an Issue with minimal reproduction
 - **Security**: Please report privately to maintainers
-
----
-
-**Last Updated**: Based on CI workflows (tests.yml, docs.yml, benchmarks.yml, asv_publish.yml)
+````
