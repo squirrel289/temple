@@ -4,8 +4,8 @@ set -euo pipefail
 # Run pytest for affected Python modules derived from filenames passed by pre-commit.
 
 PYTHON=python
-if [[ -x "$(pwd)/.hooks-venv/bin/python" ]]; then
-  PYTHON="$(pwd)/.hooks-venv/bin/python"
+if [[ -x "$(pwd)/.ci-venv/bin/python" ]]; then
+  PYTHON="$(pwd)/.ci-venv/bin/python"
 else
   if command -v python >/dev/null 2>&1; then
     PYTHON=python

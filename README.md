@@ -116,20 +116,20 @@ temple:
 
 ### Optional: Install Git hooks (recommended)
 
-We manage repository hooks with `pre-commit`. To set up hooks locally (recommended), use the provided helper which creates a local `.hooks-venv` and installs `pre-commit` and `ruff`:
+We manage repository hooks with `pre-commit`. To set up hooks locally (recommended), use the provided helper which creates a local `.ci-venv` and installs `pre-commit` and `ruff`:
 
 ```bash
 # create the hooks venv and install tooling
 ./scripts/setup-hooks.sh
 
 # (optional) activate the venv for manual runs
-source .hooks-venv/bin/activate
+source .ci-venv/bin/activate
 
 # run all hooks across the repository to validate your environment
-.hooks-venv/bin/pre-commit run --all-files
+.ci-venv/bin/pre-commit run --all-files
 ```
 
-If you prefer the system-wide `pre-commit` installation, install `pre-commit` and run `pre-commit install` instead. The helper keeps tooling isolated in `.hooks-venv` and avoids mutating files during commits.
+If you prefer the system-wide `pre-commit` installation, install `pre-commit` and run `pre-commit install` instead. The helper keeps tooling isolated in `.ci-venv` and avoids mutating files during commits.
 
 ### Supported Output Formats
 - Markdown (`.md`)

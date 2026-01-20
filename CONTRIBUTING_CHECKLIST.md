@@ -133,9 +133,9 @@ Use the repository's helper to create a local hooks venv and install `pre-commit
 
 ```bash
 ./scripts/setup-hooks.sh
-source .hooks-venv/bin/activate  # optional
-.hooks-venv/bin/pre-commit run --all-files
+source .ci-venv/bin/activate  # optional
+.ci-venv/bin/pre-commit run --all-files
 ```
 
-This keeps hook tooling isolated in `.hooks-venv`, matching the new contributor workflow.
+This keeps hook tooling isolated in `.ci-venv`, matching the new contributor workflow.
 ```
