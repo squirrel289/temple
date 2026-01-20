@@ -1,6 +1,4 @@
-import json
 import re
-import sys
 from pathlib import Path
 
 import pytest
@@ -13,6 +11,7 @@ from html.parser import HTMLParser
 # tomllib is only available in Python 3.11+
 try:
     import tomllib
+
     HAS_TOMLLIB = True
 except ImportError:
     HAS_TOMLLIB = False
@@ -65,7 +64,16 @@ SCHEMA = {
         "age": {"type": "number"},
         "active": {"type": "boolean"},
         "skills": {"type": "array", "items": {"type": "string"}},
-        "jobs": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "company": {"type": "string"}}}},
+        "jobs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "company": {"type": "string"},
+                },
+            },
+        },
     },
 }
 
@@ -149,7 +157,13 @@ def parse_structured_from_text(text: str) -> dict:
         if m:
             job = {"title": m.group(1).strip(), "company": m.group(2).strip()}
 
-    out = {"name": name, "age": age, "active": active, "skills": skills, "jobs": [job] if job else []}
+    out = {
+        "name": name,
+        "age": age,
+        "active": active,
+        "skills": skills,
+        "jobs": [job] if job else [],
+    }
     return out
 
 
@@ -164,7 +178,9 @@ def test_toml_positive():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(get_template_path("toml_positive.toml.tmpl", positive=True), ctx)
+    rendered, mapping = render_template_file(
+        get_template_path("toml_positive.toml.tmpl", positive=True), ctx
+    )
     parsed = tomllib.loads(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -180,7 +196,9 @@ def test_toml_negative():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(get_template_path("toml_negative.toml.tmpl", positive=False), ctx)
+    rendered, mapping = render_template_file(
+        get_template_path("toml_negative.toml.tmpl", positive=False), ctx
+    )
     parsed = tomllib.loads(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
@@ -196,7 +214,9 @@ def test_md_positive():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(get_template_path("md_positive.md.tmpl", positive=True), ctx)
+    rendered, mapping = render_template_file(
+        get_template_path("md_positive.md.tmpl", positive=True), ctx
+    )
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -211,7 +231,9 @@ def test_md_negative():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(get_template_path("md_negative.md.tmpl", positive=False), ctx)
+    rendered, mapping = render_template_file(
+        get_template_path("md_negative.md.tmpl", positive=False), ctx
+    )
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
@@ -227,7 +249,9 @@ def test_html_positive():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(get_template_path("html_positive.html.tmpl", positive=True), ctx)
+    rendered, mapping = render_template_file(
+        get_template_path("html_positive.html.tmpl", positive=True), ctx
+    )
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -242,7 +266,9 @@ def test_html_negative():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(get_template_path("html_negative.html.tmpl", positive=False), ctx)
+    rendered, mapping = render_template_file(
+        get_template_path("html_negative.html.tmpl", positive=False), ctx
+    )
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
@@ -258,7 +284,9 @@ def test_text_positive():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(get_template_path("text_positive.txt.tmpl", positive=True), ctx)
+    rendered, mapping = render_template_file(
+        get_template_path("text_positive.txt.tmpl", positive=True), ctx
+    )
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -273,13 +301,17 @@ def test_text_negative():
             "jobs": [{"title": "Engineer", "company": "Acme"}],
         }
     }
-    rendered, mapping = render_template_file(get_template_path("text_negative.txt.tmpl", positive=False), ctx)
+    rendered, mapping = render_template_file(
+        get_template_path("text_negative.txt.tmpl", positive=False), ctx
+    )
     parsed = parse_structured_from_text(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
 
 
-@pytest.mark.skipif(not HAS_TOMLLIB, reason="tomllib required for TOML validation in includes")
+@pytest.mark.skipif(
+    not HAS_TOMLLIB, reason="tomllib required for TOML validation in includes"
+)
 def test_includes_match_extension():
     """Ensure include files roughly match their declared extension.
 
@@ -298,10 +330,16 @@ def test_includes_match_extension():
         stripped = txt.strip()
         if ext == "md":
             # Require a Markdown header and disallow HTML tags inside includes
-            has_header = any(re.match(r"^\s{0,3}#{1,6}\s+", line) for line in txt.splitlines())
+            has_header = any(
+                re.match(r"^\s{0,3}#{1,6}\s+", line) for line in txt.splitlines()
+            )
             has_html_tag = bool(re.search(r"<[^>]+>", txt))
-            assert not has_html_tag, f"HTML-like content detected in markdown include {p}"
-            assert has_header or len(stripped) > 30, f"Markdown include {p} seems too short or missing header"
+            assert not has_html_tag, (
+                f"HTML-like content detected in markdown include {p}"
+            )
+            assert has_header or len(stripped) > 30, (
+                f"Markdown include {p} seems too short or missing header"
+            )
         elif ext == "html":
             # Require the content to parse as HTML and contain at least one start tag
             parser = _CountingHTMLParser()
@@ -313,20 +351,31 @@ def test_includes_match_extension():
         elif ext == "txt":
             # Plain text includes must be non-empty and not contain HTML
             assert stripped != "", f"Empty text include: {p}"
-            assert "<" not in txt and ">" not in txt, f"HTML-like content in text include: {p}"
+            assert "<" not in txt and ">" not in txt, (
+                f"HTML-like content in text include: {p}"
+            )
         elif ext == "toml":
             # Prefer valid TOML; allow comment-only snippets, or at least one key/table-like line
             try:
                 tomllib.loads(txt)
             except Exception:
                 # collect non-empty non-comment lines
-                lines = [l for l in txt.splitlines() if l.strip()]
-                non_comment = [l for l in lines if not l.strip().startswith("#")]
-                kv_like = any(re.match(r"^\s*[\w\-\._\"]+\s*=", l) for l in non_comment)
-                table_like = any(re.match(r"^\s*\[.*\]\s*$", l) for l in non_comment)
-                assert (not non_comment) or kv_like or table_like, f"TOML include {p} is not valid TOML and not comment-only"
+                lines = [line for line in txt.splitlines() if line.strip()]
+                non_comment = [
+                    line for line in lines if not line.strip().startswith("#")
+                ]
+                kv_like = any(
+                    re.match(r"^\s*[\w\-\._\"]+\s*=", line) for line in non_comment
+                )
+                table_like = any(
+                    re.match(r"^\s*\[.*\]\s*$", line) for line in non_comment
+                )
+                assert (not non_comment) or kv_like or table_like, (
+                    f"TOML include {p} is not valid TOML and not comment-only"
+                )
         else:
             # Unknown extension: ensure it's non-empty and not obviously HTML
             assert stripped != "", f"Empty include: {p}"
-            assert "<" not in txt and ">" not in txt, f"HTML-like content in include: {p}"
-
+            assert "<" not in txt and ">" not in txt, (
+                f"HTML-like content in include: {p}"
+            )

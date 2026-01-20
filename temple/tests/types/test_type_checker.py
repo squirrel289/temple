@@ -2,12 +2,10 @@
 Tests for the type checker.
 """
 
-import pytest
 from temple.compiler.type_checker import TypeChecker, TypeEnvironment
 from temple.typed_ast import Text, Expression, If, For
-from temple.diagnostics import Position, SourceRange
 from temple.compiler.schema import object_schema
-from temple.compiler.types import StringType, NumberType, ObjectType, ArrayType
+from temple.compiler.types import StringType, NumberType
 
 
 class TestTypeEnvironment:

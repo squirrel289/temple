@@ -92,21 +92,21 @@ def test_pattern_caching():
     _compile_token_pattern.cache_clear()
     assert _compile_token_pattern.cache_info().hits == 0
     assert _compile_token_pattern.cache_info().misses == 0
-    
+
     # First call with default delimiters - cache miss
     text1 = "{{ x }}"
     tokens1 = list(temple_tokenizer(text1))
     assert len(tokens1) == 1
     assert _compile_token_pattern.cache_info().misses == 1
     assert _compile_token_pattern.cache_info().hits == 0
-    
+
     # Second call with same delimiters - cache hit
     text2 = "{% if y %}z{% end %}"
     tokens2 = list(temple_tokenizer(text2))
     assert len(tokens2) == 3
     assert _compile_token_pattern.cache_info().hits == 1
     assert _compile_token_pattern.cache_info().misses == 1
-    
+
     # Third call with custom delimiters - cache miss
     custom_delims = {
         "statement": ("<<", ">>"),
@@ -120,7 +120,7 @@ def test_pattern_caching():
     assert tokens3[0].value == "foo"
     assert _compile_token_pattern.cache_info().misses == 2
     assert _compile_token_pattern.cache_info().hits == 1
-    
+
     # Fourth call with custom delimiters again - cache hit
     text4 = "<< bar >>"
     tokens4 = list(temple_tokenizer(text4, custom_delims))
@@ -129,11 +129,10 @@ def test_pattern_caching():
     assert tokens4[0].value == "bar"
     assert _compile_token_pattern.cache_info().hits == 2
     assert _compile_token_pattern.cache_info().misses == 2
-    
+
     # Fifth call back to default delimiters - cache hit (pattern still cached)
     text5 = "{{ x }}"
     tokens5 = list(temple_tokenizer(text5))
     assert len(tokens5) == 1
     assert _compile_token_pattern.cache_info().hits == 3
     assert _compile_token_pattern.cache_info().misses == 2
-

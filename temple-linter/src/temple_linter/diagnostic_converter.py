@@ -16,13 +16,13 @@ from lsprotocol.types import (
 def temple_to_lsp_diagnostic(diag: Diagnostic) -> LspDiagnostic:
     """
     Convert temple Diagnostic to LSP Diagnostic.
-    
+
     Args:
         diag: Temple core Diagnostic object
-        
+
     Returns:
         LSP Diagnostic for editor display
-        
+
     Example:
         >>> from temple.diagnostics import Diagnostic, DiagnosticSeverity, SourceRange, Position as TemplePosition
         >>> temple_diag = Diagnostic(
@@ -41,10 +41,10 @@ def temple_to_lsp_diagnostic(diag: Diagnostic) -> LspDiagnostic:
         DiagnosticSeverity.INFORMATION: LspSeverity.Information,
         DiagnosticSeverity.HINT: LspSeverity.Hint,
     }
-    
+
     # Convert source range to LSP range
     lsp_range = source_range_to_lsp_range(diag.source_range)
-    
+
     return LspDiagnostic(
         range=lsp_range,
         severity=severity_map.get(diag.severity, LspSeverity.Error),
@@ -57,10 +57,10 @@ def temple_to_lsp_diagnostic(diag: Diagnostic) -> LspDiagnostic:
 def source_range_to_lsp_range(source_range: Optional[SourceRange]) -> Range:
     """
     Convert temple SourceRange to LSP Range.
-    
+
     Args:
         source_range: Temple SourceRange or None
-        
+
     Returns:
         LSP Range (defaults to 0,0 if source_range is None)
     """
@@ -69,7 +69,7 @@ def source_range_to_lsp_range(source_range: Optional[SourceRange]) -> Range:
             start=Position(line=0, character=0),
             end=Position(line=0, character=0),
         )
-    
+
     return Range(
         start=Position(
             line=source_range.start.line,

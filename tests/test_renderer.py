@@ -1,4 +1,4 @@
-from temple.template_renderer import render_passthrough, BlockValidator, RenderError
+from temple.template_renderer import render_passthrough
 
 
 def test_render_passthrough_simple():

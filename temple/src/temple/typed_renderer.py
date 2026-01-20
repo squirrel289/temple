@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Tuple
 
-from .typed_ast import Block, Node
+from .typed_ast import Block
 
 
 class RenderResult:
@@ -12,7 +12,9 @@ class RenderResult:
         self.mapping = mapping
 
 
-def evaluate_ast(root: Block, context: Dict[str, Any], includes: Dict[str, Block] | None = None) -> RenderResult:
+def evaluate_ast(
+    root: Block, context: Dict[str, Any], includes: Dict[str, Block] | None = None
+) -> RenderResult:
     """Evaluate AST to a target-neutral IR and collect a trivial mapping of node types to positions.
 
     Mapping is a list of (node_type, start) tuples for nodes that expose `start`.

@@ -1,4 +1,5 @@
 """Benchmarks for template tokenization across various sizes."""
+
 import os
 from temple import temple_tokenizer
 
@@ -18,9 +19,15 @@ def load_template_text(path):
 class TemplateBenchBase:
     def setup(self):
         # Load templates once per benchmark run
-        self.tpl_small = load_template_text("examples/templates/bench/real_small.md.tmpl")
-        self.tpl_medium = load_template_text("examples/templates/bench/real_medium.md.tmpl")
-        self.tpl_large = load_template_text("examples/templates/bench/real_large.html.tmpl")
+        self.tpl_small = load_template_text(
+            "examples/templates/bench/real_small.md.tmpl"
+        )
+        self.tpl_medium = load_template_text(
+            "examples/templates/bench/real_medium.md.tmpl"
+        )
+        self.tpl_large = load_template_text(
+            "examples/templates/bench/real_large.html.tmpl"
+        )
 
 
 class BenchTemplateSmall(TemplateBenchBase):

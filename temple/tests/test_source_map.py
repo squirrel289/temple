@@ -2,9 +2,8 @@
 Tests for source mapping and position tracking.
 """
 
-import pytest
-from temple.compiler.source_map import SourceMap
-from temple.diagnostics import Position, SourceRange
+from temple.compiler.source_map import SourceMap, PositionTracker, DiagnosticMapper
+from temple.diagnostics import Position
 
 
 class TestPositionTracker:
@@ -93,7 +92,7 @@ class TestSourceMap:
 
         source_map = SourceMap(original, preprocessed)
 
-        prep_range = start = (0, 0)
+        prep_range = (0, 0)
         orig_range = source_map.preprocessed_range_to_original(prep_range)
 
         assert orig_range.start.line == 0
@@ -122,7 +121,7 @@ class TestDiagnosticMapper:
         mapper = DiagnosticMapper(source_map)
 
         # Map preprocessed range back to original
-        prep_range = start = (0, 0)
+        prep_range = (0, 0)
         orig_range = mapper.map_range_from_preprocessed(prep_range)
 
         assert orig_range.start.line == 0

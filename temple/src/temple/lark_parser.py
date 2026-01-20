@@ -1,6 +1,6 @@
-from lark import Lark, Transformer, v_args
+from lark import Lark, Transformer
 from lark.exceptions import UnexpectedInput, UnexpectedToken, UnexpectedCharacters
-from typing import Any, Tuple, List
+from typing import Tuple, List
 import re
 
 from .typed_ast import Block, Text, Expression, If, For, Include
@@ -74,9 +74,11 @@ class ToTypedAST(Transformer):
     def if_block(self, items):
         # items: OPEN_IF token, body, optional else_if_chain (list), optional (OPEN_ELSE, block), OPEN_END token
         open_if = items[0]
-        s = str(open_if)
+        # Normalize OPEN_IF token to a plain string (handles lark Token objects)
+        if not isinstance(open_if, str):
+            open_if = getattr(open_if, "value", str(open_if))
         # crude parse: find 'if' and take remainder before '%}'
-        cond = s.split("if", 1)[1].rsplit("%", 1)[0].strip()
+        cond = open_if.split("if", 1)[1].rsplit("%", 1)[0].strip()
         body = items[1]
         idx = 2
         else_if_parts = []
@@ -94,10 +96,7 @@ class ToTypedAST(Transformer):
             # If it's a string token (OPEN_ELSE or OPEN_END)
             if isinstance(next_item, str):
                 # Check if it's OPEN_ELSE
-                if (
-                    "else" in str(next_item).lower()
-                    and "if" not in str(next_item).lower()
-                ):
+                if "else" in next_item.lower() and "if" not in next_item.lower():
                     idx += 1  # Skip OPEN_ELSE
                     # Next should be the else body Block
                     if idx < len(items) and isinstance(items[idx], Block):
@@ -110,8 +109,8 @@ class ToTypedAST(Transformer):
 
         # Validate OPEN_END token
         if idx < len(items):
-            end_token = items[idx]
             # end_token should be the OPEN_END string; no validation needed since grammar ensures it
+            _ = items[idx]
 
         # Use keyword args to avoid positional confusion between legacy and new names
         return If(
@@ -128,18 +127,20 @@ class ToTypedAST(Transformer):
         while i < len(items):
             open_tok = items[i]
             body = items[i + 1] if i + 1 < len(items) else None
-            s = str(open_tok)
+            if not isinstance(open_tok, str):
+                open_tok = getattr(open_tok, "value", str(open_tok))
             # Extract condition from `{% else if <condition> %}`
-            cond = s.split("if", 1)[1].rsplit("%", 1)[0].strip()
+            cond = open_tok.split("if", 1)[1].rsplit("%", 1)[0].strip()
             parts.append((cond, body))
             i += 2
         return parts
 
     def for_block(self, items):
         open_for = items[0]
-        s = str(open_for)
+        if not isinstance(open_for, str):
+            open_for = getattr(open_for, "value", str(open_for))
         # crude parse: 'for var in iterable' extract var and iterable
-        inner = s.lstrip("{").lstrip("%").rstrip("%").rstrip("}").strip()
+        inner = open_for.lstrip("{").lstrip("%").rstrip("%").rstrip("}").strip()
         # inner like 'for x in items'
         parts = inner.split()
         try:
@@ -160,13 +161,14 @@ class ToTypedAST(Transformer):
 
     def include(self, items):
         (tok,) = items
-        s = str(tok)
+        if not isinstance(tok, str):
+            tok = getattr(tok, "value", str(tok))
         # crude parse: find the quoted name inside include tag
         # e.g. "{% include 'footer' %}" or {% include "footer" %}
         import re
 
-        m = re.search(r"include\s+['\"]([^'\"]+)['\"]", s)
-        name = m.group(1) if m else s
+        m = re.search(r"include\s+['\"]([^'\"]+)['\"]", tok)
+        name = m.group(1) if m else tok
         return Include(name)
 
     def block(self, items):

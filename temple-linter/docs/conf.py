@@ -5,29 +5,30 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src'))
+
+sys.path.insert(0, os.path.abspath("../src"))
 
 # -- Project information -----------------------------------------------------
-project = 'Temple Linter'
-copyright = '2026, Temple Project'
-author = 'Temple Project'
-release = '0.1.0'
+project = "Temple Linter"
+copyright = "2026, Temple Project"
+author = "Temple Project"
+release = "0.1.0"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.intersphinx',
-    'sphinx_autodoc_typehints',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx_autodoc_typehints",
 ]
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
 
 # -- Extension configuration -------------------------------------------------
 
@@ -47,19 +48,19 @@ napoleon_type_aliases = None
 
 # Autodoc settings
 autodoc_default_options = {
-    'members': True,
-    'member-order': 'bysource',
-    'special-members': '__init__',
-    'undoc-members': True,
-    'exclude-members': '__weakref__'
+    "members": True,
+    "member-order": "bysource",
+    "special-members": "__init__",
+    "undoc-members": True,
+    "exclude-members": "__weakref__",
 }
 
 # Intersphinx configuration
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'pygls': ('https://pygls.readthedocs.io/en/latest/', None),
+    "python": ("https://docs.python.org/3", None),
+    "pygls": ("https://pygls.readthedocs.io/en/latest/", None),
 }
 
 # Type hints
-typehints_defaults = 'comma'
+typehints_defaults = "comma"
 always_document_param_types = True

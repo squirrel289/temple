@@ -5,11 +5,9 @@ Tests for base serializer interface and functionality.
 import pytest
 from temple.compiler.serializers.base import (
     Serializer,
-    SerializationError,
     SerializationContext,
 )
 from temple.typed_ast import Text, Expression, Block
-from temple.diagnostics import SourceRange, Position
 
 
 class MockSerializer(Serializer):
@@ -78,7 +76,7 @@ class TestBasicSerialization:
 
     def test_text_serialization(self):
         """Test serializing text nodes."""
-        source = start = (0, 0)
+        source = (0, 0)
         text = Text("hello", source)
         serializer = MockSerializer()
         result = serializer.serialize(text, {})
@@ -86,7 +84,7 @@ class TestBasicSerialization:
 
     def test_expression_serialization(self):
         """Test serializing expressions."""
-        source = start = (0, 0)
+        source = (0, 0)
         expr = Expression("name", source)
         serializer = MockSerializer()
         result = serializer.serialize(expr, {"name": "world"})
@@ -94,7 +92,7 @@ class TestBasicSerialization:
 
     def test_block_serialization(self):
         """Test serializing blocks."""
-        source = start = (0, 0)
+        source = (0, 0)
         children = [
             Text("Hello ", source),
             Expression("name", source),

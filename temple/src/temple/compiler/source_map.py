@@ -7,7 +7,7 @@ and AST node positions for accurate error reporting.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
+from typing import List, Tuple
 from temple.diagnostics import Position, SourceRange
 
 

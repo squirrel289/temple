@@ -9,7 +9,6 @@ import pytest
 
 from temple.typed_ast import Block
 from temple.diagnostics import Position, SourceRange
-from temple.lark_parser import parse_with_diagnostics
 from temple.compiler.type_checker import TypeChecker
 from temple.compiler.serializers.markdown_serializer import MarkdownSerializer
 from temple.compiler.serializers.json_serializer import JSONSerializer

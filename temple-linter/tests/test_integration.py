@@ -10,10 +10,10 @@ Tests the full workflow:
 6. Diagnostic mapping
 7. Diagnostic merging
 """
+
 import pathlib
 import sys
-from unittest.mock import Mock, MagicMock
-
+from unittest.mock import Mock
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -21,10 +21,26 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from temple_linter.services.lint_orchestrator import LintOrchestrator
-from temple_linter.services.token_cleaning_service import TokenCleaningService
-from temple_linter.base_format_linter import BaseFormatLinter
-from lsprotocol.types import Diagnostic, Range, Position
+try:
+    from temple_linter.services.lint_orchestrator import LintOrchestrator
+    from temple_linter.services.token_cleaning_service import TokenCleaningService
+    from temple_linter.base_format_linter import BaseFormatLinter
+    from lsprotocol.types import Diagnostic, Range, Position
+except Exception:
+    # Fall back to adjusting sys.path in test environments where package isn't
+    # available on the PYTHONPATH.
+    import pathlib
+    import sys
+
+    ROOT = pathlib.Path(__file__).resolve().parents[1]
+    SRC = ROOT / "src"
+    if str(SRC) not in sys.path:
+        sys.path.insert(0, str(SRC))
+
+    from temple_linter.services.lint_orchestrator import LintOrchestrator
+    from temple_linter.services.token_cleaning_service import TokenCleaningService
+    from temple_linter.base_format_linter import BaseFormatLinter
+    from lsprotocol.types import Diagnostic, Range, Position
 
 
 @pytest.fixture
@@ -58,11 +74,11 @@ class TestFullPipeline:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///test.json.tmpl", mock_language_client
         )
-        
+
         # Should have no errors for valid template
         assert isinstance(diagnostics, list)
         # Template linting may produce diagnostics, but structure should be valid
@@ -79,20 +95,19 @@ class TestFullPipeline:
         # Mock base linter finding JSON error
         mock_diagnostic = Diagnostic(
             range=Range(
-                start=Position(line=3, character=2),
-                end=Position(line=3, character=12)
+                start=Position(line=3, character=2), end=Position(line=3, character=12)
             ),
             message="Expected comma or closing brace",
-            severity=1
+            severity=1,
         )
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": [mock_diagnostic]
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///test.json.tmpl", mock_language_client
         )
-        
+
         assert isinstance(diagnostics, list)
         # Should receive diagnostics from base linter
 
@@ -109,11 +124,11 @@ dependencies:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///config.yaml.tmpl", mock_language_client
         )
-        
+
         assert isinstance(diagnostics, list)
 
     def test_html_template_with_control_flow(self, orchestrator, mock_language_client):
@@ -140,11 +155,11 @@ dependencies:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///page.html.tmpl", mock_language_client
         )
-        
+
         assert isinstance(diagnostics, list)
 
     def test_markdown_template_with_loops(self, orchestrator, mock_language_client):
@@ -167,11 +182,11 @@ dependencies:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///README.md.tmpl", mock_language_client
         )
-        
+
         assert isinstance(diagnostics, list)
 
     def test_custom_delimiters(self, orchestrator, mock_language_client):
@@ -187,11 +202,11 @@ dependencies:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///test.json.tmpl", mock_language_client
         )
-        
+
         assert isinstance(diagnostics, list)
 
     def test_custom_temple_extensions(self, orchestrator, mock_language_client):
@@ -203,16 +218,16 @@ value: {{ config.value }}
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         # Test with custom extension
         custom_extensions = [".tpl", ".jinja", ".tmpl"]
         diagnostics = orchestrator.lint_template(
             template,
             "file:///config.yaml.tpl",
             mock_language_client,
-            temple_extensions=custom_extensions
+            temple_extensions=custom_extensions,
         )
-        
+
         assert isinstance(diagnostics, list)
 
 
@@ -225,9 +240,9 @@ class TestTokenCleaning:
         template = """line 1
 {{ expr }}
 line 3"""
-        
+
         cleaned, tokens = service.clean_text_and_tokens(template)
-        
+
         # Cleaned text should have template tokens removed
         assert "expr" not in cleaned
         assert "line 1" in cleaned
@@ -237,9 +252,9 @@ line 3"""
         """Test cleaning multiple token types."""
         service = TokenCleaningService()
         template = "{% if x %}{{ y }}{# comment #}text"
-        
+
         cleaned, tokens = service.clean_text_and_tokens(template)
-        
+
         assert "if x" not in cleaned
         assert "y" not in cleaned
         assert "comment" not in cleaned
@@ -252,7 +267,7 @@ class TestFormatDetection:
     def test_detect_by_extension(self):
         """Test format detection by file extension."""
         linter = BaseFormatLinter()
-        
+
         assert linter.detect_base_format("config.json", "{}") == "json"
         assert linter.detect_base_format("data.yaml", "key: value") == "yaml"
         assert linter.detect_base_format("index.html", "<html></html>") == "html"
@@ -263,15 +278,15 @@ class TestFormatDetection:
     def test_detect_by_content(self):
         """Test format detection by content when no extension."""
         linter = BaseFormatLinter()
-        
+
         # JSON content
         json_content = '{"key": "value"}'
         assert linter.detect_base_format(None, json_content) == "json"
-        
+
         # HTML content
         html_content = "<!DOCTYPE html><html></html>"
         assert linter.detect_base_format(None, html_content) == "html"
-        
+
         # XML content
         xml_content = "<?xml version='1.0'?><root></root>"
         assert linter.detect_base_format(None, xml_content) == "xml"
@@ -279,11 +294,11 @@ class TestFormatDetection:
     def test_detect_temple_extension_stripping(self):
         """Test that temple extensions are properly stripped."""
         from temple_linter.base_format_linter import strip_temple_extension
-        
+
         # Default extensions
         assert strip_temple_extension("config.json.tmpl") == "config.json"
         assert strip_temple_extension("data.yaml.template") == "data.yaml"
-        
+
         # Custom extensions
         assert strip_temple_extension("file.tpl", [".tpl"]) == "file"
         assert strip_temple_extension("file.jinja", [".jinja", ".tmpl"]) == "file"
@@ -310,11 +325,11 @@ class TestEndToEnd:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///users.json.tmpl", mock_language_client
         )
-        
+
         assert isinstance(diagnostics, list)
         # Valid template should produce minimal or no diagnostics
 
@@ -335,11 +350,11 @@ services:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///docker-compose.yaml.tmpl", mock_language_client
         )
-        
+
         assert isinstance(diagnostics, list)
 
     def test_mixed_content_with_edge_cases(self, orchestrator, mock_language_client):
@@ -354,12 +369,13 @@ services:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///complex.json.tmpl", mock_language_client
         )
-        
+
         assert isinstance(diagnostics, list)
+
 
 class TestSyntaxValidation:
     """Test template syntax validation integration."""
@@ -375,11 +391,11 @@ class TestSyntaxValidation:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///test.json.tmpl", mock_language_client
         )
-        
+
         # Should have at least one diagnostic for unclosed block
         assert len(diagnostics) > 0
         # Check that at least one diagnostic is an error
@@ -396,11 +412,11 @@ class TestSyntaxValidation:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///list.html.tmpl", mock_language_client
         )
-        
+
         # Should have diagnostic for unclosed for
         assert len(diagnostics) > 0
         assert any(d.severity == 1 for d in diagnostics)
@@ -408,15 +424,15 @@ class TestSyntaxValidation:
     def test_malformed_expression_error(self, orchestrator, mock_language_client):
         """Test that malformed expressions produce errors."""
         template = "{{ user. }}"
-        
+
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///test.tmpl", mock_language_client
         )
-        
+
         assert len(diagnostics) > 0
         assert any(d.severity == 1 for d in diagnostics)
 
@@ -433,13 +449,15 @@ class TestSyntaxValidation:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///test.tmpl", mock_language_client
         )
-        
+
         # Should have no syntax errors
-        assert all(d.severity != 1 or "syntax" not in d.message.lower() for d in diagnostics)
+        assert all(
+            d.severity != 1 or "syntax" not in d.message.lower() for d in diagnostics
+        )
 
     def test_multiple_syntax_errors(self, orchestrator, mock_language_client):
         """Test that multiple syntax errors are all reported."""
@@ -451,11 +469,11 @@ class TestSyntaxValidation:
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": []
         }
-        
+
         diagnostics = orchestrator.lint_template(
             template, "file:///test.tmpl", mock_language_client
         )
-        
+
         # Should have multiple errors
         assert len(diagnostics) >= 2
         assert any(d.severity == 1 for d in diagnostics)
