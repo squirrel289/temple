@@ -4,8 +4,7 @@ Tests for HTML serializer.
 
 import pytest
 from temple.compiler.serializers.html_serializer import HTMLSerializer
-from temple.typed_ast import Text, Expression, If, For, Block
-from temple.diagnostics import SourceRange, Position
+from temple.typed_ast import Block, Text, Expression, If, For
 
 
 def make_source():
@@ -35,9 +34,9 @@ class TestHTMLSerializer:
     def test_serialize_if_block_true(self):
         """Test if block with true condition."""
         source = make_source()
-        body = [Text("shown", source)]
-        else_body = [Text("hidden", source)]
-        if_node = If("show", body, source, else_body=else_body)
+        body = Block([Text("shown", source)], start=source)
+        else_body = Block([Text("hidden", source)], start=source)
+        if_node = If("show", body, start=source, else_body=else_body)
         
         serializer = HTMLSerializer(pretty=False)
         result = serializer.serialize(if_node, {"show": True})
@@ -46,8 +45,8 @@ class TestHTMLSerializer:
     def test_serialize_for_loop(self):
         """Test for loop serialization."""
         source = make_source()
-        body = [Expression("item", source), Text(" ", source)]
-        for_node = For("item", "items", body, source)
+        body = Block([Expression("item", source), Text(" ", source)], start=source)
+        for_node = For("item", "items", body, start=source)
         
         serializer = HTMLSerializer(pretty=False)
         result = serializer.serialize(for_node, {"items": ["x", "y"]})

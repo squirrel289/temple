@@ -57,8 +57,7 @@ class DiagnosticSeverity(Enum):
     HINT = 4
 
 
-@dataclass
-class DiagnosticTag:
+class DiagnosticTag(Enum):
     """Optional tags for diagnostics."""
 
     UNNECESSARY = 1
@@ -79,7 +78,7 @@ class Diagnostic:
     """Represents a single diagnostic message (error, warning, etc.)."""
 
     message: str
-    source_range: Optional[SourceRange] = None
+    source_range: SourceRange
     severity: DiagnosticSeverity = DiagnosticSeverity.ERROR
     code: Optional[str] = None
     source: str = "temple-compiler"

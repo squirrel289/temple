@@ -6,7 +6,6 @@ import pytest
 import json
 from temple.compiler.serializers.json_serializer import JSONSerializer
 from temple.typed_ast import Text, Expression, If, For, Block
-from temple.diagnostics import SourceRange, Position
 
 
 def make_source():
@@ -91,9 +90,9 @@ class TestJSONSerializer:
     def test_serialize_if_block_true(self):
         """Test if block with true condition."""
         source = make_source()
-        body = [Text("yes", source)]
-        else_body = [Text("no", source)]
-        if_node = If("flag", body, source, else_body=else_body)
+        body = Block([Text("yes", source)], start=source)
+        else_body = Block([Text("no", source)], start=source)
+        if_node = If("flag", body, start=source, else_body=else_body)
         
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(if_node, {"flag": True})
@@ -102,9 +101,9 @@ class TestJSONSerializer:
     def test_serialize_if_block_false(self):
         """Test if block with false condition."""
         source = make_source()
-        body = [Text("yes", source)]
-        else_body = [Text("no", source)]
-        if_node = If("flag", body, source, else_body=else_body)
+        body = Block([Text("yes", source)], start=source)
+        else_body = Block([Text("no", source)], start=source)
+        if_node = If("flag", body, start=source, else_body=else_body)
         
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(if_node, {"flag": False})
@@ -113,8 +112,8 @@ class TestJSONSerializer:
     def test_serialize_for_loop(self):
         """Test for loop serialization."""
         source = make_source()
-        body = [Expression("item", source)]
-        for_node = For("item", "items", body, source)
+        body = Block([Expression("item", source)], start=source)
+        for_node = For("item", "items", body, start=source)
         
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(for_node, {"items": [1, 2, 3]})
@@ -170,7 +169,7 @@ class TestJSONSerializerErrors:
         """Test that non-iterable in for loop raises error in strict mode."""
         from temple.compiler.serializers.base import SerializationError
         source = make_source()
-        body = [Text("item", source)]
+        body = Block([Text("item", source)], start=source)
         for_node = For("item", "count", body, source)
         serializer = JSONSerializer(strict=True)
         

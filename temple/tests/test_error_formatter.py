@@ -2,7 +2,6 @@
 Tests for error formatting.
 """
 
-import pytest
 from temple.compiler.error_formatter import ErrorFormatter, ContextRenderer
 from temple.diagnostics import Diagnostic, DiagnosticSeverity, Position, SourceRange
 
@@ -14,8 +13,8 @@ class TestErrorFormatter:
         formatter = ErrorFormatter(use_colors=False)
         diag = Diagnostic(
             message="Test error",
-            start=(0, 0),
-            code="TEST_001"
+            source_range=SourceRange(Position(0, 0), Position(0, 0)),
+            code="TEST_001",
         )
         
         output = formatter.format_diagnostic(diag, include_context=False)
@@ -29,7 +28,7 @@ class TestErrorFormatter:
         formatter = ErrorFormatter(use_colors=False)
         diag = Diagnostic(
             message="Test warning",
-            start=(0, 0),
+            source_range=SourceRange(Position(0, 0), Position(0, 0)),
             severity=DiagnosticSeverity.WARNING,
             code="WARN_001"
         )
@@ -45,8 +44,8 @@ class TestErrorFormatter:
         
         diag = Diagnostic(
             message="Error here",
-            start=(1, 0),
-            code="TEST_001"
+            source_range=SourceRange(Position(1, 0), Position(1, 0)),
+            code="TEST_001",
         )
         
         output = formatter.format_diagnostic(diag, source_text=source, include_context=True)
@@ -59,10 +58,18 @@ class TestErrorFormatter:
         source = "line 1\nline 2\nline 3"
         
         diagnostics = [
-            Diagnostic("Error 1", start=(0, 0), 
-                      severity=DiagnosticSeverity.ERROR, code="E001"),
-            Diagnostic("Warning 1", start=(1, 0), 
-                      severity=DiagnosticSeverity.WARNING, code="W001"),
+            Diagnostic(
+                "Error 1",
+                source_range=SourceRange(Position(0, 0), Position(0, 0)),
+                severity=DiagnosticSeverity.ERROR,
+                code="E001",
+            ),
+            Diagnostic(
+                "Warning 1",
+                source_range=SourceRange(Position(1, 0), Position(1, 0)),
+                severity=DiagnosticSeverity.WARNING,
+                code="W001",
+            ),
         ]
         
         output = formatter.format_diagnostics(diagnostics, source_text=source)
@@ -76,8 +83,8 @@ class TestErrorFormatter:
         formatter = ErrorFormatter(use_colors=True)
         diag = Diagnostic(
             message="Test error",
-            start=(0, 0),
-            code="TEST_001"
+            source_range=SourceRange(Position(0, 0), Position(0, 0)),
+            code="TEST_001",
         )
         
         output = formatter.format_diagnostic(diag, include_context=False)
@@ -99,11 +106,13 @@ class TestErrorFormatter:
         
         diag = Diagnostic(
             message="Error at position 50",
-            start=(0, 50)
+            source_range=SourceRange(Position(0, 50), Position(0, 50)),
         )
-        
-        output = formatter.format_diagnostic(diag, source_text=source, include_context=True)
-        
+
+        output = formatter.format_diagnostic(
+            diag, source_text=source, include_context=True
+        )
+
         assert "Error at position 50" in output
 
 
@@ -176,7 +185,7 @@ class TestFormatterIntegration:
         
         diag = Diagnostic(
             message="Undefined variable 'undefined'",
-            start=(0, 4),
+            source_range=SourceRange(Position(0, 4), Position(0, 4)),
             severity=DiagnosticSeverity.ERROR,
             code="UNDEFINED_VAR",
             source="type-checker"
