@@ -2,7 +2,6 @@
 Advanced tests for lark_parser with error handling (ported from compiler tests).
 """
 
-import pytest
 from temple.lark_parser import parse_template, parse_with_diagnostics
 from temple.typed_ast import Text, Expression, If, For, Include, Block
 from temple.diagnostics import DiagnosticSeverity

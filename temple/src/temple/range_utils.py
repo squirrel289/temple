@@ -1,14 +1,18 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple, Protocol
+from typing import Optional, Tuple, Protocol, TYPE_CHECKING
 import warnings
 
 # Import diagnostics types lazily to avoid circular imports
 
 
+if TYPE_CHECKING:
+    from .diagnostics import Position, SourceRange
+
+
 class RangeLike(Protocol):
-    start: Position
-    end: Position
+    start: "Position"
+    end: "Position"
 
 
 def make_source_range(
@@ -16,7 +20,7 @@ def make_source_range(
     start: Optional[Tuple[int, int]] = None,
     end: Optional[Tuple[int, int]] = None,
     allow_duck: bool = True,
-) -> SourceRange:
+) -> "SourceRange":
     """Normalize various range-like inputs into a canonical SourceRange.
 
     Accepts either a SourceRange, a (start,) or (start,end) tuple pair, or

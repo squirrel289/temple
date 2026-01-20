@@ -8,7 +8,6 @@ and content heuristics; the registry selects the highest-confidence format.
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Protocol
 
@@ -19,19 +18,18 @@ VSCODE_PASSTHROUGH = "vscode-auto"  # sentinel for VS Code auto-detection
 
 
 def strip_temple_extension(
-    filename: Optional[str],
-    extensions: List[str] = None
+    filename: Optional[str], extensions: List[str] = None
 ) -> Optional[str]:
     """Strip temple suffix from filename, preserving base extension for VS Code detection.
-    
+
     Args:
         filename: Original filename (e.g., "config.json.tmpl")
         extensions: List of temple extensions to strip (e.g., [".tmpl", ".template"])
             If None, defaults to [".tmpl", ".template"]
-    
+
     Returns:
         Filename with temple extension removed, or original if no match
-    
+
     Examples:
         strip_temple_extension("config.json.tmpl") -> "config.json"
         strip_temple_extension("README.md.template") -> "README.md"
@@ -41,17 +39,17 @@ def strip_temple_extension(
     """
     if not filename:
         return filename
-    
+
     if extensions is None:
         extensions = [".tmpl", ".template"]
-    
+
     # Strip any matching temple extension (case-insensitive)
     base = filename
     for ext in extensions:
         if base.lower().endswith(ext.lower()):
-            base = base[:-len(ext)]
+            base = base[: -len(ext)]
             break
-    
+
     return base
 
 
@@ -239,7 +237,9 @@ class BaseFormatLinter:
         """Detect the base format using registered detectors with confidence scoring."""
         return self.registry.detect(filename, text)
 
-    def lint_base_format(self, text: str, filename: Optional[str] = None) -> List[Dict[str, Any]]:
+    def lint_base_format(
+        self, text: str, filename: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Lint the base format of a templated file by stripping template tokens first.
         Returns diagnostics from the base linter (placeholder).
@@ -247,8 +247,10 @@ class BaseFormatLinter:
         base_text = strip_template_tokens(text, self.delimiters)
         base_format = self.detect_base_format(filename, base_text)
         diagnostics: List[Dict[str, Any]] = []
-        diagnostics.append({
-            "base_format": base_format,
-            "info": f"Detected base format: {base_format}",
-        })
+        diagnostics.append(
+            {
+                "base_format": base_format,
+                "info": f"Detected base format: {base_format}",
+            }
+        )
         return diagnostics

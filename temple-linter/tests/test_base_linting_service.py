@@ -1,14 +1,23 @@
 import sys
 import pathlib
 
-import pytest
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from temple_linter.services.base_linting_service import BaseLintingService
+try:
+    from temple_linter.services.base_linting_service import BaseLintingService
+except Exception:
+    import pathlib
+    import sys
+
+    ROOT = pathlib.Path(__file__).resolve().parents[1]
+    SRC = ROOT / "src"
+    if str(SRC) not in sys.path:
+        sys.path.insert(0, str(SRC))
+
+    from temple_linter.services.base_linting_service import BaseLintingService
 
 
 class _FakeResult:
@@ -38,7 +47,10 @@ def test_request_base_diagnostics_strips_extension():
     diagnostics_payload = {
         "diagnostics": [
             {
-                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 1}},
+                "range": {
+                    "start": {"line": 0, "character": 0},
+                    "end": {"line": 0, "character": 1},
+                },
                 "message": "example",
                 "source": "json",
             }
@@ -70,12 +82,15 @@ def test_request_base_diagnostics_strips_extension():
 def test_request_base_diagnostics_coerces_dict_to_diagnostic():
     """Verify dict diagnostics are coerced into LSP Diagnostic objects."""
     from lsprotocol.types import Diagnostic as LspDiagnostic
-    
+
     diagnostics_payload = {
         "diagnostics": [
             # Raw dict
             {
-                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 5}},
+                "range": {
+                    "start": {"line": 0, "character": 0},
+                    "end": {"line": 0, "character": 5},
+                },
                 "message": "error from dict",
                 "severity": 1,
             }

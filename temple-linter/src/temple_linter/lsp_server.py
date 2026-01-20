@@ -4,6 +4,7 @@ Temple LSP Server - Thin adapter for Language Server Protocol
 This server delegates all linting logic to service classes following
 Single Responsibility Principle. See services/ directory for implementation.
 """
+
 from pygls.lsp.server import LanguageServer
 from pygls.lsp.client import LanguageClient
 from lsprotocol.types import (
@@ -31,7 +32,7 @@ from temple_linter.services.lint_orchestrator import LintOrchestrator
 
 class TempleLinterServer(LanguageServer):
     """LSP server for temple template linting."""
-    
+
     def __init__(self):
         super().__init__("temple-linter", "v1")
         self.logger = logging.getLogger(__name__)
@@ -81,7 +82,9 @@ def did_open(ls: TempleLinterServer, params: DidOpenTextDocumentParams):
 def did_change(ls: TempleLinterServer, params: DidChangeTextDocumentParams):
     """Handle document change event."""
     text_doc = ls.workspace.get_text_document(params.text_document.uri)
-    diagnostics = ls.orchestrator.lint_template(text_doc.source, text_doc.uri, lc, ls.temple_extensions)
+    diagnostics = ls.orchestrator.lint_template(
+        text_doc.source, text_doc.uri, lc, ls.temple_extensions
+    )
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
             uri=text_doc.uri,
@@ -94,7 +97,9 @@ def did_change(ls: TempleLinterServer, params: DidChangeTextDocumentParams):
 def did_save(ls: TempleLinterServer, params: DidSaveTextDocumentParams):
     """Handle document save event."""
     text_doc = ls.workspace.get_text_document(params.text_document.uri)
-    diagnostics = ls.orchestrator.lint_template(text_doc.source, text_doc.uri, lc, ls.temple_extensions)
+    diagnostics = ls.orchestrator.lint_template(
+        text_doc.source, text_doc.uri, lc, ls.temple_extensions
+    )
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
             uri=text_doc.uri,

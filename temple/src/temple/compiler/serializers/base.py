@@ -69,7 +69,7 @@ class SerializationContext:
         value = self.scope_stack[-1]  # Current scope
         if path is None:
             return value
-        
+
         parts = path.split(".")
 
         for part in parts:

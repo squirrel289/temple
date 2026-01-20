@@ -9,7 +9,7 @@ Provides:
 """
 
 from typing import List, Tuple, Optional
-from temple.template_tokenizer import Token, temple_tokenizer, TokenType
+from temple.template_tokenizer import Token, temple_tokenizer
 
 
 class RenderError(Exception):

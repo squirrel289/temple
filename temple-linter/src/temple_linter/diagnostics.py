@@ -16,8 +16,7 @@ def map_diagnostics(
     # Map base diagnostics to original template positions if possible
     mapped_base = []
     if base_diagnostics and "preprocessed_text" in base_diagnostics[0]:
-        # Assume preprocessed_text and original_text are provided for mapping
-        preprocessed_text = base_diagnostics[0]["preprocessed_text"]
+        # Assume original_text is provided for mapping
         original_text = base_diagnostics[0]["original_text"]
         mapping = TemplateMapping(original_text)
         for diag in base_diagnostics:

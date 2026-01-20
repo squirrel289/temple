@@ -24,7 +24,7 @@ try:
         Include,
         Text,
     )
-    
+
     __all__ = [
         "TypedTemplateParser",
         "TypeChecker",
@@ -41,9 +41,9 @@ try:
     ]
 except ImportError as e:
     import warnings
+
     warnings.warn(
-        f"Could not import temple core: {e}. "
-        "Please install temple: pip install temple",
-        ImportWarning
+        f"Could not import temple core: {e}. Please install temple: pip install temple",
+        ImportWarning,
     )
     __all__ = []

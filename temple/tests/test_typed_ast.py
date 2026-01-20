@@ -14,10 +14,12 @@ def test_basic_expression_and_text():
 
 
 def test_for_loop_and_markdown():
-    root = Block([
-        Text("List:"),
-        For("x", "items", Block([Text("- "), Expression("x")])),
-    ])
+    root = Block(
+        [
+            Text("List:"),
+            For("x", "items", Block([Text("- "), Expression("x")])),
+        ]
+    )
     ctx = {"items": ["a", "b"]}
     res = evaluate_ast(root, ctx)
     # flattened list contains dash prefixes and items
@@ -25,6 +27,7 @@ def test_for_loop_and_markdown():
     assert "a" in res.ir and "b" in res.ir
     md = markdown_serialize(res.ir)
     assert "List:" in md and "a" in md and "b" in md
+
 
 # precommit test
 

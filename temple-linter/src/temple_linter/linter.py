@@ -5,35 +5,37 @@ Core linting logic for templated files.
 Integrates temple core parser for comprehensive syntax validation.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from temple.lark_parser import parse_with_diagnostics
-from temple.diagnostics import Diagnostic, DiagnosticSeverity, DiagnosticCollector, Position, SourceRange
+from temple.diagnostics import (
+    Diagnostic,
+)
 
 
 class TemplateLinter:
     """
     Template linter with syntax validation using temple core parser.
-    
+
     Validates template syntax and returns diagnostics for:
     - Unclosed blocks (if, for, etc.)
     - Malformed expressions
     - Invalid statements
     - Syntax errors
     """
-    
+
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
-    
+
     def lint(self, text: str) -> List[Diagnostic]:
         """
         Parse template and return syntax diagnostics.
-        
+
         Args:
             text: Template content to validate
-            
+
         Returns:
             List of Diagnostic objects with syntax errors
-            
+
         Example:
             >>> linter = TemplateLinter()
             >>> diagnostics = linter.lint("{% if user.active %}{{ user.name }}")

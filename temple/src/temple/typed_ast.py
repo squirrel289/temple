@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple
-from temple.diagnostics import Position, SourceRange
+from temple.diagnostics import SourceRange
 from temple.range_utils import make_source_range
 
 

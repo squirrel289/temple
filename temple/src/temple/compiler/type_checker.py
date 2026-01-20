@@ -188,8 +188,8 @@ class TypeChecker:
 
     def _check_if(self, node: If, env: TypeEnvironment) -> BaseType:
         """Check an if statement."""
-        # Check condition expression
-        condition_type = self._check_expression(
+        # Check condition expression (result not used directly)
+        self._check_expression(
             Expression(expr=node.condition, source_range=node.source_range), env
         )
 
@@ -227,7 +227,7 @@ class TypeChecker:
         ):
             self.errors.add_error(
                 kind=TypeErrorKind.TYPE_MISMATCH,
-                message=f"Cannot iterate over non-array type",
+                message="Cannot iterate over non-array type",
                 source_range=node.source_range,
                 expected_type="array",
                 actual_type=type(iterable_type).__name__,

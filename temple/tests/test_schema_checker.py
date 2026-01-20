@@ -5,9 +5,10 @@ from temple.schema_checker import validate
 
 def test_schema_missing_required_property():
     # build AST with start positions for mapping
-    obj = ObjectNode([
-        ("skills", Array([Expression("user.skills", start=(2, 1))], start=(2, 1)))
-    ], start=(1, 0))
+    obj = ObjectNode(
+        [("skills", Array([Expression("user.skills", start=(2, 1))], start=(2, 1)))],
+        start=(1, 0),
+    )
     ctx = {"user": {"skills": ["a", "b"]}}
     res = evaluate_ast(obj, ctx)
 
@@ -24,9 +25,12 @@ def test_schema_missing_required_property():
 
 
 def test_schema_type_mismatch():
-    obj = ObjectNode([
-        ("name", Expression("user.name", start=(1, 2))),
-    ], start=(1, 0))
+    obj = ObjectNode(
+        [
+            ("name", Expression("user.name", start=(1, 2))),
+        ],
+        start=(1, 0),
+    )
     ctx = {"user": {"name": 123}}
     res = evaluate_ast(obj, ctx)
     schema = {"type": "object", "properties": {"name": {"type": "string"}}}

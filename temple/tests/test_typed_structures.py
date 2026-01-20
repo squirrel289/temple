@@ -3,10 +3,12 @@ from temple.typed_renderer import evaluate_ast, json_serialize
 
 
 def test_object_and_array_serialization():
-    obj = ObjectNode([
-        ("name", Expression("user.name")),
-        ("skills", Array([Expression("user.skills")])),
-    ])
+    obj = ObjectNode(
+        [
+            ("name", Expression("user.name")),
+            ("skills", Array([Expression("user.skills")])),
+        ]
+    )
     ctx = {"user": {"name": "Alice", "skills": ["Python", "Templating"]}}
     res = evaluate_ast(obj, ctx)
     assert isinstance(res.ir, dict)

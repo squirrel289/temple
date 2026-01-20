@@ -1,17 +1,29 @@
-import pathlib
 import sys
-
-import pytest
+import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from temple_linter.template_preprocessing import (
-    strip_template_tokens,
-    _compile_strip_pattern,
-)
+try:
+    from temple_linter.template_preprocessing import (
+        strip_template_tokens,
+        _compile_strip_pattern,
+    )
+except Exception:
+    import pathlib
+    import sys
+
+    ROOT = pathlib.Path(__file__).resolve().parents[1]
+    SRC = ROOT / "src"
+    if str(SRC) not in sys.path:
+        sys.path.insert(0, str(SRC))
+
+    from temple_linter.template_preprocessing import (
+        strip_template_tokens,
+        _compile_strip_pattern,
+    )
 
 
 def test_strip_default_delimiters():
