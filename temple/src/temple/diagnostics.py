@@ -6,16 +6,32 @@ Provides error, warning, and info diagnostics with source positions
 and LSP format conversion. Used by both lark_parser and temple-linter.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any, Tuple
+from typing import (
+    List,
+    Optional,
+    Dict,
+    Any,
+    Tuple,
+    Sequence,
+    overload,
+    Union,
+)
 from enum import Enum
 
 from .range_utils import make_source_range
 
 
-@dataclass
-class Position:
-    """Position in source text (0-indexed)."""
+@dataclass(frozen=True)
+class Position(Sequence[int]):
+    """Position in source text (0-indexed).
+
+    Implements a minimal `Sequence` interface so `Position` can be
+    unpacked/indexed like a `(line, column)` tuple while remaining
+    immutable.
+    """
 
     line: int
     column: int
@@ -32,10 +48,42 @@ class Position:
     def __str__(self) -> str:
         return f"{self.line + 1}:{self.column + 1}"  # Human-readable (1-indexed)
 
+    # Sequence protocol (tuple-like behavior)
+    def __len__(self) -> int:  # type: ignore[override]
+        return 2
 
-@dataclass
-class SourceRange:
-    """Range in source text."""
+    @overload
+    def __getitem__(self, index: int) -> int:  # pragma: no cover - typing only
+        ...
+
+    @overload
+    def __getitem__(
+        self, index: slice
+    ) -> Tuple[int, ...]:  # pragma: no cover - typing only
+        ...
+
+    def __getitem__(self, index: Union[int, slice]):
+        if isinstance(index, int):
+            if index == 0:
+                return self.line
+            if index == 1:
+                return self.column
+            raise IndexError("Position index out of range")
+        # slice -> return tuple of ints
+        start = 0 if index.start is None else index.start
+        stop = 2 if index.stop is None else index.stop
+        step = 1 if index.step is None else index.step
+        vals = (self.line, self.column)
+        return tuple(vals[start:stop:step])
+
+
+@dataclass(frozen=True)
+class SourceRange(Sequence["Position"]):
+    """Range in source text.
+
+    Sequence-like (start, end) for convenient unpacking/indexing while
+    remaining immutable.
+    """
 
     start: Position
     end: Position
@@ -46,6 +94,51 @@ class SourceRange:
 
     def __str__(self) -> str:
         return f"{self.start}-{self.end}"
+
+    @classmethod
+    def from_any(
+        cls,
+        source_range: Optional[object] = None,
+        start: Optional[Tuple[int, int]] = None,
+        end: Optional[Tuple[int, int]] = None,
+        allow_duck: bool = True,
+    ) -> "SourceRange":
+        """Construct a canonical SourceRange from several accepted shapes.
+
+        This is a convenience wrapper around `make_source_range` so callers
+        can request a canonical `SourceRange` directly from the type.
+        """
+        return make_source_range(
+            source_range=source_range, start=start, end=end, allow_duck=allow_duck
+        )
+
+    # Sequence protocol
+    def __len__(self) -> int:  # type: ignore[override]
+        return 2
+
+    @overload
+    def __getitem__(self, index: int) -> "Position":  # pragma: no cover - typing only
+        ...
+
+    @overload
+    def __getitem__(
+        self, index: slice
+    ) -> Tuple["Position", ...]:  # pragma: no cover - typing only
+        ...
+
+    def __getitem__(self, index: Union[int, slice]):
+        if isinstance(index, int):
+            if index == 0:
+                return self.start
+            if index == 1:
+                return self.end
+            raise IndexError("SourceRange index out of range")
+        # slice -> return tuple of Positions
+        start = 0 if index.start is None else index.start
+        stop = 2 if index.stop is None else index.stop
+        step = 1 if index.step is None else index.step
+        vals = (self.start, self.end)
+        return tuple(vals[start:stop:step])
 
 
 class DiagnosticSeverity(Enum):
@@ -113,7 +206,7 @@ class Diagnostic:
         Returns:
             Dict with LSP diagnostic fields (range, message, severity, etc.)
         """
-        diagnostic = {
+        diagnostic: Dict[str, Any] = {
             "range": self.source_range.to_lsp(),
             "message": self.message,
             "severity": self.severity.value,
@@ -124,16 +217,18 @@ class Diagnostic:
             diagnostic["code"] = self.code
 
         if self.related_information:
-            diagnostic["relatedInformation"] = [
-                {
-                    "message": ri.message,
-                    "location": {
-                        "uri": ri.location_uri,
-                        "range": ri.location_range.to_lsp(),
-                    },
-                }
-                for ri in self.related_information
-            ]
+            related_list: List[Dict[str, Any]] = []
+            for ri in self.related_information:
+                related_list.append(
+                    {
+                        "message": ri.message,
+                        "location": {
+                            "uri": ri.location_uri,
+                            "range": ri.location_range.to_lsp(),
+                        },
+                    }
+                )
+            diagnostic["relatedInformation"] = related_list
 
         if self.tags:
             diagnostic["tags"] = [tag.value for tag in self.tags]
@@ -221,6 +316,75 @@ class DiagnosticCollector:
     def clear(self):
         """Clear all diagnostics."""
         self.diagnostics.clear()
+
+
+class NodeDiagnosticCollector:
+    """Collects diagnostics attached to AST nodes without mutating them.
+
+    Uses a WeakKeyDictionary to avoid extending node lifetimes. Stores a list
+    of `Diagnostic` objects per node.
+    """
+
+    def __init__(self):
+        import weakref
+
+        # Map nodes -> list of Diagnostic objects. Use a string literal
+        # for the WeakKeyDictionary type to avoid runtime import/type issues.
+        self._map: "weakref.WeakKeyDictionary[object, List[Diagnostic]]" = (
+            weakref.WeakKeyDictionary()
+        )
+
+    def add(self, node: object, diagnostic: Diagnostic):
+        """Add a diagnostic for a node."""
+        lst: Optional[List[Diagnostic]] = self._map.get(node)
+        if lst is None:
+            lst = []
+            self._map[node] = lst
+        lst.append(diagnostic)
+
+    def get(self, node: object) -> List[Diagnostic]:
+        """Return diagnostics for `node` or empty list."""
+        lst: Optional[List[Diagnostic]] = self._map.get(node)
+        return list(lst or [])
+
+    def pop(self, node: object) -> List[Diagnostic]:
+        """Remove and return diagnostics for `node`."""
+        # pop may return None if not present; normalize to empty list
+        lst: Optional[List[Diagnostic]] = self._map.pop(node, None)
+        return list(lst or [])
+
+    def clear(self):
+        """Clear all stored diagnostics."""
+        self._map.clear()
+
+    def items(self):
+        """Yield (node, diagnostics_list) pairs for all stored nodes."""
+        return list(self._map.items())
+
+    def all_diagnostics(self) -> List[Diagnostic]:
+        """Return a flat list of all diagnostics stored across nodes."""
+        out: List[Diagnostic] = []
+        for lst in self._map.values():
+            out.extend(list(lst))
+        return out
+
+    def serialize(self) -> List[Dict[str, Any]]:
+        """Serialize node-attached diagnostics to LSP-like dicts.
+
+        Returns a list of dicts with `diagnostic` (LSP diagnostic dict) and
+        optional `node_id` and `node_repr` for consumer-side mapping.
+        """
+        out: List[Dict[str, Any]] = []
+        for node, lst in list(self._map.items()):
+            for d in lst:
+                entry: Dict[str, Any] = {"diagnostic": d.to_lsp()}
+                try:
+                    entry["node_id"] = id(node)
+                    entry["node_repr"] = repr(node)
+                except Exception:
+                    pass
+                out.append(entry)
+        return out
 
 
 __all__ = [
