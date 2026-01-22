@@ -2,6 +2,12 @@
 
 ## Status: Active Development
 
+## Requirements
+
+- Python 3.10 or newer is required for development and running tests for the
+   `temple` core. CI uses Python 3.11; using Python 3.11 locally is recommended
+   to match CI environments.
+
 **Primary Purpose**: A declarative, type-safe transformation engine for structured data that validates and emits your target format.
 
 **Current State**: Production-ready tokenization engine with configurable delimiters and LRU-cached performance optimizations.

@@ -55,8 +55,8 @@ The templates in `templates/` directory demonstrate Temple's DSL syntax across m
 
 **Template features demonstrated:**
 - Variable insertion: `{{ user.name }}`
-- Conditionals: `{% if user.active %}...{% endif %}`
-- Loops: `{% for job in user.jobs %}...{% endfor %}`
+- Conditionals: `{% if user.active %}...{% end %}`
+- Loops: `{% for job in user.jobs %}...{% end %}`
 - Includes: `{% include 'header.html' %}`
 - Loop metadata: `{% if loop.last %}` 
 
@@ -158,7 +158,7 @@ Control rendering based on conditions:
   User is active
 {% else %}
   User is inactive
-{% endif %}
+{% end %}
 ```
 
 ### Loops
@@ -168,8 +168,8 @@ Iterate over collections:
 ```template
 {% for job in user.jobs %}
 - {{ job.title }} at {{ job.company }}
-{% if loop.last %} (current){% endif %}
-{% endfor %}
+{% if loop.last %} (current){% end %}
+{% end %}
 ```
 
 ### Template Includes

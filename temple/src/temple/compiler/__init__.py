@@ -18,13 +18,16 @@ from temple.typed_ast import (
     For,
     Include,
 )
+
 # Diagnostics from temple core
 from temple.diagnostics import (
     Position,
     SourceRange,
 )
+
 # Parsing from lark_parser
 from temple.lark_parser import parse_template, parse_with_diagnostics
+
 # Type system
 from temple.compiler.types import (
     BaseType,
@@ -50,17 +53,9 @@ from temple.compiler.schema import (
 )
 from temple.compiler.type_checker import TypeChecker, TypeEnvironment
 from temple.compiler.type_errors import TypeError, TypeErrorCollector
-from temple.compiler.source_map import SourceMap
-from temple.compiler.error_formatter import ErrorFormatter
-from temple.compiler.serializers import (
-    Serializer,
-    SerializationError,
-    SerializationContext,
-    JSONSerializer,
-    MarkdownSerializer,
-    HTMLSerializer,
-    YAMLSerializer,
-)
+# NOTE: Avoid importing heavy or unused serializer/formatter symbols here to
+# reduce top-level import side-effects and satisfy linter rules. Import these
+# on-demand from their modules where they are actually used.
 
 __all__ = [
     # Position & Source Info (from temple.diagnostics)

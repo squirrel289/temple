@@ -3,7 +3,12 @@
 from temple.compiler.parser import TypedTemplateParser
 from temple.compiler.type_checker import TypeChecker
 from temple.compiler.ast_nodes import Block, Position, SourceRange
-from temple.compiler.serializers import JSONSerializer, MarkdownSerializer, HTMLSerializer, YAMLSerializer
+from temple.compiler.serializers import (
+    JSONSerializer,
+    MarkdownSerializer,
+    HTMLSerializer,
+    YAMLSerializer,
+)
 
 
 def _make_block(nodes):

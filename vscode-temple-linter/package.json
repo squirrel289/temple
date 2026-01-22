@@ -10,9 +10,6 @@
     "Other"
   ],
   "main": "./dist/src/extension.js",
-  "activationEvents": [
-    "onLanguage:templated-any"
-  ],
   "contributes": {
     "languages": [
       {
@@ -32,7 +29,10 @@
       "properties": {
         "temple.fileExtensions": {
           "type": "array",
-          "default": [".tmpl", ".template"],
+          "default": [
+            ".tmpl",
+            ".template"
+          ],
           "items": {
             "type": "string"
           },

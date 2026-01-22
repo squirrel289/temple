@@ -1,4 +1,5 @@
 """Benchmarks for tokenizer with different delimiter configurations."""
+
 import os
 from temple import temple_tokenizer
 
@@ -17,7 +18,7 @@ def load_template_text(path):
 
 class TokenizerDelimiterBase:
     """Base class for delimiter benchmarks."""
-    
+
     def setup(self):
         """Load template once."""
         self.tpl_small = load_template_text("examples/bench/real_small.md.tmpl")
@@ -27,15 +28,15 @@ class TokenizerDelimiterBase:
 
 class BenchDefaultDelimiters(TokenizerDelimiterBase):
     """Benchmark tokenization with default delimiters."""
-    
+
     def time_default_small(self):
         """Tokenize small template with default delimiters."""
         list(temple_tokenizer(self.tpl_small))
-    
+
     def time_default_medium(self):
         """Tokenize medium template with default delimiters."""
         list(temple_tokenizer(self.tpl_medium))
-    
+
     def time_default_large(self):
         """Tokenize large template with default delimiters."""
         list(temple_tokenizer(self.tpl_large))
@@ -43,7 +44,7 @@ class BenchDefaultDelimiters(TokenizerDelimiterBase):
 
 class BenchCustomDelimiters(TokenizerDelimiterBase):
     """Benchmark tokenization with custom delimiters."""
-    
+
     def setup(self):
         """Setup templates and custom delimiter config."""
         super().setup()
@@ -52,15 +53,15 @@ class BenchCustomDelimiters(TokenizerDelimiterBase):
             "expression": ("<:", ":>"),
             "comment": ("<#", "#>"),
         }
-    
+
     def time_custom_small(self):
         """Tokenize small template with custom delimiters."""
         list(temple_tokenizer(self.tpl_small, self.custom_delims))
-    
+
     def time_custom_medium(self):
         """Tokenize medium template with custom delimiters."""
         list(temple_tokenizer(self.tpl_medium, self.custom_delims))
-    
+
     def time_custom_large(self):
         """Tokenize large template with custom delimiters."""
         list(temple_tokenizer(self.tpl_large, self.custom_delims))
@@ -68,7 +69,7 @@ class BenchCustomDelimiters(TokenizerDelimiterBase):
 
 class BenchAltDelimiters(TokenizerDelimiterBase):
     """Benchmark tokenization with alternative delimiters."""
-    
+
     def setup(self):
         """Setup templates and alternative delimiter config."""
         super().setup()
@@ -78,15 +79,15 @@ class BenchAltDelimiters(TokenizerDelimiterBase):
             "expression": ("${", "}"),
             "comment": ("[!", "!]"),
         }
-    
+
     def time_alt_small(self):
         """Tokenize small template with alternative delimiters."""
         list(temple_tokenizer(self.tpl_small, self.alt_delims))
-    
+
     def time_alt_medium(self):
         """Tokenize medium template with alternative delimiters."""
         list(temple_tokenizer(self.tpl_medium, self.alt_delims))
-    
+
     def time_alt_large(self):
         """Tokenize large template with alternative delimiters."""
         list(temple_tokenizer(self.tpl_large, self.alt_delims))

@@ -1,4 +1,4 @@
-from temple.template_renderer import render_passthrough, BlockValidator, RenderError
+from temple.template_renderer import render_passthrough
 
 
 def test_render_passthrough_simple():
@@ -34,14 +34,14 @@ def test_render_passthrough_strips_comments():
 
 
 def test_block_validator_valid_if():
-    """Test validation of balanced if/endif."""
+    """Test validation of balanced if/end."""
     text = "{% if x %}content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert errors == []
 
 
 def test_block_validator_valid_for():
-    """Test validation of balanced for/endfor."""
+    """Test validation of balanced for/end."""
     text = "{% for item in list %}content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert errors == []
@@ -70,7 +70,7 @@ def test_block_validator_unclosed_for():
     assert "Unclosed block 'for'" in errors[0]
 
 
-def test_block_validator_unexpected_endif():
+def test_block_validator_unexpected_end():
     """Test detection of unexpected closing block."""
     text = "content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
@@ -80,16 +80,19 @@ def test_block_validator_unexpected_endif():
 
 def test_block_validator_mismatched_blocks():
     """Test detection of mismatched open/close."""
-    text = "{% if x %}content{% end %}"
+    # With canonical single-`end` closers, a mismatch cannot be forced.
+    # Omitting an `end` will leave the opener unclosed, so only an Unclosed block
+    # diagnostic should be produced.
+    text = "{% if x %}content"
     output, errors = render_passthrough(text, validate_blocks=True)
-    assert len(errors) == 2
-    assert "Mismatched block" in errors[0]
-    assert "Unclosed block" in errors[1]
+    assert len(errors) == 1
+    assert "Unclosed block" in errors[0]
 
 
 def test_block_validator_function_blocks():
-    """Test validation of function/endfunction."""
-    text = "{% function test() %}content{% endfunction %}"
+    """Test validation of function/end."""
+    # Use canonical 'end' closer for function blocks.
+    text = "{% function test() %}content{% end %}"
     output, errors = render_passthrough(text, validate_blocks=True)
     assert errors == []
 
@@ -122,7 +125,9 @@ def test_block_validator_custom_delimiters():
         "expression": ("<:", ":>"),
         "comment": ("<#", "#>"),
     }
-    text = "<< if x >>content<< endif >>"
-    output, errors = render_passthrough(text, delimiters=custom_delims, validate_blocks=True)
+    text = "<< if x >>content<< end >>"
+    output, errors = render_passthrough(
+        text, delimiters=custom_delims, validate_blocks=True
+    )
     assert errors == []
     assert "content" in output

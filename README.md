@@ -13,7 +13,7 @@ This repository contains three interconnected components:
 ### 1. **temple/** - Core Templating Engine (Specification Phase)
 The heart of the Temple system: template DSL parser, query engine, rendering engine, and schema validation.
 
-- **Language**: Python 3.8+
+- **Language**: Python 3.10+
 - **Status**: Architecture & specification phase
 - **Key Features**:
   - Pluggable data format parsers (JSON, XML, YAML, TOML)
@@ -26,7 +26,7 @@ The heart of the Temple system: template DSL parser, query engine, rendering eng
 ### 2. **temple-linter/** - LSP Server & Template Linting (Active Development)
 Language Server Protocol (LSP) implementation for template-aware linting and diagnostics.
 
-- **Language**: Python 3.8+
+- **Language**: Python 3.10+
 - **Status**: Active development
 - **Key Features**:
   - Template tokenization with configurable delimiters
@@ -50,8 +50,10 @@ Visual Studio Code extension providing real-time linting via LSP proxy to native
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- **Python 3.8+** (for `temple` and `temple-linter`)
+- ### Prerequisites
+- **Python 3.10+** (for `temple` and `temple-linter`)
+
+> CI uses Python 3.11; using Python 3.11 locally is recommended to match CI runs.
 - **Node.js 14+** (for `vscode-temple-linter`)
 - **VS Code** (optional, for extension development)
 
@@ -105,12 +107,29 @@ temple:
 # Resume
 {% if user.name %}
 ## {{ user.name }}
-{% endif %}
+{% end %}
 
 {% for job in user.jobs %}
 ### {{ job.title }} at {{ job.company }}
-{% endfor %}
+{% end %}
 ```
+
+### Optional: Install Git hooks (recommended)
+
+We manage repository hooks with `pre-commit`. To set up hooks locally (recommended), use the provided helper which creates a local `.ci-venv` and installs `pre-commit` and `ruff`:
+
+```bash
+# create the hooks venv and install tooling
+./scripts/setup-hooks.sh
+
+# (optional) activate the venv for manual runs
+source .ci-venv/bin/activate
+
+# run all hooks across the repository to validate your environment
+.ci-venv/bin/pre-commit run --all-files
+```
+
+If you prefer the system-wide `pre-commit` installation, install `pre-commit` and run `pre-commit install` instead. The helper keeps tooling isolated in `.ci-venv` and avoids mutating files during commits.
 
 ### Supported Output Formats
 - Markdown (`.md`)
