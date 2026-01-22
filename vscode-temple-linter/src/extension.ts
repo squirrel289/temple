@@ -109,6 +109,22 @@ function vscDiagToLspDiag(diag: vscode.Diagnostic): LspDiagnostic {
   }
 }
 
+function lspDiagToVscDiag(d: any): vscode.Diagnostic {
+  const range = d.range as vscode.Range;
+  const message = d.message || '';
+  const severityNum: number | undefined = d.severity;
+  const severity = severityNum === 1 ? vscode.DiagnosticSeverity.Error :
+    severityNum === 2 ? vscode.DiagnosticSeverity.Warning :
+    severityNum === 3 ? vscode.DiagnosticSeverity.Information :
+    vscode.DiagnosticSeverity.Hint;
+
+  const diag = new vscode.Diagnostic(range, message, severity);
+  if (d.source) diag.source = d.source;
+  if (d.code) diag.code = d.code as any;
+  if (d.tags) diag.tags = d.tags as any;
+  return diag;
+}
+
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
@@ -171,6 +187,21 @@ export function activate(context: vscode.ExtensionContext) {
       const lspDiagnostics = diagnostics.map(vscDiagToLspDiag);
       return { diagnostics: lspDiagnostics };
     });
+    // Diagnostic collection for node-attached diagnostics published by the server
+    const nodeDiagCollection = vscode.languages.createDiagnosticCollection('temple-node');
+    context.subscriptions.push(nodeDiagCollection);
+
+    // Handle optional server notification to publish node-attached diagnostics
+    client.onNotification('temple/publishNodeDiagnostics', (params: { uri: string; diagnostics: any[] }) => {
+      try {
+        const uri = vscode.Uri.parse(params.uri);
+        const diags = (params.diagnostics || []).map(lspDiagToVscDiag);
+        nodeDiagCollection.set(uri, diags);
+      } catch (e) {
+        console.error('Failed to publish node diagnostics', e);
+      }
+    });
+
     context.subscriptions.push({ dispose: () => client.stop() });
   });
 
