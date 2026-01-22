@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { createConnection, ProposedFeatures, Diagnostic as LspDiagnostic } from 'vscode-languageserver/node';
-import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node';
+import { createConnection, ProposedFeatures, Diagnostic as LspDiagnostic, Range as LspRange } from 'vscode-languageserver/node';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 
 const VIRTUAL_SCHEME = 'temple-cleaned';
 const cleanedContentMap = new Map<string, string>();
@@ -109,8 +109,8 @@ function vscDiagToLspDiag(diag: vscode.Diagnostic): LspDiagnostic {
   }
 }
 
-function lspDiagToVscDiag(d: any): vscode.Diagnostic {
-  const range = d.range as vscode.Range;
+function lspDiagToVscDiag(d: LspDiagnostic): vscode.Diagnostic {
+  const range = toVsRange(d.range as unknown as LspRange);
   const message = d.message || '';
   const severityNum: number | undefined = d.severity;
   const severity = severityNum === 1 ? vscode.DiagnosticSeverity.Error :
@@ -120,9 +120,23 @@ function lspDiagToVscDiag(d: any): vscode.Diagnostic {
 
   const diag = new vscode.Diagnostic(range, message, severity);
   if (d.source) diag.source = d.source;
-  if (d.code) diag.code = d.code as any;
-  if (d.tags) diag.tags = d.tags as any;
+  if (d.code !== undefined) diag.code = normalizeCode(d.code);
+  if (d.tags) diag.tags = d.tags;
   return diag;
+}
+
+function toVsRange(range: LspRange): vscode.Range {
+  return new vscode.Range(
+    new vscode.Position(range.start.line, range.start.character),
+    new vscode.Position(range.end.line, range.end.character)
+  );
+}
+
+function normalizeCode(code: LspDiagnostic['code']): string | number | undefined {
+  if (code && typeof code === 'object' && 'value' in code) {
+    return code.value as string | number;
+  }
+  return code as string | number | undefined;
 }
 
 let client: LanguageClient;
@@ -192,7 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(nodeDiagCollection);
 
     // Handle optional server notification to publish node-attached diagnostics
-    client.onNotification('temple/publishNodeDiagnostics', (params: { uri: string; diagnostics: any[] }) => {
+      client.onNotification('temple/publishNodeDiagnostics', (params: { uri: string; diagnostics: LspDiagnostic[] }) => {
       try {
         const uri = vscode.Uri.parse(params.uri);
         const diags = (params.diagnostics || []).map(lspDiagToVscDiag);
