@@ -25,3 +25,7 @@ Support `{% if %} / {% else if %} / {% else %} / {% end %}` and `{% for %} / {% 
 - Control-flow templates produce expected output against sample data
 - Nested blocks and mixed expressions behave correctly
 - Errors reference exact token positions with actionable messages
+
+## References
+
+- ADR: `temple/docs/adr/004-control-flow-closer.md`

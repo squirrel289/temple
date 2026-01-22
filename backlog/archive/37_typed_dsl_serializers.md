@@ -9,6 +9,7 @@ completed_date: 2026-01-09
 related_commit:
   - 7b8f125  # feat(compiler): implement multi-format serializers for JSON, Markdown, HTML, YAML
   - 06366df  # test: reorganize compiler tests (ADR-002 Phase 3 - serializer tests preserved)
+  - 8a7ab8f  # feat(typed-ast): canonicalize AST attrs; update type checker and serializers; update tests
 test_results: 73 tests passing
 dependencies:
   - [[34_typed_dsl_parser.md]] ✅

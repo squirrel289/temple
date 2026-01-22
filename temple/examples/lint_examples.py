@@ -23,7 +23,7 @@ examples = {
     ### {{ job.title }} at {{ job.company }}
     - {{ job.start }} - {{ job.end }}
     {% end %}
-    """,  # missing endif
+    """,  # missing end
     "valid_html": """
     <html>
       <body>
@@ -46,7 +46,7 @@ examples = {
         </ul>
       </body>
     </html>
-    """,  # missing endfor
+    """,  # missing end
     "valid_json": """
     {
       "name": "{{ user.name }}",
@@ -71,7 +71,7 @@ examples = {
         }{% if not loop.last %},{% end %}
       ]
     }
-    """,  # missing endfor
+    """,  # missing end
 }
 
 for name, template in examples.items():

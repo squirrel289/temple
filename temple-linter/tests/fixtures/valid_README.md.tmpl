@@ -6,7 +6,7 @@
 
 {% for feature in project.features %}
 - **{{ feature.name }}**: {{ feature.description }}
-{% endfor %}
+{% end %}
 
 ## Installation
 
@@ -19,8 +19,8 @@
 
 {% for req in project.install.requirements %}
 - {{ req }}
-{% endfor %}
-{% endif %}
+{% end %}
+{% end %}
 
 ## Usage
 
@@ -39,9 +39,9 @@
 - **Default**: `{{ option.default }}`
 {% if option.required %}
 - **Required**: Yes
-{% endif %}
+{% end %}
 
-{% endfor %}
+{% end %}
 
 ## License
 
@@ -51,4 +51,4 @@
 
 {% for contributor in project.contributors %}
 - {{ contributor.name }} ([@{{ contributor.github }}](https://github.com/{{ contributor.github }}))
-{% endfor %}
+{% end %}

@@ -1,4 +1,5 @@
 """Benchmarks for real-world template tokenization."""
+
 import os
 from temple import temple_tokenizer
 

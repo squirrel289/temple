@@ -11,10 +11,6 @@ related_backlog:
   - "[[38_integration_and_e2e_tests.md]]"
 estimated_hours: 24
 priority: high
-related_backlog:
-  - "[[38_integration_and_e2e_tests.md]]"
-estimated_hours: 24
-priority: high
 ---
 
 ## Goal
@@ -167,10 +163,10 @@ class Expression(Node):
 **Fix** (`typed_grammar.lark`):
 ```lark
 // Current:
-if_block: OPEN_IF block (OPEN_ELSE block)? OPEN_ENDIF
+if_block: OPEN_IF block (OPEN_ELSE block)? OPEN_end
 
 // Fixed:
-if_block: OPEN_IF block elif_chain? (OPEN_ELSE block)? OPEN_ENDIF
+if_block: OPEN_IF block elif_chain? (OPEN_ELSE block)? OPEN_end
 elif_chain: OPEN_ELIF block (OPEN_ELIF block)*
 OPEN_ELIF: /\{\%[^%]*elif[^%]*\%\}/
 ```

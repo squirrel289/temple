@@ -6,7 +6,8 @@ complexity: High
 estimated_effort: 16 hours
 actual_effort: null
 completed_date: null
-related_commit: []
+related_commit:
+    - 98facb7  # feat(vscode-extension): improve diagnostics/virtual docs for Temple LSP
 test_results: null
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳

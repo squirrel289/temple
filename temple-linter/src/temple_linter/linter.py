@@ -7,41 +7,46 @@ Integrates temple core parser for comprehensive syntax validation.
 
 from typing import List, Dict, Any, Optional
 from temple.lark_parser import parse_with_diagnostics
-from temple.diagnostics import Diagnostic, DiagnosticSeverity, DiagnosticCollector, Position, SourceRange
+from temple.diagnostics import (
+    Diagnostic,
+    DiagnosticCollector,
+)
 
 
 class TemplateLinter:
     """
     Template linter with syntax validation using temple core parser.
-    
+
     Validates template syntax and returns diagnostics for:
     - Unclosed blocks (if, for, etc.)
     - Malformed expressions
     - Invalid statements
     - Syntax errors
     """
-    
-    def __init__(self, config: Dict[str, Any] = None):
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
-    
-    def lint(self, text: str) -> List[Diagnostic]:
+
+    def lint(
+        self, text: str, node_collector: Optional[DiagnosticCollector] = None
+    ) -> List[Diagnostic]:
         """
         Parse template and return syntax diagnostics.
-        
+
         Args:
             text: Template content to validate
-            
+
         Returns:
             List of Diagnostic objects with syntax errors
-            
+
         Example:
             >>> linter = TemplateLinter()
             >>> diagnostics = linter.lint("{% if user.active %}{{ user.name }}")
             >>> len(diagnostics) > 0  # Missing {% end %}
             True
         """
-        ast, diagnostics = parse_with_diagnostics(text)
-        return diagnostics
+        _, diagnostics = parse_with_diagnostics(text, node_collector=node_collector)
+        return list(diagnostics)
 
 
 # CLI entry point for LSP server usage

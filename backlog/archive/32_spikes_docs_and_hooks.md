@@ -6,6 +6,11 @@ complexity: Low
 estimated_effort: 3 days
 dependencies:
   - [[30_typed_dsl_prototype.md]]
+related_commit:
+  - 89c5cd1  # ci: make CI scripts opt-in for dependency installs; installer calls scripts to populate .hooks-venv
+  - bb0d854  # chore(hooks): add/update repo hooks and CI requirements
+  - d42b86f  # chore: remove generated docs build artifacts
+  - 5203a4d  # chore: ignore generated Sphinx docs
 ---
 
 # 32 — Docs, Examples & Extensibility Hooks for Spikes

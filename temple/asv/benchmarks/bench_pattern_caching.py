@@ -1,4 +1,5 @@
 """Benchmarks for tokenizer pattern caching efficiency."""
+
 import os
 from temple import temple_tokenizer
 from temple.template_tokenizer import _compile_token_pattern
@@ -18,7 +19,7 @@ def load_template_text(path):
 
 class BenchPatternCaching:
     """Benchmark LRU cache efficiency for pattern compilation."""
-    
+
     def setup(self):
         """Load templates."""
         self.tpl = load_template_text("examples/bench/real_small.md.tmpl")
@@ -39,26 +40,26 @@ class BenchPatternCaching:
         }
         # Clear cache for baseline measurement
         _compile_token_pattern.cache_clear()
-    
+
     def time_repeated_same_delimiters(self):
         """Tokenize same template with same delimiters multiple times (tests cache hits)."""
         # After first call, pattern is cached; subsequent calls benefit from cache
         for _ in range(50):
             list(temple_tokenizer(self.tpl, self.delims_default))
-    
+
     def time_repeated_different_delimiters(self):
         """Tokenize template with three different delimiter configs."""
         # Each delimiter config requires pattern compilation
         for i in range(20):
             delims = [self.delims_default, self.delims_custom_1, self.delims_custom_2]
             list(temple_tokenizer(self.tpl, delims[i % 3]))
-    
+
     def time_mixed_templates_same_delimiters(self):
         """Tokenize different templates with same delimiters (all benefit from cache)."""
         tpl_small = load_template_text("examples/bench/real_small.md.tmpl")
         tpl_medium = load_template_text("examples/bench/real_medium.md.tmpl")
         tpl_large = load_template_text("examples/bench/real_large.html.tmpl")
-        
+
         for _ in range(10):
             list(temple_tokenizer(tpl_small, self.delims_default))
             list(temple_tokenizer(tpl_medium, self.delims_default))
@@ -67,7 +68,7 @@ class BenchPatternCaching:
 
 class BenchCacheWarming:
     """Benchmark the effect of cache warming."""
-    
+
     def setup(self):
         """Prepare templates and delimiters."""
         self.tpl = load_template_text("examples/bench/real_medium.md.tmpl")
@@ -76,12 +77,12 @@ class BenchCacheWarming:
             "expression": ("{{", "}}"),
             "comment": ("{#", "#}"),
         }
-    
+
     def time_cold_cache(self):
         """Tokenize with cold cache (first call compiles pattern)."""
         _compile_token_pattern.cache_clear()
         list(temple_tokenizer(self.tpl, self.delims))
-    
+
     def time_warm_cache(self):
         """Tokenize with warm cache (pattern already compiled)."""
         # Cache is warmed by setup or previous calls

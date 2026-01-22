@@ -1,9 +1,10 @@
 ---
 title: Complete Temple-native Templating & Linting
 id: 54
-status: proposed
+status: in-progress
 related_commit:
   - 6d8c044  # docs(adr): clarify market role and adapter architecture (ADR-003); add adapter spec; archive backlog/48_jinja_integration.md
+  - f00459b  # feat(parser): canonicalize control-flow end tokens; restore expression validation; align typed AST ranges
 dependencies:
   - "[[19_unified_token_model.md]]"
 estimated_hours: 40

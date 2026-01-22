@@ -1,6 +1,5 @@
 import pathlib
 import sys
-
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -8,7 +7,27 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from temple_linter.base_format_linter import BaseFormatLinter, strip_temple_extension, VSCODE_PASSTHROUGH
+try:
+    from temple_linter.base_format_linter import (
+        BaseFormatLinter,
+        strip_temple_extension,
+        VSCODE_PASSTHROUGH,
+    )
+except Exception:
+    # Fall back to adding repo src to sys.path for local test runs
+    import pathlib
+    import sys
+
+    ROOT = pathlib.Path(__file__).resolve().parents[1]
+    SRC = ROOT / "src"
+    if str(SRC) not in sys.path:
+        sys.path.insert(0, str(SRC))
+
+    from temple_linter.base_format_linter import (
+        BaseFormatLinter,
+        strip_temple_extension,
+        VSCODE_PASSTHROUGH,
+    )
 
 
 @pytest.fixture()
@@ -104,4 +123,3 @@ def test_strip_custom_case_insensitive():
     custom_exts = [".TPL"]
     assert strip_temple_extension("config.json.tpl", custom_exts) == "config.json"
     assert strip_temple_extension("config.json.TPL", custom_exts) == "config.json"
-

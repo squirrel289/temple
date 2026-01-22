@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 from temple.lark_parser import parse_template
