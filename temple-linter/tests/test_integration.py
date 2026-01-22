@@ -15,6 +15,7 @@ import pathlib
 import sys
 from unittest.mock import Mock
 import pytest
+from lsprotocol.types import DiagnosticSeverity
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -32,8 +33,6 @@ except Exception:
     import pathlib
     import sys
 
-    ROOT = pathlib.Path(__file__).resolve().parents[1]
-    SRC = ROOT / "src"
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
@@ -61,7 +60,9 @@ def orchestrator():
 class TestFullPipeline:
     """Test complete linting pipeline with real-world scenarios."""
 
-    def test_json_template_with_valid_syntax(self, orchestrator, mock_language_client):
+    def test_json_template_with_valid_syntax(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test valid JSON template produces no errors."""
         template = """
 {
@@ -83,7 +84,9 @@ class TestFullPipeline:
         assert isinstance(diagnostics, list)
         # Template linting may produce diagnostics, but structure should be valid
 
-    def test_json_template_with_invalid_json(self, orchestrator, mock_language_client):
+    def test_json_template_with_invalid_json(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test JSON template with invalid base format."""
         template = """
 {
@@ -98,7 +101,7 @@ class TestFullPipeline:
                 start=Position(line=3, character=2), end=Position(line=3, character=12)
             ),
             message="Expected comma or closing brace",
-            severity=1,
+            severity=DiagnosticSeverity.Error,
         )
         mock_language_client.protocol.send_request.return_value.result.return_value = {
             "diagnostics": [mock_diagnostic]
@@ -111,7 +114,9 @@ class TestFullPipeline:
         assert isinstance(diagnostics, list)
         # Should receive diagnostics from base linter
 
-    def test_yaml_template_with_expressions(self, orchestrator, mock_language_client):
+    def test_yaml_template_with_expressions(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test YAML template with template expressions."""
         template = """
 name: {{ app.name }}
@@ -131,7 +136,9 @@ dependencies:
 
         assert isinstance(diagnostics, list)
 
-    def test_html_template_with_control_flow(self, orchestrator, mock_language_client):
+    def test_html_template_with_control_flow(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test HTML template with if/for statements."""
         template = """
 <!DOCTYPE html>
@@ -162,7 +169,9 @@ dependencies:
 
         assert isinstance(diagnostics, list)
 
-    def test_markdown_template_with_loops(self, orchestrator, mock_language_client):
+    def test_markdown_template_with_loops(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test Markdown template with template syntax."""
         template = """
 # {{ project.name }}
@@ -189,7 +198,9 @@ dependencies:
 
         assert isinstance(diagnostics, list)
 
-    def test_custom_delimiters(self, orchestrator, mock_language_client):
+    def test_custom_delimiters(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test template with custom delimiters."""
         # Note: Current implementation uses default delimiters
         # This test verifies the pipeline works regardless
@@ -209,7 +220,9 @@ dependencies:
 
         assert isinstance(diagnostics, list)
 
-    def test_custom_temple_extensions(self, orchestrator, mock_language_client):
+    def test_custom_temple_extensions(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test custom temple file extensions."""
         template = """
 name: {{ config.name }}
@@ -241,7 +254,7 @@ class TestTokenCleaning:
 {{ expr }}
 line 3"""
 
-        cleaned, tokens = service.clean_text_and_tokens(template)
+        cleaned, _ = service.clean_text_and_tokens(template)
 
         # Cleaned text should have template tokens removed
         assert "expr" not in cleaned
@@ -253,7 +266,7 @@ line 3"""
         service = TokenCleaningService()
         template = "{% if x %}{{ y }}{# comment #}text"
 
-        cleaned, tokens = service.clean_text_and_tokens(template)
+        cleaned, _ = service.clean_text_and_tokens(template)
 
         assert "if x" not in cleaned
         assert "y" not in cleaned
@@ -307,7 +320,9 @@ class TestFormatDetection:
 class TestEndToEnd:
     """End-to-end tests simulating real usage."""
 
-    def test_complete_workflow_json_valid(self, orchestrator, mock_language_client):
+    def test_complete_workflow_json_valid(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test complete workflow with valid JSON template."""
         template = """
 {
@@ -333,7 +348,9 @@ class TestEndToEnd:
         assert isinstance(diagnostics, list)
         # Valid template should produce minimal or no diagnostics
 
-    def test_complete_workflow_yaml_valid(self, orchestrator, mock_language_client):
+    def test_complete_workflow_yaml_valid(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test complete workflow with valid YAML template."""
         template = """
 version: {{ version }}
@@ -357,7 +374,9 @@ services:
 
         assert isinstance(diagnostics, list)
 
-    def test_mixed_content_with_edge_cases(self, orchestrator, mock_language_client):
+    def test_mixed_content_with_edge_cases(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test edge cases like nested braces, quotes in templates."""
         template = """
 {
@@ -380,7 +399,9 @@ services:
 class TestSyntaxValidation:
     """Test template syntax validation integration."""
 
-    def test_unclosed_if_block_error(self, orchestrator, mock_language_client):
+    def test_unclosed_if_block_error(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test that unclosed if blocks produce syntax errors."""
         template = """
 {
@@ -401,7 +422,9 @@ class TestSyntaxValidation:
         # Check that at least one diagnostic is an error
         assert any(d.severity == 1 for d in diagnostics)  # 1 = Error
 
-    def test_unclosed_for_block_error(self, orchestrator, mock_language_client):
+    def test_unclosed_for_block_error(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test that unclosed for blocks produce syntax errors."""
         template = """
 <ul>
@@ -421,7 +444,9 @@ class TestSyntaxValidation:
         assert len(diagnostics) > 0
         assert any(d.severity == 1 for d in diagnostics)
 
-    def test_malformed_expression_error(self, orchestrator, mock_language_client):
+    def test_malformed_expression_error(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test that malformed expressions produce errors."""
         template = "{{ user. }}"
 
@@ -436,7 +461,9 @@ class TestSyntaxValidation:
         assert len(diagnostics) > 0
         assert any(d.severity == 1 for d in diagnostics)
 
-    def test_valid_syntax_no_errors(self, orchestrator, mock_language_client):
+    def test_valid_syntax_no_errors(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test that valid template syntax produces no syntax errors."""
         template = """
 {% if user.active %}
@@ -459,7 +486,9 @@ class TestSyntaxValidation:
             d.severity != 1 or "syntax" not in d.message.lower() for d in diagnostics
         )
 
-    def test_multiple_syntax_errors(self, orchestrator, mock_language_client):
+    def test_multiple_syntax_errors(
+        self, orchestrator: LintOrchestrator, mock_language_client: Mock
+    ):
         """Test that multiple syntax errors are all reported."""
         template = """
 {% if x %}

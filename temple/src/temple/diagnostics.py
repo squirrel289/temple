@@ -96,21 +96,29 @@ class SourceRange(Sequence["Position"]):
         return f"{self.start}-{self.end}"
 
     @classmethod
-    def from_any(
-        cls,
-        source_range: Optional[object] = None,
-        start: Optional[Tuple[int, int]] = None,
-        end: Optional[Tuple[int, int]] = None,
-        allow_duck: bool = True,
-    ) -> "SourceRange":
+    def from_any(cls, value: Any = None, *, allow_duck: bool = True) -> "SourceRange":
         """Construct a canonical SourceRange from several accepted shapes.
 
-        This is a convenience wrapper around `make_source_range` so callers
-        can request a canonical `SourceRange` directly from the type.
+        Accepts a single argument `value` which may be:
+        - a `SourceRange` (returned as-is)
+        - a `(line, col)` tuple or list -> treated as start tuple
+        - any other object (duck-typed) with `.start`/`.end` attributes
+
+        This centralizes duck-typing so callers can pass a single value
+        without worrying about tuple vs. SourceRange vs. duck-typed objects.
         """
-        return make_source_range(
-            source_range=source_range, start=start, end=end, allow_duck=allow_duck
-        )
+        # If caller passed a SourceRange, return it
+        from .diagnostics import SourceRange as _SourceRange  # local alias for clarity
+
+        if isinstance(value, _SourceRange):
+            return value
+
+        # If tuple/list of two ints, treat as start tuple
+        if isinstance(value, (tuple, list)) and len(value) == 2:
+            return make_source_range(start=(int(value[0]), int(value[1])))
+
+        # Fallback: delegate to make_source_range which supports duck-typed objects
+        return make_source_range(source_range=value, allow_duck=allow_duck)
 
     # Sequence protocol
     def __len__(self) -> int:  # type: ignore[override]
@@ -274,19 +282,36 @@ class Diagnostic:
 
 
 class DiagnosticCollector:
-    """Collects diagnostics during parsing/analysis."""
+    """Simple collector for diagnostics (parsing/analysis errors and warnings).
+
+    Aggregates all diagnostics in a single list with convenient methods
+    for adding errors and warnings.
+    """
 
     def __init__(self):
-        self.diagnostics: List[Diagnostic] = []
+        self._diagnostics: List[Diagnostic] = []
 
-    def add(self, diagnostic: Diagnostic):
-        """Add a diagnostic."""
-        self.diagnostics.append(diagnostic)
+    def add(self, diagnostic: Diagnostic) -> None:
+        """Add a diagnostic.
+
+        Args:
+            diagnostic: The diagnostic to add
+        """
+        self._diagnostics.append(diagnostic)
 
     def add_error(
-        self, message: str, source_range: SourceRange, code: Optional[str] = None
-    ):
-        """Add an error diagnostic."""
+        self,
+        message: str,
+        source_range: SourceRange,
+        code: Optional[str] = None,
+    ) -> None:
+        """Add an error diagnostic.
+
+        Args:
+            message: Error message
+            source_range: Source location
+            code: Optional error code
+        """
         self.add(
             Diagnostic(
                 message=message,
@@ -297,9 +322,18 @@ class DiagnosticCollector:
         )
 
     def add_warning(
-        self, message: str, source_range: SourceRange, code: Optional[str] = None
-    ):
-        """Add a warning diagnostic."""
+        self,
+        message: str,
+        source_range: SourceRange,
+        code: Optional[str] = None,
+    ) -> None:
+        """Add a warning diagnostic.
+
+        Args:
+            message: Warning message
+            source_range: Source location
+            code: Optional warning code
+        """
         self.add(
             Diagnostic(
                 message=message,
@@ -311,80 +345,24 @@ class DiagnosticCollector:
 
     def has_errors(self) -> bool:
         """Check if any errors were collected."""
-        return any(d.severity == DiagnosticSeverity.ERROR for d in self.diagnostics)
+        return any(d.severity == DiagnosticSeverity.ERROR for d in self._diagnostics)
+
+    @property
+    def diagnostics(self) -> Tuple[Diagnostic, ...]:
+        """Get all diagnostics as an immutable tuple.
+
+        Returns:
+            Immutable tuple of diagnostics (prevents accidental mutations)
+        """
+        return tuple(self._diagnostics)
 
     def clear(self):
         """Clear all diagnostics."""
-        self.diagnostics.clear()
-
-
-class NodeDiagnosticCollector:
-    """Collects diagnostics attached to AST nodes without mutating them.
-
-    Uses a WeakKeyDictionary to avoid extending node lifetimes. Stores a list
-    of `Diagnostic` objects per node.
-    """
-
-    def __init__(self):
-        import weakref
-
-        # Map nodes -> list of Diagnostic objects. Use a string literal
-        # for the WeakKeyDictionary type to avoid runtime import/type issues.
-        self._map: "weakref.WeakKeyDictionary[object, List[Diagnostic]]" = (
-            weakref.WeakKeyDictionary()
-        )
-
-    def add(self, node: object, diagnostic: Diagnostic):
-        """Add a diagnostic for a node."""
-        lst: Optional[List[Diagnostic]] = self._map.get(node)
-        if lst is None:
-            lst = []
-            self._map[node] = lst
-        lst.append(diagnostic)
-
-    def get(self, node: object) -> List[Diagnostic]:
-        """Return diagnostics for `node` or empty list."""
-        lst: Optional[List[Diagnostic]] = self._map.get(node)
-        return list(lst or [])
-
-    def pop(self, node: object) -> List[Diagnostic]:
-        """Remove and return diagnostics for `node`."""
-        # pop may return None if not present; normalize to empty list
-        lst: Optional[List[Diagnostic]] = self._map.pop(node, None)
-        return list(lst or [])
-
-    def clear(self):
-        """Clear all stored diagnostics."""
-        self._map.clear()
-
-    def items(self):
-        """Yield (node, diagnostics_list) pairs for all stored nodes."""
-        return list(self._map.items())
-
-    def all_diagnostics(self) -> List[Diagnostic]:
-        """Return a flat list of all diagnostics stored across nodes."""
-        out: List[Diagnostic] = []
-        for lst in self._map.values():
-            out.extend(list(lst))
-        return out
+        self._diagnostics.clear()
 
     def serialize(self) -> List[Dict[str, Any]]:
-        """Serialize node-attached diagnostics to LSP-like dicts.
-
-        Returns a list of dicts with `diagnostic` (LSP diagnostic dict) and
-        optional `node_id` and `node_repr` for consumer-side mapping.
-        """
-        out: List[Dict[str, Any]] = []
-        for node, lst in list(self._map.items()):
-            for d in lst:
-                entry: Dict[str, Any] = {"diagnostic": d.to_lsp()}
-                try:
-                    entry["node_id"] = id(node)
-                    entry["node_repr"] = repr(node)
-                except Exception:
-                    pass
-                out.append(entry)
-        return out
+        """Serialize all diagnostics to LSP-like dicts."""
+        return [{"diagnostic": d.to_lsp()} for d in self._diagnostics]
 
 
 __all__ = [

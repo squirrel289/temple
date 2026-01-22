@@ -5,11 +5,12 @@ Tests for HTML serializer.
 import pytest
 from temple.compiler.serializers.html_serializer import HTMLSerializer
 from temple.typed_ast import Block, Text, Expression, If, For
+from temple.diagnostics import Position, SourceRange
 
 
 def make_source():
     """Create a dummy source range for testing."""
-    return (0, 0)
+    return SourceRange(Position(0, 0), Position(0, 0))
 
 
 class TestHTMLSerializer:
@@ -18,7 +19,7 @@ class TestHTMLSerializer:
     def test_serialize_text(self):
         """Test serializing plain text."""
         source = make_source()
-        text = Text("hello", source)
+        text = Text(source, "hello")
         serializer = HTMLSerializer(pretty=False)
         result = serializer.serialize(text, {})
         assert result == "hello"
@@ -26,7 +27,7 @@ class TestHTMLSerializer:
     def test_serialize_expression(self):
         """Test serializing variable expressions."""
         source = make_source()
-        expr = Expression("name", source)
+        expr = Expression(source, "name")
         serializer = HTMLSerializer(pretty=False)
         result = serializer.serialize(expr, {"name": "world"})
         assert result == "world"
@@ -34,9 +35,9 @@ class TestHTMLSerializer:
     def test_serialize_if_block_true(self):
         """Test if block with true condition."""
         source = make_source()
-        body = Block([Text("shown", source)], start=source)
-        else_body = Block([Text("hidden", source)], start=source)
-        if_node = If("show", body, start=source, else_body=else_body)
+        body = Block([Text(source, "shown")])
+        else_body = Block([Text(source, "hidden")])
+        if_node = If(source, "show", body, else_body=else_body)
 
         serializer = HTMLSerializer(pretty=False)
         result = serializer.serialize(if_node, {"show": True})
@@ -45,8 +46,8 @@ class TestHTMLSerializer:
     def test_serialize_for_loop(self):
         """Test for loop serialization."""
         source = make_source()
-        body = Block([Expression("item", source), Text(" ", source)], start=source)
-        for_node = For("item", "items", body, start=source)
+        body = Block([Expression(source, "item"), Text(source, " ")])
+        for_node = For(source, "item", "items", body)
 
         serializer = HTMLSerializer(pretty=False)
         result = serializer.serialize(for_node, {"items": ["x", "y"]})
@@ -55,7 +56,7 @@ class TestHTMLSerializer:
     def test_html_special_char_escaping(self):
         """Test that HTML special characters are escaped."""
         source = make_source()
-        text = Text("<script>alert('xss')</script>", source)
+        text = Text(source, "<script>alert('xss')</script>")
         serializer = HTMLSerializer(pretty=False)
         result = serializer.serialize(text, {})
         # Should escape HTML special chars
@@ -144,7 +145,7 @@ class TestHTMLSerializerErrors:
         from temple.compiler.serializers.base import SerializationError
 
         source = make_source()
-        expr = Expression("missing", source)
+        expr = Expression(source, "missing")
         serializer = HTMLSerializer(strict=True)
 
         with pytest.raises(SerializationError):

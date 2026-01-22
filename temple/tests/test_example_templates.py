@@ -9,12 +9,9 @@ from temple.schema_checker import validate
 from html.parser import HTMLParser
 
 # tomllib is only available in Python 3.11+
-try:
-    import tomllib
+import importlib.util
 
-    HAS_TOMLLIB = True
-except ImportError:
-    HAS_TOMLLIB = False
+HAS_TOMLLIB = importlib.util.find_spec("tomllib") is not None
 
 
 class _TagTextParser(HTMLParser):
@@ -181,6 +178,8 @@ def test_toml_positive():
     rendered, mapping = render_template_file(
         get_template_path("toml_positive.toml.tmpl", positive=True), ctx
     )
+    import tomllib
+
     parsed = tomllib.loads(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert diags == []
@@ -199,6 +198,8 @@ def test_toml_negative():
     rendered, mapping = render_template_file(
         get_template_path("toml_negative.toml.tmpl", positive=False), ctx
     )
+    import tomllib
+
     parsed = tomllib.loads(rendered)
     diags = validate(parsed, SCHEMA, mapping=mapping)
     assert any(d["path"].endswith("/name") for d in diags)
@@ -319,6 +320,8 @@ def test_includes_match_extension():
     non-TOML in .toml, etc.). It uses stdlib parsers where possible to avoid
     adding new dependencies.
     """
+    import tomllib
+
     inc_dir = BASE_DIR / "includes"
     assert inc_dir.exists()
     for p in sorted(inc_dir.glob("*.*.tmpl")):

@@ -1,4 +1,5 @@
 from temple.typed_ast import ObjectNode, Expression, Array
+from temple.diagnostics import Position, SourceRange
 from temple.typed_renderer import evaluate_ast
 from temple.schema_checker import validate
 
@@ -6,8 +7,16 @@ from temple.schema_checker import validate
 def test_schema_missing_required_property():
     # build AST with start positions for mapping
     obj = ObjectNode(
-        [("skills", Array([Expression("user.skills", start=(2, 1))], start=(2, 1)))],
-        start=(1, 0),
+        SourceRange(Position(1, 0), Position(1, 0)),
+        [
+            (
+                "skills",
+                Array(
+                    SourceRange(Position(2, 1), Position(2, 1)),
+                    [Expression(SourceRange(Position(2, 1), Position(2, 1)), "user.skills")],
+                ),
+            )
+        ],
     )
     ctx = {"user": {"skills": ["a", "b"]}}
     res = evaluate_ast(obj, ctx)
@@ -26,10 +35,10 @@ def test_schema_missing_required_property():
 
 def test_schema_type_mismatch():
     obj = ObjectNode(
+        SourceRange(Position(1, 0), Position(1, 0)),
         [
-            ("name", Expression("user.name", start=(1, 2))),
+            ("name", Expression(SourceRange(Position(1, 2), Position(1, 2)), "user.name")),
         ],
-        start=(1, 0),
     )
     ctx = {"user": {"name": 123}}
     res = evaluate_ast(obj, ctx)

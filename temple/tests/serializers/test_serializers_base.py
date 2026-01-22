@@ -8,6 +8,7 @@ from temple.compiler.serializers.base import (
     SerializationContext,
 )
 from temple.typed_ast import Text, Expression, Block
+from temple.diagnostics import Position, SourceRange
 
 
 class MockSerializer(Serializer):
@@ -76,28 +77,28 @@ class TestBasicSerialization:
 
     def test_text_serialization(self):
         """Test serializing text nodes."""
-        source = (0, 0)
-        text = Text("hello", source)
+        source = SourceRange(Position(0, 0), Position(0, 0))
+        text = Text(source, "hello")
         serializer = MockSerializer()
         result = serializer.serialize(text, {})
         assert result == "hello"
 
     def test_expression_serialization(self):
         """Test serializing expressions."""
-        source = (0, 0)
-        expr = Expression("name", source)
+        source = SourceRange(Position(0, 0), Position(0, 0))
+        expr = Expression(source, "name")
         serializer = MockSerializer()
         result = serializer.serialize(expr, {"name": "world"})
         assert result == "world"
 
     def test_block_serialization(self):
         """Test serializing blocks."""
-        source = (0, 0)
+        source = SourceRange(Position(0, 0), Position(0, 0))
         children = [
-            Text("Hello ", source),
-            Expression("name", source),
+            Text(source, "Hello "),
+            Expression(source, "name"),
         ]
-        block = Block("content", children, source)
+        block = Block(children, name="content")
         serializer = MockSerializer()
         result = serializer.serialize(block, {"name": "World"})
         assert result == "Hello World"

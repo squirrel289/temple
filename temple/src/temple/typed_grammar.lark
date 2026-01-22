@@ -1,38 +1,56 @@
-// Minimal grammar for Temple prototype (supports text, expressions, if, for, include, comment)
+// Refactored grammar using rules + literals (inspired by lark-parser/python2.lark)
+// Semantics entirely in rules; terminals are only delimiters and content
 start: block
-block: (text | expression | if_block | for_block | include | set_statement)*
+block: (text | expression | if_stmt | for_stmt | inline_stmt)*
 
 text: TEXT
 
-expression: OPEN_EXPR
+expression: _EXPR_OPEN expr_content _EXPR_CLOSE
 
+// Block statements: literal keywords for openers, compound terminals for closers
+if_stmt: _STMT_OPEN "if" condition _STMT_CLOSE block else_if_chain? else_clause? END_TAG
 
-// Support else if branches in if blocks
-if_block: OPEN_IF block else_if_chain? (OPEN_ELSE block)? OPEN_END
+else_if_chain: (ELSE_IF_TAG block)+
 
-// zero or more else if branches
-else_if_chain: (OPEN_ELSE_IF block)+
+else_clause: ELSE_TAG block
 
-for_block: OPEN_FOR block OPEN_END
+for_stmt: _STMT_OPEN "for" loop_args _STMT_CLOSE block END_TAG
 
-include: OPEN_INCLUDE
-set_statement: OPEN_SET
+inline_stmt: _STMT_OPEN (include_stmt | set_stmt) _STMT_CLOSE
+// Inline statements (no block body or end closer)
+include_stmt: "include" include_args
 
-// Terminals capture full tag text, transformer will parse internals
-OPEN_EXPR: /\{\{[^}]*\}\}/
-OPEN_IF: /\{\%[^%]*if[^%]*\%\}/
-// Match `{% else if ... %}` as a single token for else-if branches
-OPEN_ELSE_IF: /\{\%\s*else\s+if[^%]*\%\}/
-OPEN_ELSE: /\{\%[^%]*else[^%]*\%\}/
-OPEN_FOR: /\{\%[^%]*for[^%]*\%\}/
-// Single end token for all block types — match exact 'end' closer only
-OPEN_END: /\{\%\s*end\s*\%\}/
-OPEN_INCLUDE: /\{\%[^%]*include[^%]*\%\}/
-OPEN_SET: /\{\%[^%]*set[^%]*\%\}/
-OPEN_COMMENT: /\{#[\s\S]*?#\}/
+set_stmt: "set" set_args
+
+// Arguments/conditions - capture content between keyword and %}
+condition: STMT_ARGS
+loop_args: STMT_ARGS
+include_args: STMT_ARGS
+set_args: STMT_ARGS
+expr_content: EXPR_CONTENT
+
+// Terminals - delimiters and content only
+_EXPR_OPEN: "{{"
+_EXPR_CLOSE: "}}"
+
+// Compound terminals for control-flow closers (avoid LALR ambiguity)
+END_TAG: _STMT_OPEN "end" _STMT_CLOSE
+ELSE_TAG: _STMT_OPEN "else" _STMT_CLOSE
+ELSE_IF_TAG: _STMT_OPEN /else\s+if/ STMT_ARGS _STMT_CLOSE
+
+_STMT_OPEN:  /\{%\s*/
+_STMT_CLOSE: /\s*%\}/
+
+// Content terminals
+EXPR_CONTENT: /(?:(?!\}\}).)+/s
+STMT_ARGS: /(?:(?!%\}).)+/s
+
+RAW_COMMENT: /\{#[\s\S]*?#\}/
 
 // TEXT matches any characters up to the next template opening sequence
-// Use tempered greedy token to avoid splitting around '{{', '{%' and '{#'
 TEXT: /(?:(?!\{\{|\{\%|\{#)[\s\S])+/
 
-%ignore OPEN_COMMENT
+%import common.WS
+
+%ignore /[ \t\f\r\n]+/
+%ignore RAW_COMMENT
