@@ -5,14 +5,15 @@ LintOrchestrator - Coordinates all linting services
 import logging
 import os
 from typing import List
+from temple.diagnostics import DiagnosticCollector
 from pygls.lsp.client import LanguageClient
 from lsprotocol.types import Diagnostic
-from temple_linter.linter import TemplateLinter
-from temple_linter.base_format_linter import BaseFormatLinter
-from temple_linter.services.token_cleaning_service import TokenCleaningService
-from temple_linter.services.base_linting_service import BaseLintingService
-from temple_linter.services.diagnostic_mapping_service import DiagnosticMappingService
-from temple_linter.diagnostic_converter import temple_to_lsp_diagnostic
+from ..linter import TemplateLinter
+from ..base_format_linter import BaseFormatLinter
+from .token_cleaning_service import TokenCleaningService
+from .base_linting_service import BaseLintingService
+from .diagnostic_mapping_service import DiagnosticMappingService
+from ..diagnostic_converter import temple_to_lsp_diagnostic
 
 
 class LintOrchestrator:
@@ -33,7 +34,7 @@ class LintOrchestrator:
     - DiagnosticMappingService: Maps positions
     """
 
-    def __init__(self, logger: logging.Logger = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)
         self.template_linter = TemplateLinter()
         self.format_linter = BaseFormatLinter()
@@ -46,7 +47,7 @@ class LintOrchestrator:
         text: str,
         uri: str,
         language_client: LanguageClient,
-        temple_extensions: List[str] = None,
+        temple_extensions: List[str] | None = None,
     ) -> List[Diagnostic]:
         """
         Execute complete linting workflow for a templated file.
@@ -64,7 +65,9 @@ class LintOrchestrator:
             temple_extensions = [".tmpl", ".template"]
 
         # 1. Template linting
-        template_diagnostics = self._lint_template_syntax(text)
+        # Create a node collector to capture per-node diagnostics during parsing
+        node_collector = DiagnosticCollector()
+        template_diagnostics = self._lint_template_syntax(text, node_collector)
 
         # 2. Token cleaning
         cleaned_text, text_tokens = self.token_cleaning_service.clean_text_and_tokens(
@@ -90,12 +93,20 @@ class LintOrchestrator:
             base_diagnostics, text_tokens
         )
 
-        # 6. Merge diagnostics
-        all_diagnostics = template_diagnostics + mapped_base_diagnostics
+        # 6. Include node-attached diagnostics (from parser/transformation)
+        node_diags: List[Diagnostic] = []
+        for d in node_collector.diagnostics:
+            node_diags.append(temple_to_lsp_diagnostic(d))
 
+        # 7. Merge diagnostics
+        all_diagnostics = template_diagnostics + mapped_base_diagnostics + node_diags
+
+        # Return merged diagnostics list (template + mapped base + node-attached)
         return all_diagnostics
 
-    def _lint_template_syntax(self, text: str) -> List[Diagnostic]:
+    def _lint_template_syntax(
+        self, text: str, node_collector: DiagnosticCollector | None = None
+    ) -> List[Diagnostic]:
         """
         Lint template syntax and logic.
 
@@ -107,5 +118,7 @@ class LintOrchestrator:
         Returns:
             List of LSP Diagnostic objects
         """
-        temple_diagnostics = self.template_linter.lint(text)
+        temple_diagnostics = self.template_linter.lint(
+            text, node_collector=node_collector
+        )
         return [temple_to_lsp_diagnostic(d) for d in temple_diagnostics]

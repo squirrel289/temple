@@ -4,12 +4,13 @@ Tests for Markdown serializer.
 
 import pytest
 from temple.compiler.serializers.markdown_serializer import MarkdownSerializer
-from temple.typed_ast import Text, Expression, If, For
+from temple.typed_ast import Text, Expression, If, For, Block
+from temple.diagnostics import Position, SourceRange
 
 
 def make_source():
     """Create a dummy source range for testing."""
-    return (0, 0)
+    return SourceRange(Position(0, 0), Position(0, 0))
 
 
 class TestMarkdownSerializer:
@@ -18,7 +19,7 @@ class TestMarkdownSerializer:
     def test_serialize_text(self):
         """Test serializing plain text."""
         source = make_source()
-        text = Text("hello", source)
+        text = Text(source, "hello")
         serializer = MarkdownSerializer(pretty=False)
         result = serializer.serialize(text, {})
         assert result == "hello"
@@ -26,7 +27,7 @@ class TestMarkdownSerializer:
     def test_serialize_expression(self):
         """Test serializing variable expressions."""
         source = make_source()
-        expr = Expression("name", source)
+        expr = Expression(source, "name")
         serializer = MarkdownSerializer(pretty=False)
         result = serializer.serialize(expr, {"name": "world"})
         assert result == "world"
@@ -34,9 +35,9 @@ class TestMarkdownSerializer:
     def test_serialize_if_block_true(self):
         """Test if block with true condition."""
         source = make_source()
-        body = [Text("shown", source)]
-        else_body = [Text("hidden", source)]
-        if_node = If("show", body, source, else_body=else_body)
+        body = Block([Text(source, "shown")])
+        else_body = Block([Text(source, "hidden")])
+        if_node = If(source, "show", body, else_body=else_body)
 
         serializer = MarkdownSerializer(pretty=False)
         result = serializer.serialize(if_node, {"show": True})
@@ -45,8 +46,8 @@ class TestMarkdownSerializer:
     def test_serialize_for_loop(self):
         """Test for loop serialization."""
         source = make_source()
-        body = [Expression("item", source), Text(" ", source)]
-        for_node = For("item", "items", body, source)
+        body = Block([Expression(source, "item"), Text(source, " ")])
+        for_node = For(source, "item", "items", body)
 
         serializer = MarkdownSerializer(pretty=False)
         result = serializer.serialize(for_node, {"items": ["a", "b", "c"]})
@@ -55,7 +56,7 @@ class TestMarkdownSerializer:
     def test_markdown_special_char_escaping(self):
         """Test that Markdown special characters are escaped."""
         source = make_source()
-        text = Text("*bold* and _italic_", source)
+        text = Text(source, "*bold* and _italic_")
         serializer = MarkdownSerializer(pretty=False)
         result = serializer.serialize(text, {})
         # Should escape special chars
@@ -125,8 +126,8 @@ class TestMarkdownSerializer:
         """Test pretty-printing with newlines."""
         source = make_source()
         data = {"items": ["a", "b"]}
-        body = [Expression("item", source)]
-        for_node = For("item", "items", body, source)
+        body = Block([Expression(source, "item")])
+        for_node = For(source, "item", "items", body)
 
         serializer = MarkdownSerializer(pretty=True)
         result = serializer.serialize(for_node, data)
@@ -142,7 +143,7 @@ class TestMarkdownSerializerErrors:
         from temple.compiler.serializers.base import SerializationError
 
         source = make_source()
-        expr = Expression("missing", source)
+        expr = Expression(source, "missing")
         serializer = MarkdownSerializer(strict=True)
 
         with pytest.raises(SerializationError):

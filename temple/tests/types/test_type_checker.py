@@ -3,7 +3,8 @@ Tests for the type checker.
 """
 
 from temple.compiler.type_checker import TypeChecker, TypeEnvironment
-from temple.typed_ast import Text, Expression, If, For
+from temple.typed_ast import Text, Expression, If, For, Block
+from temple.diagnostics import Position, SourceRange
 from temple.compiler.schema import object_schema
 from temple.compiler.types import StringType, NumberType
 
@@ -42,7 +43,8 @@ class TestTypeCheckerBasics:
 
     def test_check_text_node(self):
         checker = TypeChecker()
-        node = Text("hello", start=(0, 0))
+        sr = SourceRange(Position(0, 0), Position(0, 0))
+        node = Text(sr, "hello")
 
         assert checker.check(node)
         assert not checker.errors.has_errors()
@@ -51,14 +53,16 @@ class TestTypeCheckerBasics:
         data = {"name": "Alice"}
         checker = TypeChecker(data=data)
 
-        node = Expression("name", start=(0, 0))
+        sr = SourceRange(Position(0, 0), Position(0, 0))
+        node = Expression(sr, "name")
         assert checker.check(node)
         assert not checker.errors.has_errors()
 
     def test_check_undefined_variable(self):
         checker = TypeChecker(data={})
 
-        node = Expression("undefined", start=(0, 0))
+        sr = SourceRange(Position(0, 0), Position(0, 0))
+        node = Expression(sr, "undefined")
         assert not checker.check(node)
         assert checker.errors.has_errors()
 
@@ -70,7 +74,8 @@ class TestTypeCheckerBasics:
         data = {"user": {"name": "Alice"}}
         checker = TypeChecker(data=data)
 
-        node = Expression("user.name", start=(0, 0))
+        sr = SourceRange(Position(0, 0), Position(0, 0))
+        node = Expression(sr, "user.name")
         assert checker.check(node)
         assert not checker.errors.has_errors()
 
@@ -78,7 +83,8 @@ class TestTypeCheckerBasics:
         data = {"user": {"name": "Alice"}}
         checker = TypeChecker(data=data)
 
-        node = Expression("user.age", start=(0, 0))
+        sr = SourceRange(Position(0, 0), Position(0, 0))
+        node = Expression(sr, "user.age")
         assert not checker.check(node)
         assert checker.errors.has_errors()
 
@@ -94,12 +100,13 @@ class TestTypeCheckerControlFlow:
         data = {"active": True}
         checker = TypeChecker(data=data)
 
+        sr_block = SourceRange(Position(0, 0), Position(1, 0))
         node = If(
-            condition="active",
-            body=[Text("yes", start=(1, 0))],
+            sr_block,
+            "active",
+            Block([Text(SourceRange(Position(1, 0), Position(1, 3)), "yes")]),
             else_if_parts=[],
             else_body=None,
-            start=(0, 0),
         )
 
         assert checker.check(node)
@@ -110,10 +117,10 @@ class TestTypeCheckerControlFlow:
         checker = TypeChecker(data=data)
 
         node = For(
-            var="item",
-            iterable="items",
-            body=[Expression("item", start=(1, 0))],
-            start=(0, 0),
+            SourceRange(Position(0, 0), Position(1, 0)),
+            "item",
+            "items",
+            Block([Expression(SourceRange(Position(1, 0), Position(1, 4)), "item")]),
         )
 
         assert checker.check(node)
@@ -124,10 +131,10 @@ class TestTypeCheckerControlFlow:
         checker = TypeChecker(data=data)
 
         node = For(
-            var="item",
-            iterable="count",
-            body=[Expression("item", start=(1, 0))],
-            start=(0, 0),
+            SourceRange(Position(0, 0), Position(1, 0)),
+            "item",
+            "count",
+            Block([Expression(SourceRange(Position(1, 0), Position(1, 4)), "item")]),
         )
 
         assert not checker.check(node)
@@ -143,10 +150,10 @@ class TestTypeCheckerControlFlow:
 
         # Loop variable should be accessible in body
         node = For(
-            var="item",
-            iterable="items",
-            body=[Expression("item.name", start=(1, 0))],
-            start=(0, 0),
+            SourceRange(Position(0, 0), Position(1, 0)),
+            "item",
+            "items",
+            Block([Expression(SourceRange(Position(1, 0), Position(1, 10)), "item.name")]),
         )
 
         assert checker.check(node)
@@ -161,7 +168,7 @@ class TestSchemaValidation:
         data = {"name": "Alice", "age": 30}
 
         checker = TypeChecker(schema=schema, data=data)
-        node = Expression("name", start=(0, 0))
+        node = Expression(SourceRange(Position(0, 0), Position(0, 0)), "name")
 
         assert checker.check(node)
         assert not checker.errors.has_errors()
@@ -175,7 +182,7 @@ class TestErrorMessages:
         checker = TypeChecker(data=data)
 
         # Typo: "user_name" instead of "username"
-        node = Expression("user_name", start=(0, 0))
+        node = Expression(SourceRange(Position(0, 0), Position(0, 0)), "user_name")
         checker.check(node)
 
         assert checker.errors.has_errors()
@@ -190,7 +197,7 @@ class TestErrorMessages:
         checker = TypeChecker(data=data)
 
         # Typo: "user.emai" instead of "user.email"
-        node = Expression("user.emai", start=(0, 0))
+        node = Expression(SourceRange(Position(0, 0), Position(0, 0)), "user.emai")
         checker.check(node)
 
         assert checker.errors.has_errors()
@@ -202,7 +209,7 @@ class TestErrorMessages:
 
     def test_error_formatting(self):
         checker = TypeChecker(data={})
-        node = Expression("undefined", start=(0, 5))
+        node = Expression(SourceRange(Position(0, 5), Position(0, 5)), "undefined")
         checker.check(node)
 
         source_text = "{{ {{ undefined }} }}"

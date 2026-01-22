@@ -8,7 +8,6 @@ representative end-to-end path.
 import pytest
 
 from temple.typed_ast import Block
-from temple.diagnostics import Position, SourceRange
 from temple.compiler.type_checker import TypeChecker
 from temple.compiler.serializers.markdown_serializer import MarkdownSerializer
 from temple.compiler.serializers.json_serializer import JSONSerializer
@@ -19,12 +18,7 @@ from temple.compiler.parser import TypedTemplateParser
 
 def _make_block(nodes):
     """Wrap a list of AST nodes in a synthetic root block for serialization."""
-    if not nodes:
-        start = end = Position(0, 0)
-    else:
-        start = nodes[0].source_range.start
-        end = nodes[-1].source_range.end
-    return Block("root", nodes, SourceRange(start, end))
+    return Block(nodes, "root")
 
 
 def test_markdown_pipeline_happy_path():
@@ -46,7 +40,7 @@ def test_markdown_pipeline_happy_path():
 
     parser = TypedTemplateParser()
     ast_nodes, parse_errors = parser.parse(template)
-    assert parse_errors == []
+    assert not parse_errors
 
     checker = TypeChecker(data=data)
     for node in ast_nodes:
@@ -68,7 +62,7 @@ def test_markdown_pipeline_reports_type_errors():
 
     parser = TypedTemplateParser()
     ast_nodes, parse_errors = parser.parse(template)
-    assert parse_errors == []
+    assert not parse_errors
 
     checker = TypeChecker(data=data)
     for node in ast_nodes:
@@ -101,7 +95,7 @@ def test_json_pipeline_happy_path():
 
     parser = TypedTemplateParser()
     ast_nodes, parse_errors = parser.parse(template)
-    assert parse_errors == []
+    assert not parse_errors
 
     checker = TypeChecker(data=data)
     for node in ast_nodes:
@@ -122,7 +116,7 @@ def test_html_pipeline_happy_path():
 
     parser = TypedTemplateParser()
     ast_nodes, parse_errors = parser.parse(template)
-    assert parse_errors == []
+    assert not parse_errors
 
     checker = TypeChecker(data=data)
     for node in ast_nodes:
@@ -152,7 +146,7 @@ def test_yaml_pipeline_happy_path():
 
     parser = TypedTemplateParser()
     ast_nodes, parse_errors = parser.parse(template)
-    assert parse_errors == []
+    assert not parse_errors
 
     checker = TypeChecker(data=data)
     for node in ast_nodes:

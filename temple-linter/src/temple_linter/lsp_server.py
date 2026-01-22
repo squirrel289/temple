@@ -11,7 +11,6 @@ from lsprotocol.types import (
     InitializeParams,
     InitializeResult,
     TextDocumentSyncKind,
-    Diagnostic,
 )
 from lsprotocol.types import (
     TEXT_DOCUMENT_DID_OPEN,
@@ -26,14 +25,14 @@ from lsprotocol.types import (
     PublishDiagnosticsParams,
 )
 import logging
-from typing import List
-from temple_linter.services.lint_orchestrator import LintOrchestrator
+
+from .services.lint_orchestrator import LintOrchestrator
 
 
 class TempleLinterServer(LanguageServer):
     """LSP server for temple template linting."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("temple-linter", "v1")
         self.logger = logging.getLogger(__name__)
         self.temple_extensions = [".tmpl", ".template"]  # defaults
@@ -67,7 +66,7 @@ def on_initialize(ls: TempleLinterServer, params: InitializeParams):
 def did_open(ls: TempleLinterServer, params: DidOpenTextDocumentParams):
     """Handle document open event."""
     text_doc = params.text_document
-    diagnostics: List[Diagnostic] = ls.orchestrator.lint_template(
+    diagnostics = ls.orchestrator.lint_template(
         text_doc.text, text_doc.uri, lc, ls.temple_extensions
     )
     ls.text_document_publish_diagnostics(

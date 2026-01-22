@@ -4,12 +4,13 @@ Tests for YAML serializer.
 
 import pytest
 from temple.compiler.serializers.yaml_serializer import YAMLSerializer
-from temple.typed_ast import Text, Expression, If, For
+from temple.typed_ast import Text, Expression, If, For, Block
+from temple.diagnostics import Position, SourceRange
 
 
 def make_source():
     """Create a dummy source range for testing."""
-    return (0, 0)
+    return SourceRange(Position(0, 0), Position(0, 0))
 
 
 class TestYAMLSerializer:
@@ -18,7 +19,7 @@ class TestYAMLSerializer:
     def test_serialize_text(self):
         """Test serializing plain text."""
         source = make_source()
-        text = Text("hello", source)
+        text = Text(source, "hello")
         serializer = YAMLSerializer(pretty=False)
         result = serializer.serialize(text, {})
         assert "hello" in result
@@ -26,7 +27,7 @@ class TestYAMLSerializer:
     def test_serialize_expression(self):
         """Test serializing variable expressions."""
         source = make_source()
-        expr = Expression("name", source)
+        expr = Expression(source, "name")
         serializer = YAMLSerializer(pretty=False)
         result = serializer.serialize(expr, {"name": "world"})
         assert "world" in result
@@ -34,9 +35,9 @@ class TestYAMLSerializer:
     def test_serialize_if_block_true(self):
         """Test if block with true condition."""
         source = make_source()
-        body = [Text("shown", source)]
-        else_body = [Text("hidden", source)]
-        if_node = If("show", body, source, else_body=else_body)
+        body = Block([Text(source, "shown")])
+        else_body = Block([Text(source, "hidden")])
+        if_node = If(source, "show", body, else_body=else_body)
 
         serializer = YAMLSerializer(pretty=False)
         result = serializer.serialize(if_node, {"show": True})
@@ -164,8 +165,8 @@ class TestYAMLSerializerEdgeCases:
         """Test for loop with loop context variable."""
         source = make_source()
         # Body that uses loop items only
-        body = [Expression("item", source)]
-        for_node = For("item", "items", body, source)
+        body = Block([Expression(source, "item")])
+        for_node = For(source, "item", "items", body)
 
         serializer = YAMLSerializer(pretty=False)
         result = serializer.serialize(for_node, {"items": [10, 20]})

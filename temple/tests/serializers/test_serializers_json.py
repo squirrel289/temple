@@ -6,11 +6,12 @@ import pytest
 import json
 from temple.compiler.serializers.json_serializer import JSONSerializer
 from temple.typed_ast import Text, Expression, If, For, Block
+from temple.diagnostics import Position, SourceRange
 
 
 def make_source():
     """Create a dummy source range for testing."""
-    return (0, 0)
+    return SourceRange(Position(0, 0), Position(0, 0))
 
 
 class TestJSONSerializer:
@@ -19,7 +20,7 @@ class TestJSONSerializer:
     def test_serialize_text(self):
         """Test serializing plain text."""
         source = make_source()
-        text = Text("hello", source)
+        text = Text(source, "hello")
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(text, {})
         assert result == '"hello"'
@@ -27,7 +28,7 @@ class TestJSONSerializer:
     def test_serialize_expression(self):
         """Test serializing variable expressions."""
         source = make_source()
-        expr = Expression("name", source)
+        expr = Expression(source, "name")
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(expr, {"name": "world"})
         assert result == '"world"'
@@ -35,7 +36,7 @@ class TestJSONSerializer:
     def test_serialize_number(self):
         """Test serializing numeric values."""
         source = make_source()
-        expr = Expression("count", source)
+        expr = Expression(source, "count")
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(expr, {"count": 42})
         assert result == "42"
@@ -44,7 +45,7 @@ class TestJSONSerializer:
         """Test serializing nested objects."""
         source = make_source()
         data = {"user": {"name": "Alice", "age": 30}}
-        expr = Expression("user", source)
+        expr = Expression(source, "user")
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(expr, data)
         parsed = json.loads(result)
@@ -55,7 +56,7 @@ class TestJSONSerializer:
         """Test serializing arrays."""
         source = make_source()
         data = {"items": [1, 2, 3]}
-        expr = Expression("items", source)
+        expr = Expression(source, "items")
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(expr, data)
         parsed = json.loads(result)
@@ -65,7 +66,7 @@ class TestJSONSerializer:
         """Test pretty-printed JSON output."""
         source = make_source()
         data = {"items": [1, 2]}
-        expr = Expression("items", source)
+        expr = Expression(source, "items")
         serializer = JSONSerializer(pretty=True)
         result = serializer.serialize(expr, data)
         # Check that it's valid JSON
@@ -77,7 +78,7 @@ class TestJSONSerializer:
     def test_serialize_null_value(self):
         """Test serializing null values."""
         source = make_source()
-        expr = Expression("missing", source)
+        expr = Expression(source, "missing")
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(expr, {})
         assert result == "null"
@@ -85,9 +86,9 @@ class TestJSONSerializer:
     def test_serialize_if_block_true(self):
         """Test if block with true condition."""
         source = make_source()
-        body = Block([Text("yes", source)], start=source)
-        else_body = Block([Text("no", source)], start=source)
-        if_node = If("flag", body, start=source, else_body=else_body)
+        body = Block([Text(source, "yes")])
+        else_body = Block([Text(source, "no")])
+        if_node = If(source, "flag", body, else_body=else_body)
 
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(if_node, {"flag": True})
@@ -96,9 +97,9 @@ class TestJSONSerializer:
     def test_serialize_if_block_false(self):
         """Test if block with false condition."""
         source = make_source()
-        body = Block([Text("yes", source)], start=source)
-        else_body = Block([Text("no", source)], start=source)
-        if_node = If("flag", body, start=source, else_body=else_body)
+        body = Block([Text(source, "yes")])
+        else_body = Block([Text(source, "no")])
+        if_node = If(source, "flag", body, else_body=else_body)
 
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(if_node, {"flag": False})
@@ -107,8 +108,8 @@ class TestJSONSerializer:
     def test_serialize_for_loop(self):
         """Test for loop serialization."""
         source = make_source()
-        body = Block([Expression("item", source)], start=source)
-        for_node = For("item", "items", body, start=source)
+        body = Block([Expression(source, "item")])
+        for_node = For(source, "item", "items", body)
 
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(for_node, {"items": [1, 2, 3]})
@@ -118,7 +119,7 @@ class TestJSONSerializer:
     def test_serialize_string_escaping(self):
         """Test that special characters are properly escaped."""
         source = make_source()
-        expr = Expression("text", source)
+        expr = Expression(source, "text")
         serializer = JSONSerializer(pretty=False)
         result = serializer.serialize(expr, {"text": 'hello "world"'})
         # Should be properly quoted and escaped
@@ -156,7 +157,7 @@ class TestJSONSerializerErrors:
         from temple.compiler.serializers.base import SerializationError
 
         source = make_source()
-        expr = Expression("missing", source)
+        expr = Expression(source, "missing")
         serializer = JSONSerializer(strict=True)
 
         with pytest.raises(SerializationError):
@@ -167,8 +168,8 @@ class TestJSONSerializerErrors:
         from temple.compiler.serializers.base import SerializationError
 
         source = make_source()
-        body = Block([Text("item", source)], start=source)
-        for_node = For("item", "count", body, source)
+        body = Block([Text(source, "item")])
+        for_node = For(source, "item", "count", body)
         serializer = JSONSerializer(strict=True)
 
         with pytest.raises(SerializationError):
