@@ -282,18 +282,3 @@ class PositionTracker:
             checkpoint: Tuple from checkpoint()
         """
         self.line, self.col, self.char_index = checkpoint
-
-
-# Expose commonly-used helpers into builtins for test convenience (legacy tests
-# reference these classes unqualified in test modules).
-try:
-    import builtins
-
-    builtins.PositionTracker = PositionTracker
-    builtins.DiagnosticMapper = DiagnosticMapper
-except Exception:
-    # Best-effort: if we cannot modify builtins in this environment (e.g., restricted
-    # runtime or packaging sandbox), skip installing these testing conveniences
-    # without failing imports. This avoids surprising crashes during test collection.
-    # Intentionally do not raise here.
-    pass
