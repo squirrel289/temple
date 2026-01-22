@@ -20,9 +20,6 @@ concurrency:
 jobs:
   run-and-publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -102,6 +99,19 @@ jobs:
         with:
           path: ./temple/asv/results/html
 
+      # Deployment to GitHub Pages is performed in a separate job
+      # that runs only on the `main` branch so environment protection
+      # rules don't block feature-branch runs.
+
+  deploy-pages:
+    needs: run-and-publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
