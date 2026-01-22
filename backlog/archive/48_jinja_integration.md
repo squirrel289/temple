@@ -11,10 +11,6 @@ related_backlog:
   - "[[38_integration_and_e2e_tests.md]]"
 estimated_hours: 24
 priority: high
-related_backlog:
-  - "[[38_integration_and_e2e_tests.md]]"
-estimated_hours: 24
-priority: high
 ---
 
 ## Goal
