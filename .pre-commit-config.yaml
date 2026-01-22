@@ -18,3 +18,9 @@ repos:
       entry: scripts/pre-commit/run-pre-push.sh
       language: system
       stages: [pre-push]
+    - id: eslint-extension
+      name: eslint (vscode-temple-linter)
+      entry: npm --prefix vscode-temple-linter run lint -- --max-warnings=0
+      language: system
+      pass_filenames: false
+      files: ^vscode-temple-linter/src/.*\.ts$
