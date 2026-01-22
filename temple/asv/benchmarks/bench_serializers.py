@@ -2,22 +2,18 @@
 
 from temple.compiler.parser import TypedTemplateParser
 from temple.compiler.type_checker import TypeChecker
-from temple.compiler.ast_nodes import Block, Position, SourceRange
 from temple.compiler.serializers import (
     JSONSerializer,
     MarkdownSerializer,
     HTMLSerializer,
     YAMLSerializer,
 )
+from temple.typed_ast import Block
 
 
 def _make_block(nodes):
-    if not nodes:
-        start = end = Position(0, 0)
-    else:
-        start = nodes[0].source_range.start
-        end = nodes[-1].source_range.end
-    return Block("root", nodes, SourceRange(start, end))
+    # Wrap parsed nodes into a Block to align with serializer expectations.
+    return Block(nodes or [], name="root")
 
 
 def _build_template(sections: int = 20) -> str:
