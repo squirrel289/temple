@@ -59,16 +59,16 @@ jobs:
         continue-on-error: true
         run: |
           # Update ASV and run benchmarks from repo root using the project config
-          asv update --config temple/asv.conf.json || true
-          # Run on last 5 commits to populate graphs with historical data
-          asv run --config temple/asv.conf.json --quick HEAD~4..HEAD || true
-          # Also run current HEAD if not already covered
-          asv run --config temple/asv.conf.json --quick HEAD || true
+            asv update --config asv.conf.json || true
+            # Run on last 5 commits to populate graphs with historical data
+            asv run --config asv.conf.json --quick HEAD~4..HEAD || true
+            # Also run current HEAD if not already covered
+            asv run --config asv.conf.json --quick HEAD || true
 
       - name: Generate ASV HTML report
         run: |
           # Publish benchmark results to HTML using the project config
-          asv publish --config temple/asv.conf.json
+            asv publish --config asv.conf.json
 
       - name: Prepare versioned publish directory
         working-directory: temple
