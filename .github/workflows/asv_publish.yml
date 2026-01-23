@@ -58,17 +58,30 @@ jobs:
       - name: Run ASV benchmarks
         continue-on-error: true
         run: |
+          # Locate asv.conf.json anywhere under the workspace and use absolute path
+          ASV_CONFIG=$(find "$GITHUB_WORKSPACE" -maxdepth 4 -type f -name asv.conf.json -print -quit || true)
+          if [ -z "$ASV_CONFIG" ]; then
+            echo "asv.conf.json not found under $GITHUB_WORKSPACE"
+            exit 1
+          fi
+          echo "Using ASV config: $ASV_CONFIG"
           # Update ASV and run benchmarks from repo root using the project config
-            asv update --config asv.conf.json || true
-            # Run on last 5 commits to populate graphs with historical data
-            asv run --config asv.conf.json --quick HEAD~4..HEAD || true
-            # Also run current HEAD if not already covered
-            asv run --config asv.conf.json --quick HEAD || true
+          asv update --config "$ASV_CONFIG" || true
+          # Run on last 5 commits to populate graphs with historical data
+          asv run --config "$ASV_CONFIG" --quick HEAD~4..HEAD || true
+          # Also run current HEAD if not already covered
+          asv run --config "$ASV_CONFIG" --quick HEAD || true
 
       - name: Generate ASV HTML report
         run: |
-          # Publish benchmark results to HTML using the project config
-            asv publish --config asv.conf.json
+          # Locate asv.conf.json and publish HTML
+          ASV_CONFIG=$(find "$GITHUB_WORKSPACE" -maxdepth 4 -type f -name asv.conf.json -print -quit || true)
+          if [ -z "$ASV_CONFIG" ]; then
+            echo "asv.conf.json not found under $GITHUB_WORKSPACE"
+            exit 1
+          fi
+          echo "Using ASV config: $ASV_CONFIG"
+          asv publish --config "$ASV_CONFIG"
 
       - name: Prepare versioned publish directory
         working-directory: temple
