@@ -13,6 +13,12 @@ def load_template_text(path):
     temple_dir = os.path.dirname(asv_dir)
     repo_root = os.path.dirname(temple_dir)
     full_path = os.path.join(repo_root, path)
+    if not os.path.exists(full_path):
+        alt_path = path.replace("examples/bench/", "examples/templates/bench/")
+        alt_full = os.path.join(repo_root, alt_path)
+        if os.path.exists(alt_full):
+            full_path = alt_full
+
     with open(full_path, "r", encoding="utf-8") as f:
         return f.read()
 
