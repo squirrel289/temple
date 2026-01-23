@@ -7,12 +7,16 @@ class TemplateError(Exception):
 
 
 class Node:
-    def __init__(self, source_range: "SourceRange"):
+    def __init__(self, source_range: SourceRange):
         # `source_range` is the canonical SourceRange for this node.
-        self.source_range = source_range
+        self._source_range = source_range
         # Keep convenient `.start` reference for legacy code: the Position
         # (start of the SourceRange).
         self.start = source_range.start
+
+    @property
+    def source_range(self) -> SourceRange:
+        return self._source_range
 
     def evaluate(
         self,
@@ -25,7 +29,7 @@ class Node:
 
 
 class Text(Node):
-    def __init__(self, source_range: "SourceRange", text: str):
+    def __init__(self, source_range: SourceRange, text: str):
         super().__init__(source_range)
         self.text = text
 
@@ -40,7 +44,7 @@ class Text(Node):
 
 
 class Expression(Node):
-    def __init__(self, source_range: "SourceRange", expr: Optional[str] = None):
+    def __init__(self, source_range: SourceRange, expr: Optional[str] = None):
         expr_val = expr
         super().__init__(source_range)
         self.expr = expr_val
@@ -206,12 +210,12 @@ class Block(Node):
         nodes: Optional[List[Node]],
         name: Optional[str] = None,
     ):
-        source_range = (
+        sr = (
             SourceRange(nodes[0].source_range.start, nodes[-1].source_range.end)
             if nodes
             else SourceRange(Position(0, 0), Position(0, 0))
         )
-        super().__init__(source_range)
+        super().__init__(sr)
         self.name = name
         # canonical storage
         self.nodes = list(nodes) if nodes is not None else []

@@ -1,17 +1,13 @@
 """Type checker benchmarks for typical templates."""
 
+from typing import Sequence
 from temple.compiler.parser import TypedTemplateParser
 from temple.compiler.type_checker import TypeChecker
-from temple.compiler.ast_nodes import Block, Position, SourceRange
+from temple.typed_ast import Block, Node
 
 
-def _make_block(nodes):
-    if not nodes:
-        start = end = Position(0, 0)
-    else:
-        start = nodes[0].source_range.start
-        end = nodes[-1].source_range.end
-    return Block("root", nodes, SourceRange(start, end))
+def _make_block(nodes: Sequence[Node]) -> Block:
+    return Block(list(nodes), "root")
 
 
 def _build_template(sections: int = 20) -> str:
@@ -25,7 +21,7 @@ def _build_template(sections: int = 20) -> str:
 class BenchTypeChecker:
     def setup(self):
         self.parser = TypedTemplateParser()
-        self.data = {
+        self.data: dict[str, dict[str, object]] = {
             "user": {
                 "name": "Alice",
                 "jobs": [

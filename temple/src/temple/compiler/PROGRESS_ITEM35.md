@@ -185,7 +185,7 @@ TypeErrorCollector
 ## Integration Points
 
 ### Input Dependencies (from Item 34)
-- ✅ Uses AST nodes from `temple.compiler.ast_nodes`
+- ✅ Uses AST nodes from `temple.typed_ast`
 - ✅ Position tracking (SourceRange, Position)
 - ✅ Node types (Text, Expression, If, For, etc.)
 
@@ -198,7 +198,12 @@ TypeErrorCollector
 ### Output for Item 37 (Serializers)
 - ✅ Type-decorated AST ready
 - ✅ Type information available for serialization decisions
+
+## Related Commits
+
+- c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
 - ✅ Schema validation for output format compliance
+- 207d23e  # docs(serializers): update example imports to temple.typed_ast (backlog #35)
 
 ## Key Design Decisions
 
