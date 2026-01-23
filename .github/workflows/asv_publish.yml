@@ -70,11 +70,11 @@ jobs:
           REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$GITHUB_WORKSPACE")
           TMP_CONF=$(mktemp)
           python - <<PY
-import json
-cfg = json.load(open(r"$ASV_CONFIG"))
-cfg['repo'] = r"$REPO_ROOT"
-json.dump(cfg, open(r"$TMP_CONF", 'w'), indent=2)
-PY
+          import json
+          cfg = json.load(open(r"$ASV_CONFIG"))
+          cfg['repo'] = r"$REPO_ROOT"
+          json.dump(cfg, open(r"$TMP_CONF", 'w'), indent=2)
+          PY
           ASV_CONFIG="$TMP_CONF"
           echo "Using generated ASV config: $ASV_CONFIG"
           # Update ASV and run benchmarks from repo root using the project config
