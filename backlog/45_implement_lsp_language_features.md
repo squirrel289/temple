@@ -9,6 +9,7 @@ completed_date: null
 related_commit:
   - 98facb7  # feat(vscode-extension): improve diagnostics/virtual docs for Temple LSP
   - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)"
+  - 58fe36a  # chore(typings): update temple typed_ast stub and diagnostics docs (backlog #45)
 test_results: null
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
