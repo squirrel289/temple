@@ -53,25 +53,22 @@ jobs:
             .github/runner_info.txt
 
       - name: Configure deterministic CI machine identity
-        working-directory: temple
-        run: ../.github/scripts/configure_asv_machine.sh ../asv/machines/ci_machine.json
+        run: .github/scripts/configure_asv_machine.sh asv/machines/ci_machine.json
 
       - name: Run ASV benchmarks
-        working-directory: temple
         continue-on-error: true
         run: |
-          # Update ASV and run benchmarks
-          asv update || true
+          # Update ASV and run benchmarks from repo root using the project config
+          asv update --config-file temple/asv.conf.json || true
           # Run on last 5 commits to populate graphs with historical data
-          asv run --quick HEAD~4..HEAD || true
+          asv run --config-file temple/asv.conf.json --quick HEAD~4..HEAD || true
           # Also run current HEAD if not already covered
-          asv run --quick HEAD || true
+          asv run --config-file temple/asv.conf.json --quick HEAD || true
 
       - name: Generate ASV HTML report
-        working-directory: temple
         run: |
-          # Publish benchmark results to HTML
-          asv publish
+          # Publish benchmark results to HTML using the project config
+          asv publish --config-file temple/asv.conf.json
 
       - name: Prepare versioned publish directory
         working-directory: temple
