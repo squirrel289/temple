@@ -15,6 +15,7 @@ related_commit:
   - e14cfc8  # feat(compiler): implement type system, schema validation, and type checker
   - 06366df  # test: reorganize compiler tests (ADR-002 Phase 3 - type system tests preserved)
   - 8a7ab8f  # feat(typed-ast): canonicalize AST attrs; update type checker and serializers; update tests
+  - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
 completed_date: 2026-01-09
 ---
 

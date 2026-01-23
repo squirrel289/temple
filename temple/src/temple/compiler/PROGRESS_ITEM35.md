@@ -198,6 +198,10 @@ TypeErrorCollector
 ### Output for Item 37 (Serializers)
 - ✅ Type-decorated AST ready
 - ✅ Type information available for serialization decisions
+
+## Related Commits
+
+- c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
 - ✅ Schema validation for output format compliance
 
 ## Key Design Decisions
