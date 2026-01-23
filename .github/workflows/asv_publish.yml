@@ -59,12 +59,24 @@ jobs:
         continue-on-error: true
         run: |
           # Locate asv.conf.json anywhere under the workspace and use absolute path
-          ASV_CONFIG=$(find "$GITHUB_WORKSPACE" -maxdepth 4 -type f -name asv.conf.json -print -quit || true)
+          ASV_CONFIG=$(find "$GITHUB_WORKSPACE" -maxdepth 6 -type f -name asv.conf.json -print -quit || true)
           if [ -z "$ASV_CONFIG" ]; then
             echo "asv.conf.json not found under $GITHUB_WORKSPACE"
             exit 1
           fi
-          echo "Using ASV config: $ASV_CONFIG"
+          echo "Found ASV config: $ASV_CONFIG"
+          # Ensure ASV uses the repository root for git operations by writing a
+          # temporary copy of the config with an absolute `repo` path.
+          REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$GITHUB_WORKSPACE")
+          TMP_CONF=$(mktemp)
+          python - <<PY
+import json
+cfg = json.load(open(r"$ASV_CONFIG"))
+cfg['repo'] = r"$REPO_ROOT"
+json.dump(cfg, open(r"$TMP_CONF", 'w'), indent=2)
+PY
+          ASV_CONFIG="$TMP_CONF"
+          echo "Using generated ASV config: $ASV_CONFIG"
           # Update ASV and run benchmarks from repo root using the project config
           asv update --config "$ASV_CONFIG" || true
           # Run on last 5 commits to populate graphs with historical data
