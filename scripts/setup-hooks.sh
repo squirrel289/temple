@@ -89,7 +89,7 @@ fi
 
 echo "Upgrading pip and installing tools into .ci-venv"
 "$HOOKS_VENV/bin/python" -m pip install --upgrade pip
-"$HOOKS_VENV/bin/python" -m pip install pre-commit ruff
+"$HOOKS_VENV/bin/python" -m pip install pre-commit ruff yamllint
 
 echo "Installing pre-commit hooks using the venv's pre-commit binary"
 "$HOOKS_VENV/bin/pre-commit" install || true
@@ -99,6 +99,18 @@ if [[ $INSTALL_DEPS -eq 1 ]]; then
   echo "Installing CI dependencies into $HOOKS_VENV via shared scripts"
   PATH="$HOOKS_VENV/bin:$PATH" INSTALL_DEPS=1 bash -c "bash scripts/ci/tests.sh --install-deps-only && bash scripts/ci/docs_build.sh --install-deps-only && bash scripts/ci/benchmarks_quick.sh --install-deps-only" || true
   echo "CI dependencies installed into $HOOKS_VENV (best-effort)."
+fi
+
+# Ensure node-based linters/deps are available for pre-commit hooks that use `npx`
+if [[ -f "vscode-temple-linter/package.json" ]]; then
+  echo "Installing Node devDependencies for vscode-temple-linter (for remark/eslint hooks)"
+  if command -v npm >/dev/null 2>&1; then
+    npm --prefix vscode-temple-linter install || true
+    # Ensure remark-cli + recommended preset are present so pre-commit npx runs are fast
+    npm --prefix vscode-temple-linter install --no-save --no-audit remark-cli remark-preset-lint-recommended || true
+  else
+    echo "npm not found; skipping Node linter install. Pre-commit will use npx at runtime." >&2
+  fi
 fi
 
 cat <<'EOF'
