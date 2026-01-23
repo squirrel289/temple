@@ -185,7 +185,7 @@ TypeErrorCollector
 ## Integration Points
 
 ### Input Dependencies (from Item 34)
-- ✅ Uses AST nodes from `temple.compiler.ast_nodes`
+- ✅ Uses AST nodes from `temple.typed_ast`
 - ✅ Position tracking (SourceRange, Position)
 - ✅ Node types (Text, Expression, If, For, etc.)
 
