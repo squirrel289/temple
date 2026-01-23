@@ -203,6 +203,7 @@ TypeErrorCollector
 
 - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
 - ✅ Schema validation for output format compliance
+ - 207d23e  # docs(serializers): update example imports to temple.typed_ast (backlog #35)
 
 ## Key Design Decisions
 
