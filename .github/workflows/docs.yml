@@ -2,10 +2,12 @@
 name: Docs
 
 "on":
+  # Run on pushes to main and trusted branch patterns
   push:
-    branches: [main]
+    branches: [main, 'docs/**']
+  # Run on pull request events (opened/synchronize/reopened) for PRs from any branch
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened]
 
 jobs:
   docs-linter:

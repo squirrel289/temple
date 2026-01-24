@@ -2,10 +2,12 @@
 name: ESLint
 
 "on":
+  # Run on pushes to main and common feature/release branch patterns
   push:
-    branches: [main]
+    branches: [main, 'feature/**', 'release/**', 'hotfix/**', 'dependabot/**', 'ci/**', 'bugfix/**', 'chore/**']
+  # Run on pull request events (opened/synchronize/reopened) for PRs from any branch
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened]
 
 defaults:
   run:
