@@ -1,12 +1,10 @@
 ---
 name: Auto-resolve PR review threads
-
 on:
-  pull_request:
-    types: [synchronize, reopened, ready_for_review]
   workflow_run:
     workflows: ["Tests", "Benchmarks", "Docs", "ESLint", "CodeQL"]
     types: [completed]
+  workflow_dispatch:
 
 permissions:
   pull-requests: write
@@ -17,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -55,14 +53,22 @@ jobs:
         run: |
           APP_ID="${{ secrets.REVIEW_RESOLUTION_BOT_APP_ID }}"
           token=$(python scripts/ci/github_app_helpers.py --app-id "$APP_ID" --private-key private-key.pem --installation ${{ env.INSTALLATION_ID }})
+          echo "::add-mask::$token"
           echo "INSTALL_TOKEN=$token" >> $GITHUB_ENV
+
+      - name: Verify token available
+        run: |
+          if [ -z "${{ env.INSTALL_TOKEN }}" ] && [ -z "${{ secrets.GITHUB_PR_AUTORESOLVE_TOKEN }}" ]; then
+            echo "No authentication token available. Configure REVIEW_RESOLUTION_BOT_APP_KEY and REVIEW_RESOLUTION_BOT_APP_ID secrets."
+            exit 1
+          fi
 
       - name: Run auto-resolve (dry-run)
         env:
           REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref || github.event.workflow_run.pull_requests[0].base.ref }}
           GITHUB_PR_AUTORESOLVE_TOKEN: ${{ env.INSTALL_TOKEN || secrets.GITHUB_PR_AUTORESOLVE_TOKEN }}
           DRY_RUN: '1'
         run: |
