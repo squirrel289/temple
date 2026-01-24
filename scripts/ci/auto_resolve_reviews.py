@@ -2,9 +2,10 @@
 """Auto-resolve PR review threads that are covered by a commit and tests.
 
 Conservative policy implemented:
-- Only attempt to resolve threads for which the PR head's required checks are green.
+- Only attempt to resolve threads for which the PR head's lightweight checks
+   are green.
 - Require either: (A) a tests/ file was added/modified in the PR, or
-  (B) an explicit marker `FixesReviewThread: <thread-id>` appears in the PR body or commit messages.
+    (B) an explicit marker `FixesReviewThread: <thread-id>` appears in the PR body or commit messages.
 
 This script is intended to be run from a GitHub Action. It uses the
 `GITHUB_PR_AUTORESOLVE_TOKEN` secret for GraphQL requests.
@@ -41,22 +42,8 @@ def _get_headers(token: str) -> Dict[str, str]:
     }
 
 
-def _safe_post(url: str, **post_kwargs):
-    """Wrapper around requests.post that prefers `json=` but falls back to `payload=`.
+# Use `requests.post` directly; tests are updated to provide a requests-like stub.
 
-    Some tests stub `requests.post` with signatures that accept `payload` instead of
-    `json`. This helper tries the usual `json` kwarg first and if the call raises
-    a TypeError due to unexpected kwarg, it retries by renaming `json` -> `payload`.
-    """
-    try:
-        return requests.post(url, **post_kwargs)
-    except TypeError:
-        # If a fake post doesn't accept `json`, try using `payload` instead.
-        if "json" in post_kwargs:
-            new_kwargs = dict(post_kwargs)
-            new_kwargs["payload"] = new_kwargs.pop("json")
-            return requests.post(url, **new_kwargs)
-        raise
 
 
 def combined_status(repo: str, sha: str, token: str) -> str:
@@ -158,9 +145,7 @@ def graphql_query(
     repo: str, query: str, variables: Dict[str, Any], token: str
 ) -> Dict[str, Any]:
     headers = _get_headers(token)
-    r = _safe_post(
-        GITHUB_GRAPHQL, json={"query": query, "variables": variables}, headers=headers
-    )
+    r = requests.post(GITHUB_GRAPHQL, json={"query": query, "variables": variables}, headers=headers)
     r.raise_for_status()
     result = r.json()
     if "errors" in result:
@@ -174,16 +159,19 @@ def list_review_threads(repo: str, pr: int, token: str) -> List[Dict[str, Any]]:
     query($owner:String!, $name:String!, $number:Int!) {
       repository(owner:$owner, name:$name) {
         pullRequest(number:$number) {
-          reviewThreads(first: 200) {
-            nodes {
-              id
-              isResolved
-              isOutdated
-              path
-              start { line }
-              comments(first: 10) { nodes { databaseId } }
-            }
-          }
+                                            reviewThreads(first: 100) {
+                                                nodes {
+                                                        id
+                                                        isResolved
+                                                        isOutdated
+                                                        path
+                                                        start { line }
+                                                        # Request comment line fields when available; prefer
+                                                        # `line` or `originalLine` (file-line numbers) before
+                                                        # falling back to `position` (patch index).
+                                                        comments(first: 10) { nodes { databaseId line originalLine position } }
+                                                }
+                                        }
         }
       }
     }
@@ -191,6 +179,29 @@ def list_review_threads(repo: str, pr: int, token: str) -> List[Dict[str, Any]]:
     vars: Dict[str, str | int] = {"owner": owner, "name": name, "number": pr}
     data = graphql_query(repo, query, vars, token)
     nodes = data["repository"]["pullRequest"]["reviewThreads"]["nodes"]
+    # Normalize nodes: prefer `start.line` when present. Otherwise, look for
+    # a file-line on comments (`line` or `originalLine`) and fall back to the
+    # patch `position` index. We prefer the first comment that contains a
+    # usable value to keep behavior deterministic.
+    for n in nodes:
+        start_line = None
+        if n.get("start") and n.get("start", {}).get("line") is not None:
+            start_line = n["start"]["line"]
+        else:
+            comments = n.get("comments", {}).get("nodes", [])
+            for c in comments:
+                # Prefer file-line values
+                if c.get("line") is not None:
+                    start_line = c.get("line")
+                    break
+                if c.get("originalLine") is not None:
+                    start_line = c.get("originalLine")
+                    break
+                if c.get("position") is not None:
+                    start_line = c.get("position")
+                    break
+        if start_line is not None:
+            n.setdefault("start", {})["line"] = start_line
     return nodes
 
 
@@ -206,7 +217,7 @@ def post_thread_reply(
     owner, name = _repo_owner_name(repo)
     url = f"{GITHUB_API}/repos/{owner}/{name}/pulls/{pr}/comments"
     payload: Dict[str, str | int] = {"body": body, "in_reply_to": in_reply_to}
-    r = _safe_post(url, headers=_get_headers(token), json=payload)
+    r = requests.post(url, headers=_get_headers(token), json=payload)
     r.raise_for_status()
 
 
@@ -224,7 +235,7 @@ def mark_thread_resolved(repo: str, thread_id: str, token: str) -> None:
 def post_pr_comment(repo: str, pr: int, body: str, token: str) -> None:
     owner, name = _repo_owner_name(repo)
     url = f"{GITHUB_API}/repos/{owner}/{name}/issues/{pr}/comments"
-    r = _safe_post(url, headers=_get_headers(token), json={"body": body})
+    r = requests.post(url, headers=_get_headers(token), json={"body": body})
     r.raise_for_status()
 
 

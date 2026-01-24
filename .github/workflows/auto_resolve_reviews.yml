@@ -2,7 +2,10 @@
 name: Auto-resolve PR review threads
 on:
   workflow_run:
-    workflows: ["Tests", "Benchmarks", "Docs", "ESLint", "CodeQL"]
+    # Only respond after lightweight checks complete on the PR head.
+    # Heavy jobs (Benchmarks, Docs, CodeQL) are intentionally excluded
+    # so they don't block auto-resolve on PR branches.
+    workflows: ["Tests", "ESLint"]
     types: [completed]
   workflow_dispatch:
 

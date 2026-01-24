@@ -64,7 +64,7 @@ def test_main_dry_run_resolves_thread(monkeypatch, capsys):
             return Resp(200, [])
         raise RuntimeError(f"unexpected GET {url}")
 
-    def fake_post(url, payload=None, headers=None):
+    def fake_post(url, json=None, headers=None):
         # GraphQL
         if url.endswith("/graphql"):
             # return one thread with start line 3 and a comment with databaseId
