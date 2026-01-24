@@ -33,7 +33,14 @@ def test_main_dry_run_resolves_thread(monkeypatch, capsys):
     def fake_get(url, headers=None, params=None):
         # checks endpoint
         if url.endswith("/check-runs"):
-            return Resp(200, {"check_runs": [{"status": "completed", "conclusion": "success", "name": "ci"}]})
+            return Resp(
+                200,
+                {
+                    "check_runs": [
+                        {"status": "completed", "conclusion": "success", "name": "ci"}
+                    ]
+                },
+            )
         # legacy status
         if url.endswith("/status"):
             return Resp(200, {"state": "success"})
@@ -46,7 +53,12 @@ def test_main_dry_run_resolves_thread(monkeypatch, capsys):
             return Resp(200, [{"filename": "foo.txt"}])
         # PR body
         if url.endswith("/pulls/1"):
-            return Resp(200, {"body": "",})
+            return Resp(
+                200,
+                {
+                    "body": "",
+                },
+            )
         # commits list
         if url.endswith("/pulls/1/commits"):
             return Resp(200, [])
@@ -82,7 +94,9 @@ def test_main_dry_run_resolves_thread(monkeypatch, capsys):
             return Resp(201, {"id": 1})
         raise RuntimeError(f"unexpected POST {url}")
 
-    monkeypatch.setattr(mod, "requests", types.SimpleNamespace(get=fake_get, post=fake_post))
+    monkeypatch.setattr(
+        mod, "requests", types.SimpleNamespace(get=fake_get, post=fake_post)
+    )
 
     # Mock subprocess.run for git fetch and git diff
     class Proc:

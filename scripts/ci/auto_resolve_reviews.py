@@ -35,7 +35,7 @@ def _repo_owner_name(repo: str) -> Tuple[str, str]:
 
 def _get_headers(token: str) -> Dict[str, str]:
     return {
-        "Authorization": f"bearer {token}",
+        "Authorization": f"Bearer {token}",
         # Use the stable GitHub API media type
         "Accept": "application/vnd.github+json",
     }
@@ -57,6 +57,7 @@ def _safe_post(url: str, **post_kwargs):
             new_kwargs["payload"] = new_kwargs.pop("json")
             return requests.post(url, **new_kwargs)
         raise
+
 
 def combined_status(repo: str, sha: str, token: str) -> str:
     """Return combined status for a commit considering Check Runs and legacy statuses.
@@ -156,11 +157,10 @@ def pr_body_and_commits(repo: str, pr: int, token: str) -> Tuple[str, List[str]]
 def graphql_query(
     repo: str, query: str, variables: Dict[str, Any], token: str
 ) -> Dict[str, Any]:
-    headers = {
-        "Authorization": f"bearer {token}",
-        "Accept": "application/vnd.github+json",
-    }
-    r = _safe_post(GITHUB_GRAPHQL, json={"query": query, "variables": variables}, headers=headers)
+    headers = _get_headers(token)
+    r = _safe_post(
+        GITHUB_GRAPHQL, json={"query": query, "variables": variables}, headers=headers
+    )
     r.raise_for_status()
     result = r.json()
     if "errors" in result:
@@ -395,10 +395,19 @@ def main() -> int:
                     try:
                         comments = t.get("comments", {}).get("nodes", [])
                         if comments:
-                            first_dbid = comments[0].get("databaseId")
-                            if first_dbid:
+                            # Prefer replying to the last comment in the thread so the
+                            # audit message appears at the most recent position in the
+                            # conversation. Fall back to PR-level comment if no
+                            # databaseId is available.
+                            last_dbid = None
+                            for c in reversed(comments):
+                                dbid = c.get("databaseId")
+                                if dbid:
+                                    last_dbid = dbid
+                                    break
+                            if last_dbid:
                                 post_thread_reply(
-                                    repo, pr, first_dbid, comment_body, token
+                                    repo, pr, last_dbid, comment_body, token
                                 )
                             else:
                                 post_pr_comment(repo, pr, comment_body, token)
