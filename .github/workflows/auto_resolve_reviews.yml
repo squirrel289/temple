@@ -30,7 +30,6 @@ jobs:
         run: echo "Dependencies installed from scripts/ci/requirements-resolver.txt"
 
       - name: Write App private key (REVIEW_RESOLUTION_BOT_APP_KEY)
-        if: secrets.REVIEW_RESOLUTION_BOT_APP_KEY != ''
         env:
           KEY: ${{ secrets.REVIEW_RESOLUTION_BOT_APP_KEY }}
         run: |
@@ -38,7 +37,6 @@ jobs:
           chmod 600 private-key.pem
 
       - name: Get App installation id (REVIEW_RESOLUTION_BOT_APP_ID)
-        if: secrets.REVIEW_RESOLUTION_BOT_APP_ID != '' && (secrets.REVIEW_RESOLUTION_BOT_APP_KEY != '')
         env:
           APP_ID: ${{ secrets.REVIEW_RESOLUTION_BOT_APP_ID }}
         run: |
