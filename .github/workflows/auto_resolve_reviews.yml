@@ -8,6 +8,21 @@ on:
     workflows: ["Tests", "ESLint"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to operate on'
+        required: false
+        type: number
+      head_sha:
+        description: 'Head commit SHA for PR'
+        required: false
+      base_ref:
+        description: 'Base ref for PR'
+        required: false
+      dry_run:
+        description: 'Override DRY_RUN (1 = dry-run, 0 = execute)'
+        required: false
+        default: '1'
 
 permissions:
   pull-requests: write
@@ -71,10 +86,11 @@ jobs:
       - name: Run auto-resolve (dry-run)
         env:
           REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha }}
-          BASE_REF: ${{ github.event.pull_request.base.ref || github.event.workflow_run.pull_requests[0].base.ref }}
+          # Prefer explicit workflow_dispatch inputs, then pull_request context, then workflow_run payload
+          PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.inputs.head_sha || github.event.pull_request.head.sha || github.event.workflow_run.head_sha }}
+          BASE_REF: ${{ github.event.inputs.base_ref || github.event.pull_request.base.ref || github.event.workflow_run.pull_requests[0].base.ref }}
           GITHUB_PR_AUTORESOLVE_TOKEN: ${{ env.INSTALL_TOKEN || secrets.GITHUB_PR_AUTORESOLVE_TOKEN }}
-          DRY_RUN: '1'
+          DRY_RUN: ${{ github.event.inputs.dry_run || '1' }}
         run: |
           python scripts/ci/auto_resolve_reviews.py
