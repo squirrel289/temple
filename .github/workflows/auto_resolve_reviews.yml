@@ -4,6 +4,9 @@ name: Auto-resolve PR review threads
 on:
   pull_request:
     types: [synchronize, reopened, ready_for_review]
+  workflow_run:
+    workflows: ["Tests", "Benchmarks", "Docs", "ESLint", "CodeQL"]
+    types: [completed]
 
 permissions:
   pull-requests: write
