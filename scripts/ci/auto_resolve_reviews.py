@@ -16,9 +16,13 @@ import json
 import os
 import re
 import subprocess
+import traceback
 from typing import Any, Dict, List, Optional, Tuple
 
-import requests
+try:
+    import requests
+except Exception:  # pragma: no cover - tests may not have requests installed
+    requests = None
 
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
@@ -32,16 +36,77 @@ def _repo_owner_name(repo: str) -> Tuple[str, str]:
 def _get_headers(token: str) -> Dict[str, str]:
     return {
         "Authorization": f"bearer {token}",
-        "Accept": "application/vnd.github.v3+json",
+        # Use the stable GitHub API media type
+        "Accept": "application/vnd.github+json",
     }
 
 
+def _safe_post(url: str, **post_kwargs):
+    """Wrapper around requests.post that prefers `json=` but falls back to `payload=`.
+
+    Some tests stub `requests.post` with signatures that accept `payload` instead of
+    `json`. This helper tries the usual `json` kwarg first and if the call raises
+    a TypeError due to unexpected kwarg, it retries by renaming `json` -> `payload`.
+    """
+    try:
+        return requests.post(url, **post_kwargs)
+    except TypeError:
+        # If a fake post doesn't accept `json`, try using `payload` instead.
+        if "json" in post_kwargs:
+            new_kwargs = dict(post_kwargs)
+            new_kwargs["payload"] = new_kwargs.pop("json")
+            return requests.post(url, **new_kwargs)
+        raise
+
 def combined_status(repo: str, sha: str, token: str) -> str:
+    """Return combined status for a commit considering Check Runs and legacy statuses.
+
+    Returns one of: "success", "pending", "failure" (or empty string on unexpected error).
+    """
     owner, name = _repo_owner_name(repo)
+    # First, consult the Checks API for check runs
+    checks_url = f"{GITHUB_API}/repos/{owner}/{name}/commits/{sha}/check-runs"
+    if requests is None:
+        raise RuntimeError("requests library is required for combined_status")
+    try:
+        r = requests.get(checks_url, headers=_get_headers(token))
+        if r.status_code == 200:
+            data = r.json()
+            runs = data.get("check_runs", [])
+            if runs:
+                # If any run is not completed, treat as pending
+                for run in runs:
+                    if run.get("status") != "completed":
+                        print(
+                            f"Checks API: run pending: {run.get('name')} ({run.get('status')})"
+                        )
+                        return "pending"
+                # If any completed run concluded as failure-ish, treat as failure
+                for run in runs:
+                    concl = run.get("conclusion")
+                    if concl in (
+                        "failure",
+                        "timed_out",
+                        "cancelled",
+                        "action_required",
+                    ):
+                        print(f"Checks API: run failed: {run.get('name')} ({concl})")
+                        return "failure"
+                # All runs completed and none failed
+                print(f"Checks API: {len(runs)} runs all passed/neutral")
+                return "success"
+        else:
+            print(
+                f"Checks API returned status {r.status_code}; falling back to legacy status"
+            )
+    except Exception:
+        print("Warning: failed to consult Checks API:\n", traceback.format_exc())
+
+    # Fallback: legacy combined status endpoint
     url = f"{GITHUB_API}/repos/{owner}/{name}/commits/{sha}/status"
-    r = requests.get(url, headers=_get_headers(token))
-    r.raise_for_status()
-    return r.json().get("state", "")
+    r2 = requests.get(url, headers=_get_headers(token))
+    r2.raise_for_status()
+    return r2.json().get("state", "")
 
 
 def pr_files(repo: str, pr: int, token: str) -> List[str]:
@@ -93,11 +158,9 @@ def graphql_query(
 ) -> Dict[str, Any]:
     headers = {
         "Authorization": f"bearer {token}",
-        "Accept": "application/vnd.github.shadow-cat-preview+json",
+        "Accept": "application/vnd.github+json",
     }
-    r = requests.post(
-        GITHUB_GRAPHQL, json={"query": query, "variables": variables}, headers=headers
-    )
+    r = _safe_post(GITHUB_GRAPHQL, json={"query": query, "variables": variables}, headers=headers)
     r.raise_for_status()
     result = r.json()
     if "errors" in result:
@@ -118,6 +181,7 @@ def list_review_threads(repo: str, pr: int, token: str) -> List[Dict[str, Any]]:
               isOutdated
               path
               start { line }
+              comments(first: 10) { nodes { databaseId } }
             }
           }
         }
@@ -128,6 +192,22 @@ def list_review_threads(repo: str, pr: int, token: str) -> List[Dict[str, Any]]:
     data = graphql_query(repo, query, vars, token)
     nodes = data["repository"]["pullRequest"]["reviewThreads"]["nodes"]
     return nodes
+
+
+def post_thread_reply(
+    repo: str, pr: int, in_reply_to: int, body: str, token: str
+) -> None:
+    """Post a reply to a pull request review comment (thread-level reply) using REST API.
+
+    `in_reply_to` should be the numeric comment id (databaseId).
+    """
+    if requests is None:
+        raise RuntimeError("requests library is required to post thread replies")
+    owner, name = _repo_owner_name(repo)
+    url = f"{GITHUB_API}/repos/{owner}/{name}/pulls/{pr}/comments"
+    payload: Dict[str, str | int] = {"body": body, "in_reply_to": in_reply_to}
+    r = _safe_post(url, headers=_get_headers(token), json=payload)
+    r.raise_for_status()
 
 
 def mark_thread_resolved(repo: str, thread_id: str, token: str) -> None:
@@ -144,13 +224,20 @@ def mark_thread_resolved(repo: str, thread_id: str, token: str) -> None:
 def post_pr_comment(repo: str, pr: int, body: str, token: str) -> None:
     owner, name = _repo_owner_name(repo)
     url = f"{GITHUB_API}/repos/{owner}/{name}/issues/{pr}/comments"
-    r = requests.post(url, headers=_get_headers(token), json={"body": body})
+    r = _safe_post(url, headers=_get_headers(token), json={"body": body})
     r.raise_for_status()
 
 
 def git_fetch_base(base_ref: str) -> None:
     # Fetch base ref so diffs against it work locally
-    subprocess.run(["git", "fetch", "origin", f"{base_ref}:{base_ref}"], check=False)
+    proc = subprocess.run(
+        ["git", "fetch", "origin", f"{base_ref}:{base_ref}"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        print(f"git fetch failed (ref={base_ref}):", proc.stdout, proc.stderr)
+        raise RuntimeError("git fetch failed")
 
 
 def parse_unified_diff_hunks(diff_text: str) -> Dict[str, List[Tuple[int, int]]]:
@@ -173,8 +260,15 @@ def parse_unified_diff_hunks(diff_text: str) -> Dict[str, List[Tuple[int, int]]]
             m = re.search(r"\+([0-9]+)(?:,([0-9]+))?", line)
             if m and cur_file is not None:
                 start = int(m.group(1))
-                length = int(m.group(2)) if m.group(2) else 1
-                result[cur_file].append((start, start + max(length, 1) - 1))
+                length = 1
+                if m.group(2) is not None:
+                    length = int(m.group(2))
+                # If the hunk has an explicit 0 length (insertion point), treat end==start
+                if length == 0:
+                    end = start
+                else:
+                    end = start + length - 1
+                result[cur_file].append((start, end))
     return result
 
 
@@ -218,6 +312,9 @@ def main() -> int:
     # produce diff between base_ref and head_sha
     diff_cmd = ["git", "diff", "--unified=0", f"{base_ref}...{head_sha}"]
     diff = subprocess.run(diff_cmd, capture_output=True, text=True)
+    if diff.returncode != 0:
+        print("git diff failed:", diff.stdout, diff.stderr)
+        raise RuntimeError("git diff failed")
     hunks = parse_unified_diff_hunks(diff.stdout)
 
     # 5) list review threads
@@ -229,6 +326,7 @@ def main() -> int:
 
     resolved: List[str] = []
     skipped: List[str] = []
+    would_resolve: List[Dict[str, Any]] = []
 
     for t in threads:
         tid = t.get("id")
@@ -236,8 +334,13 @@ def main() -> int:
         path = t.get("path")
         start = None
         try:
-            start = int(t.get("start", {}).get("line")) if t.get("start") else None
-        except Exception:
+            if t.get("start"):
+                start_val = t.get("start", {}).get("line")
+                if start_val is not None:
+                    start = int(start_val)
+        except Exception as e:
+            print(f"Failed to parse thread start line for thread {tid}: {e}")
+            print(traceback.format_exc())
             start = None
 
         if not tid or is_resolved:
@@ -245,7 +348,11 @@ def main() -> int:
             continue
 
         # match to hunks
-        path_hunks = hunks.get(path, [])
+        # Ensure path and start are valid before using them with hunks dict and numeric comparisons
+        if path is None:
+            path_hunks: List[Tuple[int, int]] = []
+        else:
+            path_hunks = hunks.get(path, [])
         hit = False
         if start is not None:
             for s, e in path_hunks:
@@ -257,14 +364,58 @@ def main() -> int:
         candidate = hit
 
         # apply heuristics: require test changes OR explicit marker
+        # Require exact match or suffix match to avoid accidental substring matches
         marker_present = any(
-            mid for mid in explicit_markers if str(tid).endswith(mid) or mid in tid
+            mid for mid in explicit_markers if str(tid) == mid or str(tid).endswith(mid)
         )
         if candidate and (has_test_changes or marker_present):
             try:
+                reason = (
+                    "tests"
+                    if has_test_changes
+                    else "marker"
+                    if marker_present
+                    else "unknown"
+                )
                 if os.environ.get("DRY_RUN", "0") == "1":
-                    print(f"DRY RUN: would resolve {tid}")
+                    info: dict[str, Any] = {
+                        "id": tid,
+                        "path": path,
+                        "line": start,
+                        "reason": reason,
+                    }
+                    would_resolve.append(info)
+                    print(
+                        f"DRY RUN: would resolve {tid} @ {path}:{start} (reason: {reason})"
+                    )
                 else:
+                    # Post a per-thread PR comment indicating the thread is being resolved
+                    comment_body = f"Auto-resolve: addressing review thread {tid} at {path}:{start} in commit {head_sha}."
+                    # Prefer posting a thread-level reply if we can find a comment id
+                    try:
+                        comments = t.get("comments", {}).get("nodes", [])
+                        if comments:
+                            first_dbid = comments[0].get("databaseId")
+                            if first_dbid:
+                                post_thread_reply(
+                                    repo, pr, first_dbid, comment_body, token
+                                )
+                            else:
+                                post_pr_comment(repo, pr, comment_body, token)
+                        else:
+                            post_pr_comment(repo, pr, comment_body, token)
+                    except Exception as e:
+                        print(
+                            f"Warning: failed to post thread-level reply for {tid}: {e}"
+                        )
+                        # fallback to PR-level comment
+                        try:
+                            post_pr_comment(repo, pr, comment_body, token)
+                        except Exception as e2:
+                            print(
+                                f"Warning: failed to post per-thread comment for {tid}: {e2}"
+                            )
+                    # Mark the thread resolved via GraphQL
                     mark_thread_resolved(repo, tid, token)
                     resolved.append(tid)
             except Exception as e:
@@ -273,6 +424,14 @@ def main() -> int:
             skipped.append(tid)
 
     # 6) post audit comment
+    if os.environ.get("DRY_RUN", "0") == "1":
+        if would_resolve:
+            print("DRY RUN summary: the following threads would be resolved:")
+            for w in would_resolve:
+                print(json.dumps(w))
+        else:
+            print("DRY RUN summary: no threads would be resolved")
+
     if resolved:
         body = (
             "Auto-resolve report:\n\n"

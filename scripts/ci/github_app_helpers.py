@@ -25,8 +25,15 @@ import argparse
 import time
 from typing import Any
 
-import jwt
-import requests
+try:
+    import jwt
+except Exception:  # pragma: no cover - tests may not have jwt installed
+    jwt = None
+
+try:
+    import requests
+except Exception:  # pragma: no cover - tests may not have requests installed
+    requests = None
 
 GITHUB_API = "https://api.github.com"
 
@@ -43,7 +50,10 @@ def create_jwt(app_id: str, private_key_path: str) -> str:
 
 
 def list_installations(jwt_token: str) -> Any:
-    headers = {"Authorization": f"Bearer {jwt_token}", "Accept": "application/vnd.github+json"}
+    headers = {
+        "Authorization": f"Bearer {jwt_token}",
+        "Accept": "application/vnd.github+json",
+    }
     r = requests.get(f"{GITHUB_API}/app/installations", headers=headers)
     r.raise_for_status()
     return r.json()
@@ -51,7 +61,10 @@ def list_installations(jwt_token: str) -> Any:
 
 def get_installation_for_repo(jwt_token: str, owner: str, repo: str) -> Any:
     """Return installation id for a specific repository, or None if not installed."""
-    headers = {"Authorization": f"Bearer {jwt_token}", "Accept": "application/vnd.github+json"}
+    headers = {
+        "Authorization": f"Bearer {jwt_token}",
+        "Accept": "application/vnd.github+json",
+    }
     r = requests.get(f"{GITHUB_API}/repos/{owner}/{repo}/installation", headers=headers)
     if r.status_code == 404:
         return None
@@ -60,8 +73,14 @@ def get_installation_for_repo(jwt_token: str, owner: str, repo: str) -> Any:
 
 
 def create_installation_token(jwt_token: str, installation_id: str) -> str:
-    headers = {"Authorization": f"Bearer {jwt_token}", "Accept": "application/vnd.github+json"}
-    r = requests.post(f"{GITHUB_API}/app/installations/{installation_id}/access_tokens", headers=headers)
+    headers = {
+        "Authorization": f"Bearer {jwt_token}",
+        "Accept": "application/vnd.github+json",
+    }
+    r = requests.post(
+        f"{GITHUB_API}/app/installations/{installation_id}/access_tokens",
+        headers=headers,
+    )
     r.raise_for_status()
     return r.json()["token"]
 
@@ -69,10 +88,20 @@ def create_installation_token(jwt_token: str, installation_id: str) -> str:
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--app-id", required=True, help="GitHub App ID")
-    p.add_argument("--private-key", required=True, help="Path to App private key PEM file")
-    p.add_argument("--list-installations", action="store_true", help="List installations for this app")
-    p.add_argument("--repo", help="Owner/repo to find installation for (e.g. squirrel289/temple)")
-    p.add_argument("--installation", help="Installation ID to create an access token for")
+    p.add_argument(
+        "--private-key", required=True, help="Path to App private key PEM file"
+    )
+    p.add_argument(
+        "--list-installations",
+        action="store_true",
+        help="List installations for this app",
+    )
+    p.add_argument(
+        "--repo", help="Owner/repo to find installation for (e.g. squirrel289/temple)"
+    )
+    p.add_argument(
+        "--installation", help="Installation ID to create an access token for"
+    )
     args = p.parse_args()
 
     jwt_token = create_jwt(args.app_id, args.private_key)
@@ -81,7 +110,9 @@ def main() -> int:
         installs = list_installations(jwt_token)
         print("Installations:")
         for i in installs:
-            print(f"- id: {i.get('id')} account: {i.get('account', {}).get('login')} repository_selection: {i.get('repository_selection')}")
+            print(
+                f"- id: {i.get('id')} account: {i.get('account', {}).get('login')} repository_selection: {i.get('repository_selection')}"
+            )
         return 0
 
     if args.repo:

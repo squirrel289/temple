@@ -47,7 +47,7 @@ Install dependencies in a virtualenv and run the script in dry-run mode:
 ```bash
 python -m venv .sandbox-venv
 source .sandbox-venv/bin/activate
-pip install -r scripts/ci/requirements.txt
+pip install -r scripts/ci/requirements-resolver.txt
 
 # write private key to file
 cat > private-key.pem <<'PEM'
@@ -79,3 +79,14 @@ python scripts/ci/auto_resolve_reviews.py
 ## Notes
 - The workflow uses short‑lived App installation tokens created at runtime; no long‑lived PAT is required.
 - Keep the `DRY_RUN` variable set to `1` until you confirm behavior.
+
+## Thread-reply behavior
+
+When `auto_resolve_reviews.py` posts evidence that a review thread is being resolved it prefers a thread-level reply (so the reply appears inline in the review thread). The script attempts to read the review thread's `comments.nodes[].databaseId` value returned by the GraphQL `reviewThreads` query and calls the REST `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments` endpoint with an `in_reply_to` payload. If a thread-level reply cannot be posted (missing ids or API error), the script falls back to publishing a PR-level comment.
+
+### Required permissions
+
+- GitHub App: `pull_requests: write` (required to post review comments and to call `markPullRequestReviewThreadResolved`).
+- GitHub App: `issues: write` (optional/fallback for PR-level comments).
+
+If you use a personal access token instead of a GitHub App, ensure it has the equivalent `repo`/`public_repo` scopes and write access to pull request comments.
