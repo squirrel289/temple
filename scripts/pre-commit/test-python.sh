@@ -3,18 +3,10 @@ set -euo pipefail
 
 # Run pytest for affected Python modules derived from filenames passed by pre-commit.
 
-PYTHON=python
-if [[ -x "$(pwd)/.ci-venv/bin/python" ]]; then
-  PYTHON="$(pwd)/.ci-venv/bin/python"
-else
-  if command -v python >/dev/null 2>&1; then
-    PYTHON=python
-  elif command -v python3 >/dev/null 2>&1; then
-    PYTHON=python3
-  else
-    echo "python not found in PATH; skipping test checks (allowing commit)." >&2
-    exit 0
-  fi
+PYTHON="$(command -v python3 || command -v python)"
+if [ -z "$PYTHON" ]; then
+  echo "python not found in PATH; skipping test checks (allowing commit)." >&2
+  exit 0
 fi
 
 # If pre-commit passes no filenames, exit successfully

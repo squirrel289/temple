@@ -42,7 +42,14 @@ def create_jwt(app_id: str, private_key_path: str) -> str:
     with open(private_key_path, "r") as f:
         private_key = f.read()
     now = int(time.time())
-    payload = {"iat": now - 60, "exp": now + (10 * 60), "iss": int(app_id)}
+    # GitHub accepts either the numeric Application ID or the client ID (a string)
+    # for the `iss` claim. Prefer converting to int when possible, otherwise
+    # use the provided string (client id) as-is.
+    try:
+        iss_val = int(app_id)
+    except Exception:
+        iss_val = app_id
+    payload = {"iat": now - 60, "exp": now + (10 * 60), "iss": iss_val}
     token = jwt.encode(payload, private_key, algorithm="RS256")
     if isinstance(token, bytes):
         token = token.decode()

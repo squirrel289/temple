@@ -38,8 +38,6 @@ In the repository: Settings → Secrets and variables → Actions → New reposi
 - Name: `REVIEW_RESOLUTION_BOT_APP_KEY` — Value: paste the full `private-key.pem` contents.
 - Name: `REVIEW_RESOLUTION_BOT_APP_ID` — Value: the numeric App ID
 
-Alternatively use the `TEMPLE_APP_PRIVATE_KEY` / `TEMPLE_APP_ID` names.
-
 ## Local dry-run
 
 Install dependencies in a virtualenv and run the script in dry-run mode:
@@ -47,7 +45,7 @@ Install dependencies in a virtualenv and run the script in dry-run mode:
 ```bash
 python -m venv .sandbox-venv
 source .sandbox-venv/bin/activate
-pip install -r scripts/ci/requirements-resolver.txt
+pip install -r scripts/ci/requirements.txt
 
 # write private key to file
 cat > private-key.pem <<'PEM'

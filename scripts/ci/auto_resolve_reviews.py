@@ -45,7 +45,6 @@ def _get_headers(token: str) -> Dict[str, str]:
 # Use `requests.post` directly; tests are updated to provide a requests-like stub.
 
 
-
 def combined_status(repo: str, sha: str, token: str) -> str:
     """Return combined status for a commit considering Check Runs and legacy statuses.
 
@@ -145,7 +144,9 @@ def graphql_query(
     repo: str, query: str, variables: Dict[str, Any], token: str
 ) -> Dict[str, Any]:
     headers = _get_headers(token)
-    r = requests.post(GITHUB_GRAPHQL, json={"query": query, "variables": variables}, headers=headers)
+    r = requests.post(
+        GITHUB_GRAPHQL, json={"query": query, "variables": variables}, headers=headers
+    )
     r.raise_for_status()
     result = r.json()
     if "errors" in result:

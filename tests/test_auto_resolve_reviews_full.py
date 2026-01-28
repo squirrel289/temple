@@ -113,7 +113,9 @@ def test_post_thread_reply_success(monkeypatch):
 
 
 def _fake_graphql_response(nodes):
-    return {"data": {"repository": {"pullRequest": {"reviewThreads": {"nodes": nodes}}}}}
+    return {
+        "data": {"repository": {"pullRequest": {"reviewThreads": {"nodes": nodes}}}}
+    }
 
 
 def test_list_review_threads_prefers_start_line(monkeypatch):
@@ -192,7 +194,14 @@ def test_list_review_threads_falls_back_to_position(monkeypatch):
 def test_list_review_threads_no_position_or_line(monkeypatch):
     mod = __import__("scripts.ci.auto_resolve_reviews", fromlist=["*"])
 
-    nodes = [{"id": "t5", "isResolved": False, "path": "e.py", "comments": {"nodes": [{"databaseId": 4}]}}]
+    nodes = [
+        {
+            "id": "t5",
+            "isResolved": False,
+            "path": "e.py",
+            "comments": {"nodes": [{"databaseId": 4}]},
+        }
+    ]
 
     def fake_post(url, json=None, headers=None):
         return _make_response(200, _fake_graphql_response(nodes))

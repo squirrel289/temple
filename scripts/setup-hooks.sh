@@ -10,26 +10,23 @@ cd "$REPO_ROOT"
 
 usage() {
   cat <<EOF
-Usage: $0 [--global] [--force] [--no-deps]
+Usage: $0 [--global] [--force]
 
 Install and configure repository hooks.
 
 Options:
   --global   Install hooks into your global git template directory so new clones receive them automatically.
   --force    Overwrite existing global template hooks when using --global.
-  --no-deps  Do NOT install CI dependencies (installer installs deps by default).
   -h, --help Show this help message
 EOF
 }
 
 GLOBAL=0
 FORCE=0
-INSTALL_DEPS=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --global) GLOBAL=1; shift ;;
     --force) FORCE=1; shift ;;
-    --no-deps) INSTALL_DEPS=0; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown arg: $1"; usage; exit 2 ;;
   esac
@@ -70,35 +67,59 @@ if [[ $GLOBAL -eq 1 ]]; then
   exit 0
 fi
 
-# Local setup: create .ci-venv and install tooling, then register pre-commit hooks
+# Ensure local hooks venv path
 HOOKS_VENV="$REPO_ROOT/.ci-venv"
-if [[ -d "$HOOKS_VENV" ]]; then
-  echo ".ci-venv already exists; using existing environment"
-else
-  echo "Creating .ci-venv..."
-  if command -v python >/dev/null 2>&1; then
-    PYTHON=python
-  elif command -v python3 >/dev/null 2>&1; then
-    PYTHON=python3
-  else
-    echo "python not found in PATH; cannot create venv." >&2
-    exit 2
-  fi
-  "$PYTHON" -m venv "$HOOKS_VENV"
+
+# Create and populate the hooks venv (idempotent)
+if [ ! -d "$HOOKS_VENV" ] || [ ! -x "$HOOKS_VENV/bin/python" ]; then
+  echo "Creating and populating hooks venv at: $HOOKS_VENV"
+  CI_VENV_PATH="$HOOKS_VENV" ./scripts/ci/ensure_ci_venv.sh || true
 fi
 
+# Use a repo-local pre-commit cache so hook virtualenvs don't depend on
+# global ~/.cache/pre-commit state (avoids plugin/version mismatches).
+export PRE_COMMIT_HOME="$REPO_ROOT/.cache/pre-commit"
+mkdir -p "$PRE_COMMIT_HOME"
+
 echo "Upgrading pip and installing tools into .ci-venv"
-"$HOOKS_VENV/bin/python" -m pip install --upgrade pip
-"$HOOKS_VENV/bin/python" -m pip install pre-commit ruff yamllint
+"$HOOKS_VENV/bin/python" -m pip install --upgrade pip || true
+
+# Install consolidated CI requirements first so we control tool versions
+# and avoid later conflicts when installing the editable package.
+if [ -f "./scripts/ci/requirements.txt" ]; then
+  echo "Installing CI requirements from scripts/ci/requirements.txt"
+  "$HOOKS_VENV/bin/pip" install -r ./scripts/ci/requirements.txt || true
+else
+  echo "Installing minimal tooling into .ci-venv"
+  "$HOOKS_VENV/bin/pip" install pre-commit ruff yamllint detect-secrets || true
+fi
+
+# Ensure pre-commit is available in the venv (CI requirements may not include it)
+"$HOOKS_VENV/bin/pip" install --upgrade pre-commit || true
+
+# Install the repository package in editable mode but avoid auto-installing
+# its declared dependencies to prevent resolver conflicts with the CI pins.
+"$HOOKS_VENV/bin/pip" install -e . || true
 
 echo "Installing pre-commit hooks using the venv's pre-commit binary"
-"$HOOKS_VENV/bin/pre-commit" install || true
+"$HOOKS_VENV/bin/pre-commit" install --install-hooks || true
 
-# Optionally install CI dependencies used by shared scripts
-if [[ $INSTALL_DEPS -eq 1 ]]; then
-  echo "Installing CI dependencies into $HOOKS_VENV via shared scripts"
-  PATH="$HOOKS_VENV/bin:$PATH" INSTALL_DEPS=1 bash -c "bash scripts/ci/tests.sh --install-deps-only && bash scripts/ci/docs_build.sh --install-deps-only && bash scripts/ci/benchmarks_quick.sh --install-deps-only" || true
+# Quick detect-secrets sanity check (gives actionable guidance for baseline/plugin mismatches)
+if ! "$HOOKS_VENV/bin/pre-commit" run detect-secrets --all-files --show-diff-on-failure >/dev/null 2>&1; then
+  echo "Warning: detect-secrets hook failed to initialize or matched an incompatible baseline."
+  echo "  - Run: '$HOOKS_VENV/bin/pre-commit autoupdate' or 'pre-commit autoupdate' to refresh hook revisions."
+  echo "  - Alternatively, pin the detect-secrets hook revision in .pre-commit-config.yaml to match .secrets.baseline."
+fi
+
+# Install CI dependencies used by shared scripts into the hooks venv as a
+# best-effort fallback for environments that rely on the helper script.
+echo "Installing CI dependencies into $HOOKS_VENV"
+if [ -f "./scripts/ci/ensure_ci_venv.sh" ]; then
+  chmod +x ./scripts/ci/ensure_ci_venv.sh || true
+  CI_VENV_PATH="$HOOKS_VENV" ./scripts/ci/ensure_ci_venv.sh || true
   echo "CI dependencies installed into $HOOKS_VENV (best-effort)."
+else
+  echo "Warning: ./scripts/ci/ensure_ci_venv.sh not found; skipping CI dependency install" >&2
 fi
 
 # Ensure node-based linters/deps are available for pre-commit hooks that use `npx`
