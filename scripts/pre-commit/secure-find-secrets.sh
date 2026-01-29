@@ -119,9 +119,39 @@ if [ -n "${DETECT_SECRETS_CMD}" ]; then
   # Fallback to full or per-path scan + compare
   if [ "${#staged_array[@]}" -gt 0 ]; then
     # join array into arguments safely
-    output=$($DETECT_SECRETS_CMD scan $DISABLE_FLAGS $SCAN_ARGS "${staged_array[@]}" 2>/dev/null | $PYTHON scripts/ci/detect_secrets_compare.py --curr - --no-write || true)
+    if [ "${SCAN_ARGS:-}" = "--all-files" ]; then
+      # Build a file list of tracked + untracked (but not git-ignored) files
+      tmpf=$(mktemp)
+      { git ls-files -z || true; git ls-files -z --others --exclude-standard || true; } > "$tmpf"
+      if [ -s "$tmpf" ]; then
+        # Feed null-delimited list to xargs -0 so detect-secrets only scans files git cares about
+        cat "$tmpf" | xargs -0 $DETECT_SECRETS_CMD scan $DISABLE_FLAGS > detect_secrets_curr.json 2>/dev/null || true
+      else
+        # Nothing to scan
+        echo '{"results":{}}' > detect_secrets_curr.json
+      fi
+      rm -f "$tmpf" || true
+      output=$($PYTHON scripts/ci/detect_secrets_compare.py --curr detect_secrets_curr.json --no-write || true)
+      # Save a baseline snapshot for CI upload if present
+      cp -f detect_secrets_curr.json current.baseline 2>/dev/null || true
+    else
+      output=$($DETECT_SECRETS_CMD scan $DISABLE_FLAGS $SCAN_ARGS "${staged_array[@]}" 2>/dev/null | $PYTHON scripts/ci/detect_secrets_compare.py --curr - --no-write || true)
+    fi
   else
-    output=$($DETECT_SECRETS_CMD scan $DISABLE_FLAGS $SCAN_ARGS 2>/dev/null | $PYTHON scripts/ci/detect_secrets_compare.py --curr - --no-write || true)
+    if [ "${SCAN_ARGS:-}" = "--all-files" ]; then
+      tmpf=$(mktemp)
+      { git ls-files -z || true; git ls-files -z --others --exclude-standard || true; } > "$tmpf"
+      if [ -s "$tmpf" ]; then
+        cat "$tmpf" | xargs -0 $DETECT_SECRETS_CMD scan $DISABLE_FLAGS > detect_secrets_curr.json 2>/dev/null || true
+      else
+        echo '{"results":{}}' > detect_secrets_curr.json
+      fi
+      rm -f "$tmpf" || true
+      output=$($PYTHON scripts/ci/detect_secrets_compare.py --curr detect_secrets_curr.json --no-write || true)
+      cp -f detect_secrets_curr.json current.baseline 2>/dev/null || true
+    else
+      output=$($DETECT_SECRETS_CMD scan $DISABLE_FLAGS $SCAN_ARGS 2>/dev/null | $PYTHON scripts/ci/detect_secrets_compare.py --curr - --no-write || true)
+    fi
   fi
 else
   echo "Falling back to python -m detect_secrets: $PYTHON"
