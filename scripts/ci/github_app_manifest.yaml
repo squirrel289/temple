@@ -13,4 +13,4 @@ default_events: []
 # Notes:
 # - Use the repo owner URL as `url`. Callback/webhook URLs can be placeholders
 #   (https://example.com/...) if you don't implement webhooks or OAuth.
-# - Install the App only on the specific target repository(ies) for least privilege.
+# - During installation, select only the specific target repository(ies) for least privilege.
