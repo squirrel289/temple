@@ -181,7 +181,8 @@ def main(argv=None) -> int:
     if new:
         print("New secrets found:")
         print(new)
-        json.dump(new, open(ROOT / "secrets-report.json", "w"))
+        with open(ROOT / "secrets-report.json", "w") as f:
+            json.dump(new, f)
         status_path.write_text("new")
     else:
         print("No new secrets found")
