@@ -59,6 +59,9 @@ Visual Studio Code extension providing real-time linting via LSP proxy to native
 
 ### Setup Each Component
 
+> Quick onboarding: after cloning the repository, run `./scripts/setup-hooks.sh` to create the local `.ci-venv` and install pre-commit hooks and tooling.
+
+
 #### 1. temple (Core Engine)
 ```bash
 cd temple
@@ -198,6 +201,47 @@ git commit -m "docs(temple): document query validation architecture"
 
 Temple abstracts away:
 - Data structure types (JSON, XML, YAML, TOML)
+
+## Local testing: CI helper scripts
+1. Prepare the shared CI venv and install dependencies (recommended onboarding):
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+This helper creates a local `.ci-venv`, installs `pre-commit` and the required tooling, and runs `pre-commit install --install-hooks` so hooks execute with the venv-provided tools.
+
+2. (Optional) If you prefer to create the venv manually or for CI-only use, you can run:
+
+```bash
+./scripts/ci/ensure_ci_venv.sh
+```
+
+3. Create a `detect-secrets` baseline (run once):
+
+```bash
+./scripts/ci/create_secrets_baseline.sh
+# review .secrets.baseline and commit it
+git add .secrets.baseline && git commit -m "chore(secrets): add detect-secrets baseline"
+```
+
+Pre-commit notes:
+- The repository's hooks are managed via `pre-commit`. Running `./scripts/setup-hooks.sh` is the recommended onboarding step and ensures `pre-commit` is installed from the `.ci-venv` so hooks run against the venv's tools.
+- To run hooks manually (after running `setup-hooks.sh`):
+
+```bash
+.ci-venv/bin/pre-commit run --all-files
+```
+
+ - The pre-commit hooks call scripts under `scripts/pre-commit/` (for example, `secure-find-secrets.sh`, `test-python.sh`, `build-docs.sh`). These step scripts assume required tools (Python, detect-secrets, pytest, sphinx-build, etc.) are available on PATH — which is satisfied when `pre-commit` is installed from `.ci-venv`.
+
+If you prefer not to use the helper, you can still prepare the CI venv manually via `./scripts/ci/ensure_ci_venv.sh` and then run `.ci-venv/bin/pre-commit install --install-hooks` to get equivalent behavior.
+
+## CI Status
+
+Detect-secrets scan: ![detect-secrets](https://github.com/squirrel289/temple/actions/workflows/detect-secrets.yml/badge.svg)
+
+The badge shows the latest status for the `detect-secrets` workflow. If the workflow fails, click the Actions tab and open the workflow run to see uploaded artifacts (scan output and report).
 - Query engines and AST implementations
 - Output formats and their linters
 - Editor/IDE integration details

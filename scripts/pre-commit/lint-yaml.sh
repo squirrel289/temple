@@ -17,4 +17,4 @@ if [ "${files_count}" -eq 0 ]; then
 fi
 
 # Use null-separated file list to safely handle spaces/newlines in filenames
-git ls-files -z '*.yml' '*.yaml' | xargs -0 "$YAMLLINT_BIN" -c .yamllint.yml
+git ls-files -z '*.yml' '*.yaml' | xargs -0 "$YAMLLINT_BIN" -c .yamllint
