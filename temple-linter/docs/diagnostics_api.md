@@ -37,7 +37,7 @@ class DiagnosticSeverity(Enum):
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
 from temple.compiler.diagnostics import Diagnostic, DiagnosticSeverity
-from temple.compiler.ast_nodes import SourceRange
+from temple.typed_ast import SourceRange
 
 @dataclass
 class Diagnostic:
@@ -181,7 +181,7 @@ Formats diagnostics as human-readable messages with optional source context:
 ```python
 from temple.compiler.error_formatter import ErrorFormatter
 from temple.compiler.diagnostics import Diagnostic, DiagnosticSeverity
-from temple.compiler.ast_nodes import SourceRange, Position
+from temple.typed_ast import SourceRange, Position
 
 formatter = ErrorFormatter(use_colors=True)
 
@@ -302,7 +302,7 @@ Diagnostics are converted to LSP format for IDE integration:
 
 ```python
 from temple.compiler.diagnostics import Diagnostic, DiagnosticSeverity
-from temple.compiler.ast_nodes import SourceRange, Position
+from temple.typed_ast import SourceRange, Position
 
 diagnostic = Diagnostic(
     message="Undefined variable",
