@@ -17,7 +17,6 @@ import json
 import os
 import re
 import subprocess
-import traceback
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
@@ -68,26 +67,35 @@ def combined_status(repo: str, sha: str, token: str) -> str:
                             f"Checks API: run pending: {run.get('name')} ({run.get('status')})"
                         )
                         return "pending"
-                # If any completed run concluded as failure-ish, treat as failure
-                for run in runs:
-                    concl = run.get("conclusion")
-                    if concl in (
-                        "failure",
-                        "timed_out",
-                        "cancelled",
-                        "action_required",
-                    ):
-                        print(f"Checks API: run failed: {run.get('name')} ({concl})")
-                        return "failure"
-                # All runs completed and none failed
+
+                # Collect conclusions and classify outcomes
+                conclusions = [run.get("conclusion") for run in runs]
+                failing = {"failure", "timed_out", "cancelled", "action_required"}
+
+                # Any explicit failing conclusion -> failure
+                if any(c in failing for c in conclusions if c is not None):
+                    print("Checks API: one or more check runs failed")
+                    return "failure"
+
+                # If any conclusion is None (unexpected), treat as pending
+                if any(c is None for c in conclusions):
+                    print("Checks API: some check runs have no conclusion yet; treating as pending")
+                    return "pending"
+
+                # Special-case: all conclusions are 'neutral' — treat as success but log
+                if all(c == "neutral" for c in conclusions):
+                    print("Checks API: all check runs concluded 'neutral'; treating as success")
+                    return "success"
+
+                # Otherwise, treat as success (includes 'success' and mixed 'success'/'neutral')
                 print(f"Checks API: {len(runs)} runs all passed/neutral")
                 return "success"
         else:
             print(
                 f"Checks API returned status {r.status_code}; falling back to legacy status"
             )
-    except Exception:
-        print("Warning: failed to consult Checks API:\n", traceback.format_exc())
+    except Exception as exc:
+        print(f"WARN: failed to consult Checks API: {exc}")
 
     # Fallback: legacy combined status endpoint
     url = f"{GITHUB_API}/repos/{owner}/{name}/commits/{sha}/status"
@@ -275,11 +283,11 @@ def parse_unified_diff_hunks(diff_text: str) -> Dict[str, List[Tuple[int, int]]]
                 length = 1
                 if m.group(2) is not None:
                     length = int(m.group(2))
-                # If the hunk has an explicit 0 length (insertion point), treat end==start
+                # In unified diff, "+start,0" indicates an insertion point with no added lines.
+                # For this function (ranges of added lines), skip zero-length hunks.
                 if length == 0:
-                    end = start
-                else:
-                    end = start + length - 1
+                    continue
+                end = start + length - 1
                 result[cur_file].append((start, end))
     return result
 
@@ -351,11 +359,20 @@ def main() -> int:
                 if start_val is not None:
                     start = int(start_val)
         except Exception as e:
-            print(f"Failed to parse thread start line for thread {tid}: {e}")
-            print(traceback.format_exc())
+            print(f"Warning: Failed to parse thread start line for thread {tid}: {e}")
             start = None
 
         if not tid or is_resolved:
+            skipped.append(tid or "<no-id>")
+            continue
+
+        # Note: Threads without a numeric `start` line (file-level comments
+        # or otherwise unspecified positions) are intentionally not
+        # auto-resolved. We cannot reliably determine whether the PR's
+        # changes addressed a file-level comment, so skip them and record
+        # them as skipped. This mirrors the conservative policy documented
+        # in the module docstring.
+        if start is None:
             skipped.append(tid or "<no-id>")
             continue
 
@@ -376,9 +393,14 @@ def main() -> int:
         candidate = hit
 
         # apply heuristics: require test changes OR explicit marker
-        # Require exact match or suffix match to avoid accidental substring matches
+        # Require either the full thread id or an explicit suffix match (the part
+        # after the final underscore). This reduces accidental substring matches.
+        def _extract_thread_suffix(thread_id: str) -> str:
+            return thread_id.split("_")[-1] if "_" in thread_id else thread_id
+
         marker_present = any(
-            mid for mid in explicit_markers if str(tid) == mid or str(tid).endswith(mid)
+            (str(tid) == mid) or (_extract_thread_suffix(str(tid)) == mid)
+            for mid in explicit_markers
         )
         if candidate and (has_test_changes or marker_present):
             try:
