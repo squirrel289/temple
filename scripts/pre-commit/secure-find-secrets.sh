@@ -64,8 +64,18 @@ else
     echo "Staged files detected (fallback): ${#staged_array[@]}"
     SCAN_ARGS=--
   else
-    echo "No staged files detected; running full scan"
-    SCAN_ARGS="--all-files"
+    # Do NOT perform a full repository scan from a pre-commit hook by default.
+    # Full scans are expensive and must only be run from scheduled CI jobs.
+    # Allow a scheduled job to explicitly opt-in by setting
+    # DETECT_SECRETS_ALLOW_FULL_REPO_SCAN=1 in its environment.
+    if [ "${DETECT_SECRETS_ALLOW_FULL_REPO_SCAN:-}" = "1" ]; then
+      echo "No staged files detected; DETECT_SECRETS_ALLOW_FULL_REPO_SCAN=1 -> running full scan"
+      SCAN_ARGS="--all-files"
+    else
+      echo "No staged files detected; skipping detect-secrets scan (full repo scans only run in scheduled jobs)." >&2
+      echo "Set DETECT_SECRETS_ALLOW_FULL_REPO_SCAN=1 in CI to allow a scheduled full scan." >&2
+      exit 0
+    fi
   fi
 fi
 
