@@ -23,6 +23,9 @@
       "path": "vscode-temple-linter",
       "name": "vscode-extension",
     },
+    {
+      "path": "../gists/llm-utils",
+    },
   ],
   "settings": {
     "python.testing.pytestEnabled": true,

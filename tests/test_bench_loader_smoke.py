@@ -26,6 +26,8 @@ def _cleanup(path: Path):
         if path.exists():
             path.unlink()
     except Exception:
+        # Best-effort cleanup: ignore errors (e.g., race conditions or
+        # missing files) during test teardown rather than failing the test.
         pass
 
 

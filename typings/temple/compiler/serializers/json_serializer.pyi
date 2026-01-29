@@ -38,14 +38,14 @@ class JSONSerializer(Serializer):
         Evaluate AST node to Python value suitable for JSON encoding.
 
         Args:
-            node: AST node
-                    return node.text
+            node: AST node to evaluate.
+            context: SerializationContext providing variables and helper utilities used during evaluation.
 
         Returns:
-                    value = context.get_variable(node.expr)
+            A Python value (str/int/float/list/dict/None) suitable for JSON encoding.
 
         Raises:
-            SerializationError: If evaluation fails
+            SerializationError: If evaluation fails or the node cannot be resolved.
         """
         ...
     
