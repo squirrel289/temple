@@ -45,9 +45,17 @@ def _get_headers(token: str) -> Dict[str, str]:
 
 
 def combined_status(repo: str, sha: str, token: str) -> str:
-    """Return combined status for a commit considering Check Runs and legacy statuses.
+    """
+    Return combined status for a commit considering both Check Runs (modern API) and legacy commit statuses.
 
-    Returns one of: "success", "pending", "failure" (or empty string on unexpected error).
+    - First, consult the Checks API for all check runs on the commit.
+        - If any check run is failing, timed out, cancelled, or action required, return "failure".
+        - If any check run is pending or has no conclusion, return "pending".
+        - If all check runs are successful or neutral, return "success".
+        - If the Checks API is unavailable or returns no runs, fall back to the legacy combined status endpoint.
+    - The legacy status endpoint is used for older workflows and returns "success", "pending", or "failure".
+
+    This ensures threads are only auto-resolved when all required checks have passed, matching conservative policy.
     """
     owner, name = _repo_owner_name(repo)
     # First, consult the Checks API for check runs
