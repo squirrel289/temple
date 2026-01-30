@@ -13,4 +13,5 @@ default_events: []
 # Notes:
 # - Use the repo owner URL as `url`. Callback/webhook URLs can be placeholders
 #   (https://example.com/...) if you don't implement webhooks or OAuth.
-# - During installation, select only the specific target repository(ies) for least privilege.
+# - Installation scope is set during the installation process in GitHub's UI, not in this manifest.
+#   Select only the specific target repository(ies) for least privilege when installing the App.

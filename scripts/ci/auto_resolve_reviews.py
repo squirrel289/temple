@@ -371,7 +371,8 @@ def main() -> int:
         # auto-resolved. We cannot reliably determine whether the PR's
         # changes addressed a file-level comment, so skip them and record
         # them as skipped. This mirrors the conservative policy documented
-        # in the module docstring.
+        # in the module docstring. If you want to explicitly resolve file-level
+        # threads, use a commit message or PR body marker: FixesReviewThread:<thread_id>
         if start is None:
             skipped.append(tid or "<no-id>")
             continue
@@ -396,6 +397,7 @@ def main() -> int:
         # Require either the full thread id or an explicit suffix match (the part
         # after the final underscore). This reduces accidental substring matches.
         def _extract_thread_suffix(thread_id: str) -> str:
+            # Extract just the suffix after the last underscore for comparison
             return thread_id.split("_")[-1] if "_" in thread_id else thread_id
 
         marker_present = any(
