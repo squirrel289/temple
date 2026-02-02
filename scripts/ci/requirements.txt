@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=scripts/ci/requirements.txt scripts/ci/requirements.in
 #
+-e temple
+
 alabaster==1.0.0
     # via sphinx
 asv==0.6.5

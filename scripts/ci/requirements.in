@@ -2,6 +2,7 @@
 # Note: leave versions unpinned here; pip-compile will produce a pinned working set.
 
 # Core tooling
+-e ./temple
 detect-secrets
 PyYAML
 requests
