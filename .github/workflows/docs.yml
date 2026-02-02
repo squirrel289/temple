@@ -33,14 +33,10 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Ensure CI venv
-        run: |
-          chmod +x scripts/ci/ensure_ci_venv.sh
-          CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
+        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
 
-      - name: Build docs via shared script
-        run: |
-          chmod +x ./scripts/ci/docs_build.sh
-          ./scripts/ci/docs_build.sh --with-deps
+      - name: Build docs via pre-commit hook
+        run: scripts/pre-commit/build-docs.sh
 
       - name: Check for broken links
         working-directory: temple-linter/docs

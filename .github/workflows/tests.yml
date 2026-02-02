@@ -35,11 +35,7 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Ensure CI venv
-        run: |
-          chmod +x scripts/ci/ensure_ci_venv.sh
-          CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
+        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
 
-      - name: Run tests via shared script
-        run: |
-          chmod +x ./scripts/ci/tests.sh
-          ./scripts/ci/tests.sh --with-deps
+      - name: Run tests via pre-commit hook
+        run: scripts/pre-commit/test-python.sh

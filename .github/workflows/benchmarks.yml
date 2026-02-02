@@ -34,13 +34,9 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Ensure CI venv
-        run: |
-          chmod +x scripts/ci/ensure_ci_venv.sh
-          CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
+        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
       - name: Run quick benchmark gate (pytest-based)
-        run: |
-          chmod +x ./scripts/ci/benchmarks_quick.sh
-          ./scripts/ci/benchmarks_quick.sh --with-deps
+        run: scripts/pre-commit/validate-benchmarks.sh
 
   # Scheduled/publish job to generate HTML reports (temple package)
   benchmarks:
@@ -66,14 +62,7 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Ensure CI venv
-        run: |
-          chmod +x scripts/ci/ensure_ci_venv.sh
-          CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
-
-      - name: Install ASV and temple package (via shared script)
-        run: |
-          chmod +x ./scripts/ci/benchmarks_quick.sh
-          ./scripts/ci/benchmarks_quick.sh --install-deps-only
+        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
 
       - name: Prepare ASV machine mapping
         run: |
