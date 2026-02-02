@@ -40,28 +40,23 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Ensure CI venv
-        run: |
-          chmod +x scripts/ci/ensure_ci_venv.sh
-          CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
+        working-directory: .
+        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
 
       - name: Install Node dependencies
         run: npm ci
 
       - name: Run yamllint
-        run: |
-          chmod +x ${{ github.workspace }}/scripts/pre-commit/lint-yaml.sh
-          ${{ github.workspace }}/scripts/pre-commit/lint-yaml.sh
+        working-directory: .
+        run: ${{ github.workspace }}/scripts/pre-commit/lint-yaml.sh
 
       - name: Run ruff
-        run: |
-          chmod +x ${{ github.workspace }}/scripts/pre-commit/lint-python.sh
-          ${{ github.workspace }}/scripts/pre-commit/lint-python.sh
+        working-directory: .
+        run: ${{ github.workspace }}/scripts/pre-commit/lint-python.sh
+
       - name: Run ESLint (vscode-temple-linter)
-        run: |
-          chmod +x ${{ github.workspace }}/scripts/pre-commit/lint-js.sh
-          ${{ github.workspace }}/scripts/pre-commit/lint-js.sh
+        run: ${{ github.workspace }}/scripts/pre-commit/lint-js.sh
 
       - name: Run bash lint (bash -n)
-        run: |
-          chmod +x ${{ github.workspace }}/scripts/pre-commit/lint-shell.sh
-          ${{ github.workspace }}/scripts/pre-commit/lint-shell.sh
+        working-directory: .
+        run: ${{ github.workspace }}/scripts/pre-commit/lint-shell.sh
