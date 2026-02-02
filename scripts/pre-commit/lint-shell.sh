@@ -57,7 +57,16 @@ while IFS= read -r -d $'\0' file; do
     printf "\n"
   fi
 
-done < <(find . -path './.git' -prune -o -type f -name '*.sh' -print0)
+done < <(find . \
+  -path './.git' -prune -o \
+  -path './node_modules' -prune -o \
+  -path './vscode-temple-linter/node_modules' -prune -o \
+  -path './.cache' -prune -o \
+  -path './temple/.venv' -prune -o \
+  -path './temple-linter/.venv' -prune -o \
+  -path './.ci-venv' -prune -o \
+  -path './env' -prune -o \
+  -type f -name '*.sh' -print0)
 
 if [ "$failed" -ne 0 ]; then
   echo "One or more shell scripts failed checks."
