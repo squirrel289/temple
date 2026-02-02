@@ -1,10 +1,13 @@
+---
 name: ESLint
 
-on:
+"on":
+  # Run on pushes to main and common feature/release branch patterns
   push:
-    branches: [main]
+    branches: [main, 'feature/**', 'release/**', 'hotfix/**', 'dependabot/**', 'ci/**', 'bugfix/**', 'chore/**']
+  # Run on pull request events (opened/synchronize/reopened) for PRs from any branch
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened]
 
 defaults:
   run:
@@ -26,8 +29,34 @@ jobs:
           cache: 'npm'
           cache-dependency-path: vscode-temple-linter/package-lock.json
 
-      - name: Install dependencies
+      - name: Restore pip cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/pip/wheels
+          key: ${{ runner.os }}-pip-${{ hashFiles('scripts/ci/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Ensure CI venv
+        working-directory: .
+        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
+
+      - name: Install Node dependencies
         run: npm ci
 
-      - name: Run ESLint
-        run: npm run lint
+      - name: Run yamllint
+        working-directory: .
+        run: ${{ github.workspace }}/scripts/pre-commit/lint-yaml.sh
+
+      - name: Run ruff
+        working-directory: .
+        run: ${{ github.workspace }}/scripts/pre-commit/lint-python.sh
+
+      - name: Run ESLint (vscode-temple-linter)
+        run: ${{ github.workspace }}/scripts/pre-commit/lint-js.sh
+
+      - name: Run bash lint (bash -n)
+        working-directory: .
+        run: ${{ github.workspace }}/scripts/pre-commit/lint-shell.sh

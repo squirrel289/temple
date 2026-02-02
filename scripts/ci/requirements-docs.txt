@@ -1,6 +1,0 @@
--e temple
--e temple-linter
-sphinx
-sphinx-rtd-theme
-sphinx-autodoc-typehints
-pygls

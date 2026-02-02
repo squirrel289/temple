@@ -44,7 +44,7 @@ Core Modules
 Template Tokenizer
 ~~~~~~~~~~~~~~~~~~
 
-.. automodule:: temple_linter.template_tokenizer
+.. automodule:: temple.template_tokenizer
    :members:
    :undoc-members:
    :show-inheritance:

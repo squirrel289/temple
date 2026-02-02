@@ -1,26 +1,61 @@
+---
 repos:
-- repo: local
-  hooks:
-    - id: ruff-check
-      name: ruff check
-      entry: .ci-venv/bin/ruff check
-      language: system
-      types: [python]
-    - id: pytest-affected
-      name: pytest affected
-      entry: scripts/pre-commit/run-tests.sh
-      language: system
-      files: ''
-      pass_filenames: true
-      types: [python]
-    - id: prepush-checks
-      name: pre-push checks
-      entry: scripts/pre-commit/run-pre-push.sh
-      language: system
-      stages: [pre-push]
-    - id: eslint-extension
-      name: eslint (vscode-temple-linter)
-      entry: npm --prefix vscode-temple-linter run lint -- --max-warnings=0
-      language: system
-      pass_filenames: false
-      files: ^vscode-temple-linter/src/.*\.ts$
+  - repo: local
+    hooks:
+      - id: lint-shell
+        name: "lint: shell (bash -n)"
+        entry: scripts/pre-commit/lint-shell.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: lint-yaml
+        name: "lint: yaml (yamllint)"
+        entry: scripts/pre-commit/lint-yaml.sh
+        language: system
+        pass_filenames: false
+
+      - id: lint-python
+        name: "lint: python"
+        entry: scripts/pre-commit/lint-python.sh
+        language: system
+        types: [python]
+
+      - id: lint-js
+        name: "lint: js/ts (ESLint)"
+        entry: scripts/pre-commit/lint-js.sh
+        language: system
+        pass_filenames: false
+        files: ^vscode-temple-linter/src/.*\.ts$
+
+      - id: secure-secrets-scan
+        name: "secure: secrets scan"
+        # Wrapper runs scan + compare (ensures compare logic identical to CI).
+        entry: scripts/pre-commit/secure-find-secrets.sh
+        language: system
+        pass_filenames: false
+
+      - id: test-python-affected
+        name: "test: python affected"
+        entry: scripts/pre-commit/test-python.sh
+        language: system
+        pass_filenames: true
+        types: [python]
+
+      - id: validate-benchmarks
+        name: "validate: benchmarks quick"
+        entry: scripts/pre-commit/validate-benchmarks.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: build-docs
+        name: "build: docs (pre-push)"
+        entry: scripts/pre-commit/build-docs.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+  # Official detect-secrets hook intentionally removed in favor of the
+  # `secure-secrets-scan` wrapper defined above. The wrapper provides
+  # repository-specific filtering and comparison logic to match CI.

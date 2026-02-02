@@ -329,7 +329,7 @@ Implement `Serializer` for custom output formats:
 
 ```python
 from temple.compiler.serializers import Serializer, SerializationContext, SerializationError
-from temple.compiler.ast_nodes import ASTNode, Text, Expression, If, For
+from temple.typed_ast import ASTNode, Text, Expression, If, For
 
 class CSVSerializer(Serializer):
     """Example: Custom CSV serializer."""
