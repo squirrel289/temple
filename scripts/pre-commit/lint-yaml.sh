@@ -2,10 +2,23 @@
 set -euo pipefail
 
 # Run yamllint across repository YAML files using repo config
-HERE=$(dirname "$0")/..
-YAMLLINT_BIN="${CI_VENV:-.ci-venv}/bin/yamllint"
-if [ ! -x "$YAMLLINT_BIN" ]; then
-  YAMLLINT_BIN=".ci-venv/bin/yamllint"
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+# Ensure CI venv is available if helper exists
+if [ -f "$ROOT_DIR/scripts/ci/venv_utils.sh" ]; then
+  . "$ROOT_DIR/scripts/ci/venv_utils.sh"
+fi
+
+if ! ensure_ci_venv_ready; then
+  print_ci_venv_instructions || true
+  exit 1
+fi
+
+YAMLLINT_BIN="$(command -v yamllint || true)"
+if [ -z "$YAMLLINT_BIN" ]; then
+  echo "yamllint not found on PATH; ensure .ci-venv is active or run ./scripts/setup-hooks.sh" >&2
+  exit 1
 fi
 
 echo "Running yamllint..."
