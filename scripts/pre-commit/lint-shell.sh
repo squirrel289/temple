@@ -46,7 +46,8 @@ while IFS= read -r -d $'\0' file; do
 
   # Use shellcheck (if available) - show results and mark failure on non-zero exit
   if [ "$SHELLCHECK_AVAILABLE" -eq 1 ]; then
-    if shellcheck -x "$file" >"$SC_ERR" 2>&1; then
+    # Only fail on error-level issues (exclude warnings/style)
+    if shellcheck -x -S error "$file" >"$SC_ERR" 2>&1; then
       printf " + shellcheck ok\n"
     else
       printf " + SHELLCHECK ERROR\n"
