@@ -27,7 +27,7 @@
       "path": "../workflow-framework",
     },
     {
-      "path": "../gists/llm-utils",
+      "path": "../gh-pr-review",
     },
   ],
   "settings": {
