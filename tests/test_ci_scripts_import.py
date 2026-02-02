@@ -10,9 +10,6 @@ def _load_module(path, name):
 
 
 def test_parse_unified_diff_hunks_zero_length():
-    import importlib.util
-    import os
-
     path = os.path.join(os.getcwd(), "scripts", "ci", "auto_resolve_reviews.py")
     spec = importlib.util.spec_from_file_location("ci.auto_resolve_reviews_test2", path)
     mod = importlib.util.module_from_spec(spec)
