@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build docs for pre-push checks. Assumes `sphinx-build` is on PATH.
+# Build docs for pre-push checks. Ensures CI venv is active.
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
+
+# Ensure CI venv is available if helper exists
+if [ -f "$ROOT_DIR/scripts/ci/venv_utils.sh" ]; then
+  . "$ROOT_DIR/scripts/ci/venv_utils.sh"
+fi
+
+if ! ensure_ci_venv_ready; then
+  print_ci_venv_instructions || true
+  exit 1
+fi
 
 SPHINX="$(command -v sphinx-build || true)"
 if [ -z "$SPHINX" ]; then
