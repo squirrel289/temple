@@ -106,8 +106,9 @@ def main() -> int:
         try:
             nested_repo = (nested_resolved / repo_field).resolve()
             candidates["nested_resolved_repo"] = inspect_path(nested_repo)
-        except Exception:
-            pass
+        except Exception as e:
+            # Record resolution errors for diagnostics instead of silently ignoring
+            candidates["nested_resolved_repo_error"] = str(e)
 
     report["candidates"] = candidates
 

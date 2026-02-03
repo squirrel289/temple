@@ -77,7 +77,6 @@ ENV/
 !*[a-zA-Z]venv*/
 !*venv[a-zA-Z]*/
 
-
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -85,6 +84,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Ruff
+.ruff*
+!.ruff.toml
 
 # -----------------------------------------------------------------------------
 # Node.js / TypeScript (vscode-temple-linter/)
@@ -295,3 +298,5 @@ temple-linter/tests/*.out
 # Matches any path that ends with docs/_build/ and its contents
 **/docs/_build/
 **/docs/_build/**
+
+.secrets/

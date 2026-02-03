@@ -2,10 +2,12 @@
 name: Docs
 
 "on":
+  # Run on pushes to main and trusted branch patterns
   push:
-    branches: [main]
+    branches: [main, 'docs/**']
+  # Run on pull request events (opened/synchronize/reopened) for PRs from any branch
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened]
 
 jobs:
   docs-linter:
@@ -20,10 +22,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build docs via shared script
-        run: |
-          chmod +x ./scripts/ci/docs_build.sh
-          ./scripts/ci/docs_build.sh --with-deps
+      - name: Restore pip cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/pip/wheels
+          key: ${{ runner.os }}-pip-${{ hashFiles('scripts/ci/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Ensure CI venv
+        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
+
+      - name: Build docs via pre-commit hook
+        run: scripts/pre-commit/build-docs.sh
 
       - name: Check for broken links
         working-directory: temple-linter/docs

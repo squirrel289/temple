@@ -23,6 +23,12 @@
       "path": "vscode-temple-linter",
       "name": "vscode-extension",
     },
+    {
+      "path": "../workflow-framework",
+    },
+    {
+      "path": "../gh-pr-review",
+    },
   ],
   "settings": {
     "python.testing.pytestEnabled": true,
@@ -45,6 +51,7 @@
       "ms-python.vscode-pylance",
       "charliermarsh.ruff",
       "bierner.github-markdown-preview",
+      "timonwong.shellcheck",
     ],
   },
 }
