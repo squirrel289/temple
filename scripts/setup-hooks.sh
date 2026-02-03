@@ -24,6 +24,21 @@ EOF
 GLOBAL=0
 FORCE=0
 while [[ $# -gt 0 ]]; do
+echo "Upgrading pip and installing tools into .ci-venv"
+"$HOOKS_VENV/bin/python" -m pip install --upgrade pip || true
+
+# Ensure node-based linters/deps are available for pre-commit hooks that use `npx`
+if [[ -f "vscode-temple-linter/package.json" ]]; then
+  echo "Installing Node devDependencies for vscode-temple-linter (for remark/eslint hooks)"
+  if command -v npm >/dev/null 2>&1; then
+    npm --prefix vscode-temple-linter install || true
+    # Ensure remark-cli + recommended preset are present so pre-commit npx runs are fast
+    npm --prefix vscode-temple-linter install --no-save --no-audit remark-cli remark-preset-lint-recommended || true
+  else
+    echo "npm not found; skipping Node linter install. Pre-commit will use npx at runtime." >&2
+  fi
+fi
+
   case "$1" in
     --global) GLOBAL=1; shift ;;
     --force) FORCE=1; shift ;;
@@ -38,7 +53,7 @@ if [[ $GLOBAL -eq 1 ]]; then
   mkdir -p "$TARGET_DIR"
   if [[ -d .githooks && -n "$(ls -A .githooks)" ]]; then
     if [[ $FORCE -eq 1 ]]; then
-      rm -rf "$TARGET_DIR"/*
+      rm -rf "${TARGET_DIR:?}"/*
     fi
     # Prefer using pre-commit for global installs so hooks are managed consistently.
     if command -v pre-commit >/dev/null 2>&1; then
@@ -79,6 +94,21 @@ fi
 # Use a repo-local pre-commit cache so hook virtualenvs don't depend on
 # global ~/.cache/pre-commit state (avoids plugin/version mismatches).
 export PRE_COMMIT_HOME="$REPO_ROOT/.cache/pre-commit"
+  echo "Upgrading pip and installing tools into .ci-venv"
+  "$HOOKS_VENV/bin/python" -m pip install --upgrade pip || true
+
+  # Ensure node-based linters/deps are available for pre-commit hooks that use `npx`
+  if [[ -f "vscode-temple-linter/package.json" ]]; then
+    echo "Installing Node devDependencies for vscode-temple-linter (for remark/eslint hooks)"
+    if command -v npm >/dev/null 2>&1; then
+      npm --prefix vscode-temple-linter install || true
+      # Ensure remark-cli + recommended preset are present so pre-commit npx runs are fast
+      npm --prefix vscode-temple-linter install --no-save --no-audit remark-cli remark-preset-lint-recommended || true
+    else
+      echo "npm not found; skipping Node linter install. Pre-commit will use npx at runtime." >&2
+    fi
+  fi
+
 mkdir -p "$PRE_COMMIT_HOME"
 
 echo "Upgrading pip and installing tools into .ci-venv"
