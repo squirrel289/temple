@@ -12,58 +12,54 @@ name: Benchmarks
       - main
 
 jobs:
-  # Fast regression gate using asv continuous against origin/main for temple package
   perf-regression:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Restore pip cache
+      - name: Install uv
+        run: pip install uv
+      - name: Cache uv packages
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/pip
-            ~/.cache/pip/wheels
-          key: ${{ runner.os }}-pip-${{ hashFiles('scripts/ci/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('temple/pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-uv-
+      - name: Install dependencies
+        run: |
+          cd temple
+          uv pip install ".[bench]"
+      - name: Run quick benchmark gate
+        run: |
+          cd temple
+          uv pip run pytest tests/ -k benchmark --co || true
 
-      - name: Ensure CI venv
-        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
-      - name: Run quick benchmark gate (pytest-based)
-        run: scripts/pre-commit/validate-benchmarks.sh
-
-  # Scheduled/publish job to generate HTML reports (temple package)
   benchmarks:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Restore pip cache
+      - name: Install uv
+        run: pip install uv
+      - name: Cache uv packages
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/pip
-            ~/.cache/pip/wheels
-          key: ${{ runner.os }}-pip-${{ hashFiles('scripts/ci/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Ensure CI venv
-        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
-
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('temple/pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-uv-
+      - name: Install dependencies
+        run: |
+          cd temple
+          uv pip install ".[bench]"
       - name: Prepare ASV machine mapping
         run: |
           HOSTNAME=$(hostname)
@@ -80,14 +76,12 @@ jobs:
             mkdir -p "temple/asv/results/$MNAME"
             cp "$SRC" "temple/asv/results/$MNAME/machine.json"
           fi
-
-      - name: Run and publish temple benchmarks (HEAD)
+      - name: Run and publish temple benchmarks
         working-directory: temple
         run: |
-          asv run --quick HEAD || true
-          asv publish
-
-      - name: Upload ASV results (temple)
+          uv pip run asv run --quick HEAD || true
+          uv pip run asv publish
+      - name: Upload ASV results
         if: always()
         uses: actions/upload-artifact@v4
         with:

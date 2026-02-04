@@ -2,40 +2,45 @@
 name: Tests
 
 "on":
-  # Run on pushes to main and common feature/release branch patterns
   push:
     branches: [main, 'feature/**', 'release/**', 'hotfix/**', 'dependabot/**', 'ci/**', 'bugfix/**', 'chore/**']
-  # Run on pull request events (opened/synchronize/reopened) for PRs from any branch
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11"]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Restore pip cache
+      - name: Install uv
+        run: pip install uv
+      - name: Cache uv packages
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/pip
-            ~/.cache/pip/wheels
-          key: ${{ runner.os }}-pip-${{ hashFiles('scripts/ci/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Ensure CI venv
-        run: CI_VENV_PATH="${{ github.workspace }}/.cache/ci-venv" ./scripts/ci/ensure_ci_venv.sh
-
-      - name: Run tests via pre-commit hook
-        run: scripts/pre-commit/test-python.sh
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('temple/pyproject.toml', 'temple-linter/pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-uv-${{ matrix.python-version }}-
+      - name: Install temple dependencies
+        run: |
+          cd temple
+          uv pip install ".[test]"
+      - name: Install temple-linter dependencies
+        run: |
+          cd temple-linter
+          uv pip install ".[test]"
+      - name: Run temple tests
+        run: |
+          cd temple
+          uv pip run pytest tests/
+      - name: Run temple-linter tests
+        run: |
+          cd temple-linter
+          uv pip run pytest tests/

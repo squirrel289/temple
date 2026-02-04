@@ -4,58 +4,64 @@ repos:
     hooks:
       - id: lint-shell
         name: "lint: shell (bash -n)"
-        entry: scripts/pre-commit/lint-shell.sh
+        entry: bash -n
         language: system
-        pass_filenames: false
+        pass_filenames: true
+        types: [shell]
         stages: [pre-push]
 
       - id: lint-yaml
         name: "lint: yaml (yamllint)"
-        entry: scripts/pre-commit/lint-yaml.sh
+        entry: uv tool run yamllint
         language: system
-        pass_filenames: false
+        pass_filenames: true
+        types: [yaml]
+        stages: [pre-commit]
 
       - id: lint-python
-        name: "lint: python"
-        entry: scripts/pre-commit/lint-python.sh
-        language: system
-        types: [python]
-
-      - id: lint-js
-        name: "lint: js/ts (ESLint)"
-        entry: scripts/pre-commit/lint-js.sh
-        language: system
-        pass_filenames: false
-        files: ^vscode-temple-linter/src/.*\.ts$
-
-      - id: secure-secrets-scan
-        name: "secure: secrets scan"
-        # Wrapper runs scan + compare (ensures compare logic identical to CI).
-        entry: scripts/pre-commit/secure-find-secrets.sh
-        language: system
-        pass_filenames: false
-
-      - id: test-python-affected
-        name: "test: python affected"
-        entry: scripts/pre-commit/test-python.sh
+        name: "lint: python (ruff)"
+        entry: uv tool run ruff check
         language: system
         pass_filenames: true
         types: [python]
+        stages: [pre-commit]
+
+      - id: lint-js
+        name: "lint: js/ts (ESLint)"
+        entry: bash -c "cd vscode-temple-linter && npx eslint"
+        language: system
+        pass_filenames: true
+        types: [javascript]
+        files: ^vscode-temple-linter/src/.*\.ts$
+        stages: [pre-commit]
+
+      - id: secure-secrets-scan
+        name: "secure: secrets scan (detect-secrets)"
+        entry: uv tool run detect-secrets scan
+        language: system
+        pass_filenames: true
+        stages: [pre-commit]
+
+      - id: test-python-affected
+        name: "test: python (pytest)"
+        entry: bash -c "uv tool run pytest"
+        language: system
+        pass_filenames: false
+        types: [python]
+        stages: [pre-commit]
 
       - id: validate-benchmarks
         name: "validate: benchmarks quick"
-        entry: scripts/pre-commit/validate-benchmarks.sh
+        entry: bash -c "cd temple && uv pip run pytest"
         language: system
         pass_filenames: false
+        types: [python]
         stages: [pre-push]
 
       - id: build-docs
-        name: "build: docs (pre-push)"
-        entry: scripts/pre-commit/build-docs.sh
+        name: "build: docs (sphinx)"
+        entry: bash -c "cd temple-linter/docs && uv pip run sphinx-build -b html . _build/html"
         language: system
         pass_filenames: false
+        types: [python, yaml, markdown]
         stages: [pre-push]
-
-  # Official detect-secrets hook intentionally removed in favor of the
-  # `secure-secrets-scan` wrapper defined above. The wrapper provides
-  # repository-specific filtering and comparison logic to match CI.
