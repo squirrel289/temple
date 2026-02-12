@@ -2,19 +2,8 @@
 set -euo pipefail
 
 # Run pytest for affected Python modules (pre-commit) or all tests (scheduled/push).
-
-# Ensure CI virtualenv is activated so tests run with the CI toolset.
 ROOT_DIR="$(git rev-parse --show-toplevel)"
-
-# Ensure CI venv is available if helper exists
-if [ -f "$ROOT_DIR/scripts/ci/venv_utils.sh" ]; then
-  . "$ROOT_DIR/scripts/ci/venv_utils.sh"
-fi
-
-if ! ensure_ci_venv_ready; then
-  print_ci_venv_instructions || true
-  exit 1
-fi
+cd "$ROOT_DIR"
 
 PYTHON="$(command -v python3 || command -v python)"
 if [ -z "$PYTHON" ]; then

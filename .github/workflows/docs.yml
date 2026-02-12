@@ -1,68 +1,37 @@
 ---
 name: Docs
 
-"on":
+on:
+  # Run on pushes to main and trusted branch patterns
   push:
     branches: [main, 'docs/**']
+  # Run on pull request events (opened/synchronize/reopened) for PRs from any branch
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
   docs-linter:
-    name: temple-linter Sphinx Docs
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Temple Linter Python Environment Setup
+        uses: ./.github/actions/setup-python
         with:
           python-version: '3.11'
-      - name: Install uv
-        run: pip install uv
-      - name: Cache uv packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('temple-linter/pyproject.toml') }}
-          restore-keys: ${{ runner.os }}-uv-
-      - name: Install dependencies
-        run: |
-          cd temple-linter
-          uv pip install ".[docs]"
+          working-directory: temple-linter
+          extras: "[docs]"
       - name: Build docs
-        run: |
-          cd temple-linter/docs
-          uv pip run sphinx-build -b html . _build/html
-      - name: Check for broken links
-        run: |
-          cd temple-linter/docs
-          uv pip run sphinx-build -b linkcheck -W --keep-going . _build/linkcheck || true
-
+        run: ./scripts/pre-commit/build-docs.sh
+      - name: Lint docs
+        run: ./scripts/pre-commit/lint-docs.sh
   docs-core:
-    name: temple Core Docs
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Temple Core Python Environment Setup
+        uses: ./.github/actions/setup-python
         with:
           python-version: '3.11'
-      - name: Install uv
-        run: pip install uv
-      - name: Cache uv packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('temple/pyproject.toml') }}
-          restore-keys: ${{ runner.os }}-uv-
-      - name: Install dependencies
-        run: |
-          cd temple
-          uv pip install ".[docs]"
-      - name: Verify core docs exist
+          working-directory: temple
+          extras: "[docs]"
+      - name: Validate core docs exist
         working-directory: temple/docs
-        run: |
-          echo "✓ Core documentation files present:"
-          ls -1 *.md || echo "No markdown docs found"
+        run: echo '✓ Core documentation files present:' && ls -1 *.md || echo 'No markdown docs found'

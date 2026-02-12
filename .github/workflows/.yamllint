@@ -1,4 +1,5 @@
-extends: ../../.yamllint
+---
+extends: .yamllint
 
 # Per-folder yamllint config for GitHub workflow files.
 # This file extends the repository-level `.yamllint` at the project root
