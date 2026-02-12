@@ -1,9 +1,9 @@
 ---
 name: Auto-resolve PR review threads
-
 on:
   workflow_run:
-    workflows: ["Tests", "ESLint"]
+    # Respond after the current verification workflows complete on the PR head.
+    workflows: ["Tests", "Static Analysis"]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -34,26 +34,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Python setup for auto-resolve
+        uses: ./.github/actions/setup-python
         with:
           python-version: '3.11'
-      - name: Install uv
-        run: pip install uv
-      - name: Cache uv packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-auto-resolve
-          restore-keys: ${{ runner.os }}-uv-
-      - name: Install dependencies
-        run: uv pip install requests PyJWT[crypto] cryptography PyGithub
-      - name: (deps installed)
-        run: 'echo "Dependencies installed via uv"'
+          working-directory: scripts/ci
+          extras: "[token]"
       - name: Write App private key
         env:
           KEY: ${{ secrets.REVIEW_RESOLUTION_BOT_APP_KEY }}
         run: |
+          # Write private key to a secure temp file and export its path for later steps
           PRIVATE_KEY_PATH=$(mktemp)
           printf "%s" "$KEY" > "$PRIVATE_KEY_PATH"
           chmod 600 "$PRIVATE_KEY_PATH"
@@ -118,6 +109,7 @@ jobs:
       - name: Cleanup private key
         if: always()
         run: |
+          # Best-effort cleanup of the temporary private key file
           if [ -n "${PRIVATE_KEY_PATH:-}" ] && [ -f "${PRIVATE_KEY_PATH}" ]; then
             shred -u "${PRIVATE_KEY_PATH}" 2>/dev/null || rm -f "${PRIVATE_KEY_PATH}" || true
           fi

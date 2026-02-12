@@ -12,7 +12,7 @@ repos:
 
       - id: lint-yaml
         name: "lint: yaml (yamllint)"
-        entry: uv tool run yamllint
+        entry: scripts/pre-commit/lint-yaml.sh
         language: system
         pass_filenames: true
         types: [yaml]
@@ -20,7 +20,7 @@ repos:
 
       - id: lint-python
         name: "lint: python (ruff)"
-        entry: uv tool run ruff check
+        entry: scripts/pre-commit/lint-python.sh
         language: system
         pass_filenames: true
         types: [python]
@@ -37,14 +37,14 @@ repos:
 
       - id: secure-secrets-scan
         name: "secure: secrets scan (detect-secrets)"
-        entry: uv tool run detect-secrets scan
+        entry: scripts/pre-commit/secure-find-secrets.sh
         language: system
         pass_filenames: true
         stages: [pre-commit]
 
       - id: test-python-affected
         name: "test: python (pytest)"
-        entry: bash -c "uv tool run pytest"
+        entry: scripts/pre-commit/test-python.sh
         language: system
         pass_filenames: false
         types: [python]
