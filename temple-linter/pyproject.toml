@@ -5,7 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "temple-linter"
 version = "0.1.0"
-description = "Linting and diagnostics for templated files. Integrates with temple core and base format linters."
+description = "Linting and diagnostics for templated files. Integrates with temple and base format linters."
+
+authors = [
+	{ name = "Chris Caldwell", email = "chris@calan.co" }
+]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
