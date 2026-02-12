@@ -1,46 +1,55 @@
 ---
 name: Tests
 
-"on":
+on:
+  # Run on pushes to main and common feature/release branch patterns
   push:
     branches: [main, 'feature/**', 'release/**', 'hotfix/**', 'dependabot/**', 'ci/**', 'bugfix/**', 'chore/**']
+  # Run on pull request events (opened/synchronize/reopened) for PRs from any branch
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
-  test:
+  root-python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Python Setup (root automation tests)
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.11'
+          working-directory: scripts/ci
+          extras: "[test]"
+      - name: Install local temple package
+        run: uv pip install ./temple[test]
+      - name: Run root test suite
+        run: python -m pytest tests -q
+
+  temple-tests:
     strategy:
       matrix:
         python-version: ["3.10", "3.11"]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Python Setup (temple)
+        uses: ./.github/actions/setup-python
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install uv
-        run: pip install uv
-      - name: Cache uv packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('temple/pyproject.toml', 'temple-linter/pyproject.toml') }}
-          restore-keys: ${{ runner.os }}-uv-${{ matrix.python-version }}-
-      - name: Install temple dependencies
-        run: |
-          cd temple
-          uv pip install ".[test]"
-      - name: Install temple-linter dependencies
-        run: |
-          cd temple-linter
-          uv pip install ".[test]"
+          working-directory: temple
+          extras: "[test]"
       - name: Run temple tests
-        run: |
-          cd temple
-          uv pip run pytest tests/
+        working-directory: temple
+        run: python -m pytest tests -q
+
+  temple-linter-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Python Setup (temple dependency)
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.11'
+          working-directory: temple
+          extras: "[test]"
+      - name: Install temple-linter test dependencies
+        run: uv pip install ./temple-linter[test]
       - name: Run temple-linter tests
-        run: |
-          cd temple-linter
-          uv pip run pytest tests/
+        run: python -m pytest temple-linter/tests -q

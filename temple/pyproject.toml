@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "temple"
 version = "0.1.0"
 description = "Core templating engine for Temple DSL - tokenization, parsing, and rendering of structured data templates."
+authors = [
+    { name="Chris Caldwell", email="chris@calan.co" }
+]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -46,6 +49,9 @@ ci = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+temple = ["typed_grammar.lark"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
