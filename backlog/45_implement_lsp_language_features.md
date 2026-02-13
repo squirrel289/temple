@@ -12,6 +12,7 @@ related_commit:
   - 58fe36a  # chore(typings): update temple typed_ast stub and diagnostics docs (backlog #45)
   - 7be8f73  # docs(backlog): record serializers commit and clean tmp file (backlog #35)
   - a38d007  # feat(temple-linter): add native LSP providers and perf checks
+  - 8bb34ef  # feat(vscode): harden LSP init contract and packaging checks
 test_results: "Local: uv run --with pytest --with ./temple --with ./temple-linter python -m pytest temple-linter/tests/test_lsp_features.py temple-linter/tests/test_lsp_entrypoint.py -q passes (14 tests incl. updated feature coverage)."
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
@@ -26,6 +27,7 @@ notes: |
   2026-02-13: Started implementation of native LSP feature providers and server wiring.
   2026-02-13: Added `lsp_features.py` providers and registered completion/hover/definition/references/rename handlers in lsp_server.
   2026-02-13: Committed integrated provider implementation and parser dependency guards in `a38d007`.
+  2026-02-13: Added semantic schema-path initialization support and VS Code init-option wiring in `8bb34ef`.
 ---
 
 ## Goal

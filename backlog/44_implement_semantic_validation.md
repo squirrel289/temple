@@ -6,7 +6,8 @@ complexity: High
 estimated_effort: 12 hours
 actual_effort: null
 completed_date: null
-related_commit: []
+related_commit:
+  - 62d1795  # feat(semantic): seed type checker from schema for lint diagnostics
 test_results: "2026-02-13: semantic/schema/type-check suites passing locally (temple/tests/types/test_type_checker.py, temple-linter/tests/test_semantic_linter.py, temple-linter/tests/test_lsp_mvp_smoke.py)"
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
@@ -19,6 +20,7 @@ related_spike:
 
 notes: |
   Integrates type checker and schema system for semantic validation: undefined variables, type mismatches, schema violations.
+  2026-02-13: Added schema-seeded type environments and schema-only semantic diagnostics in commit `62d1795`.
 ---
 
 ## Goal
