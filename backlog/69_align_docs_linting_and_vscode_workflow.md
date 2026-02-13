@@ -8,7 +8,8 @@ complexity: medium
 estimated_hours: 8
 actual_hours: 5
 completed_date: null
-related_commit: []
+related_commit:
+  - 88f0305
 test_results: "Docs/workflow validation: vscode-temple-linter compile+lint pass; .vscode JSON files validate; docs HTML build passes (network-dependent intersphinx warnings only)."
 dependencies:
   - "[[68_repair_vscode_extension_integration.md]]"
