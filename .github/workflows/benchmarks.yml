@@ -41,6 +41,7 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
+      CI_VENV_PATH: ${{ github.workspace }}/.cache/ci-venv
       RUNNER_INFO_FILE: runner_info.txt
       ASV_MACHINE_JSON: $HOME/.asv-machine.json
       ASV_MACHINE_CONFIG: asv/machines/ci_machine.json
@@ -51,6 +52,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 20
+      - name: Bootstrap CI environment
+        run: ./scripts/ci/ensure_ci_venv.sh
       - name: Collect runner info
         run: ./scripts/pre-commit/collect-runner-info.sh "$RUNNER_INFO_FILE"
       - name: Upload runner info
@@ -62,11 +65,12 @@ jobs:
         run: .github/scripts/configure_asv_machine.sh "$ASV_MACHINE_CONFIG" "$ASV_MACHINE_JSON" "$TEMPLE_BENCHMARKS_ROOT_PATH"
       - name: Run ASV benchmarks
         run: |
-             uv pip run asv update || true
-             uv pip run asv run --quick HEAD~4..HEAD || true
-             uv pip run asv run --quick HEAD || true
-      - name: Build ASV HTML report to "$TEMPLE_BENCHMARKS_ROOT_PATH"
-        run: uv pip run asv publish
+             "$CI_VENV_PATH/bin/python" -m asv update
+             "$CI_VENV_PATH/bin/python" -m asv run --quick HEAD~4..HEAD
+             "$CI_VENV_PATH/bin/python" -m asv run --quick HEAD
+      - name: Build ASV HTML report
+        run: |
+          "$CI_VENV_PATH/bin/python" -m asv publish
       - name: Upload ASV results artifact
         uses: actions/upload-artifact@v4
         with:

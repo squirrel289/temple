@@ -53,7 +53,7 @@ jobs:
         env:
           APP_ID: ${{ secrets.REVIEW_RESOLUTION_BOT_APP_ID }}
         run: |
-          inst=$(uv pip run python scripts/ci/github_app_helpers.py --app-id "$APP_ID" --private-key "$PRIVATE_KEY_PATH" --repo "${{ github.repository }}")
+          inst=$(python scripts/ci/github_app_helpers.py --app-id "$APP_ID" --private-key "$PRIVATE_KEY_PATH" --repo "${{ github.repository }}")
           if [ -z "$inst" ]; then
             echo "No installation found for repository; exiting" >&2
             exit 1
@@ -63,7 +63,7 @@ jobs:
         if: env.INSTALLATION_ID != ''
         run: |
           APP_ID="${{ secrets.REVIEW_RESOLUTION_BOT_APP_ID }}"
-          token=$(uv pip run python scripts/ci/github_app_helpers.py --app-id "$APP_ID" --private-key "$PRIVATE_KEY_PATH" --installation ${{ env.INSTALLATION_ID }})
+          token=$(python scripts/ci/github_app_helpers.py --app-id "$APP_ID" --private-key "$PRIVATE_KEY_PATH" --installation ${{ env.INSTALLATION_ID }})
           echo "::add-mask::$token"
           echo "INSTALL_TOKEN=$token" >> $GITHUB_ENV
       - name: Verify token available
@@ -105,7 +105,7 @@ jobs:
           DRY_RUN: ${{ env.DRY_RUN || github.event.inputs.dry_run || '1' }}
         run: |
           echo "Running auto-resolve with REPOSITORY=$REPOSITORY PR_NUMBER=$PR_NUMBER HEAD_SHA=$HEAD_SHA BASE_REF=$BASE_REF DRY_RUN=$DRY_RUN"
-          uv pip run python scripts/ci/auto_resolve_reviews.py
+          python scripts/ci/auto_resolve_reviews.py
       - name: Cleanup private key
         if: always()
         run: |

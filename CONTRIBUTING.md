@@ -63,6 +63,28 @@ Temple uses **four primary GitHub Actions workflows** to validate code:
 cd temple && pytest tests/ -v
 cd ../temple-linter && pytest tests/ -v
 ```
+
+### Canonical Local Commands (CI Parity)
+
+Use the repository scripts below to mirror CI behavior locally:
+
+```bash
+# static analysis
+./scripts/pre-commit/lint-python.sh scripts/ci tests
+./scripts/pre-commit/lint-yaml.sh .github/workflows .github/actions .pre-commit-config.yaml .yamllint
+./scripts/pre-commit/lint-js.sh
+./scripts/pre-commit/lint-shell.sh
+
+# docs
+./scripts/pre-commit/build-docs.sh
+./scripts/pre-commit/lint-docs.sh
+
+# benchmark smoke checks
+./scripts/pre-commit/validate-benchmarks.sh
+
+# root automation tests
+python -m pytest tests -q
+```
 # Contributing to Temple
 
 Welcome! This guide walks you through the Temple development workflow, including CI integration and test execution.
