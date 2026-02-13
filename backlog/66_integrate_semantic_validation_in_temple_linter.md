@@ -8,7 +8,8 @@ complexity: high
 estimated_hours: 20
 actual_hours: 5
 completed_date: null
-related_commit: []
+related_commit:
+  - 2fe2810
 test_results: "temple-linter semantic suites: 32 tests pass (test_semantic_linter, test_linter, test_integration). Ruff passes on updated linter/orchestrator files."
 dependencies:
   - "[[65_complete_temple_native_language_core.md]]"
