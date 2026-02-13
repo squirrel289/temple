@@ -1,13 +1,13 @@
 ---
 title: "44_implement_semantic_validation"
-status: not_started
+status: testing
 priority: High
 complexity: High
 estimated_effort: 12 hours
 actual_effort: null
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "2026-02-13: semantic/schema/type-check suites passing locally (temple/tests/types/test_type_checker.py, temple-linter/tests/test_semantic_linter.py, temple-linter/tests/test_lsp_mvp_smoke.py)"
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
   - [[43_implement_template_syntax_validation.md]] ⏳
@@ -27,7 +27,7 @@ Integrate temple core's type checker and schema system to provide semantic valid
 
 ## Background
 
-After syntax validation (backlog #43), the next layer is semantic validation. This requires type checking template expressions against input data schemas to catch logical errors before runtime.
+After syntax validation (backlog [[43_implement_template_syntax_validation]]), the next layer is semantic validation. This requires type checking template expressions against input data schemas to catch logical errors before runtime.
 
 ## Tasks
 
@@ -284,6 +284,7 @@ def completions(params: CompletionParams):
 ## Configuration Example
 
 `.vscode/settings.json`:
+
 ```json
 {
   "temple.schemas": {
@@ -309,3 +310,5 @@ def completions(params: CompletionParams):
 - Backlog #43: Implement Template Syntax Validation
 - Backlog #35: Typed DSL Type System (provides type checker)
 - Backlog #02: Query Language and Schema (schema validation spec)
+
+[43_implement_template_syntax_validation]: archive/43_implement_template_syntax_validation.md "43_implement_template_syntax_validation"
