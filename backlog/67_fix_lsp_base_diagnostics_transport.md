@@ -8,7 +8,8 @@ complexity: medium
 estimated_hours: 12
 actual_hours: 5
 completed_date: null
-related_commit: []
+related_commit:
+  - d1ea621
 test_results: "31 temple-linter transport/integration tests pass (test_lsp_transport_wiring, test_base_linting_service, test_integration, test_lsp_entrypoint). Ruff passes on updated transport files."
 dependencies:
   - "[[66_integrate_semantic_validation_in_temple_linter.md]]"
