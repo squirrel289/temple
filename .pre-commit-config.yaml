@@ -50,6 +50,13 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
+      - id: test-temple-parity
+        name: "test: temple parity (native vs jinja2)"
+        entry: scripts/pre-commit/test-temple-parity.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
       - id: secure-secrets-scan
         name: "secure: secrets scan (detect-secrets)"
         entry: scripts/pre-commit/secure-find-secrets.sh
