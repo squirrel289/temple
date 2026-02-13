@@ -1,9 +1,10 @@
 ---
 title: Jinja2 Adapter Prototype
 id: 56
-status: proposed
+status: testing
 related_commit:
   - 6d8c044  # ADAPTER_SPEC.md added
+test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with jinja2 --with-editable ./temple python -m pytest temple/tests/test_jinja2_adapter.py -q (4 passed)."
 dependencies:
   - "[[55_adapter_spec_impl.md]]"
 estimated_hours: 40
@@ -26,3 +27,7 @@ Build a prototype adapter `temple.adapters.jinja2` that parses templates with Ji
 - Prototype can process representative templates and produce IR
 - Diagnostics for undefined variables and simple type mismatches are produced and mapped
 - Adapter documented with examples
+
+## Progress Notes
+
+- 2026-02-13: Implemented `temple.adapters.jinja2_adapter.Jinja2Adapter` prototype with Jinja AST-to-IR conversion, best-effort line-based source mapping, filter discovery, typed-AST conversion, and semantic diagnostic bridging through `TypeChecker`.
