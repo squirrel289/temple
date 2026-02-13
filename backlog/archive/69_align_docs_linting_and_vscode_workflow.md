@@ -1,13 +1,13 @@
 ---
 title: "Align Documentation, Linting Guidance, and VS Code Workflow"
 id: 69
-status: testing
-state_reason: null
+status: completed
+state_reason: success
 priority: medium
 complexity: medium
 estimated_hours: 8
 actual_hours: 5
-completed_date: null
+completed_date: 2026-02-13
 related_commit:
   - 88f0305
 test_results: "Docs/workflow validation: vscode-temple-linter compile+lint pass; .vscode JSON files validate; docs HTML build passes (network-dependent intersphinx warnings only)."
@@ -57,7 +57,7 @@ Current docs contain duplicate/outdated sections, placeholder values, and confli
 
 ## Acceptance Criteria
 
-- [ ] Primary setup instructions are non-duplicative and runnable
-- [ ] Documented local commands match scripts/workflows
-- [ ] VS Code workflow files support core + linter + extension iteration
-- [ ] Documentation lint/build checks are explicit and actionable
+- [x] Primary setup instructions are non-duplicative and runnable
+- [x] Documented local commands match scripts/workflows
+- [x] VS Code workflow files support core + linter + extension iteration
+- [x] Documentation lint/build checks are explicit and actionable

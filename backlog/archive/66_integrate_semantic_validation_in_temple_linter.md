@@ -1,13 +1,13 @@
 ---
 title: "Integrate Semantic Validation in temple-linter"
 id: 66
-status: testing
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: high
 estimated_hours: 20
 actual_hours: 5
-completed_date: null
+completed_date: 2026-02-13
 related_commit:
   - 2fe2810
 test_results: "temple-linter semantic suites: 32 tests pass (test_semantic_linter, test_linter, test_integration). Ruff passes on updated linter/orchestrator files."
@@ -59,7 +59,7 @@ Current linter behavior is syntax-centric. Semantic validation work is designed 
 
 ## Acceptance Criteria
 
-- [ ] Semantic diagnostics are emitted for schema-aware template errors
-- [ ] Syntax errors still report correctly and do not regress
-- [ ] Diagnostic ranges map correctly for semantic findings
-- [ ] New semantic integration tests pass
+- [x] Semantic diagnostics are emitted for schema-aware template errors
+- [x] Syntax errors still report correctly and do not regress
+- [x] Diagnostic ranges map correctly for semantic findings
+- [x] New semantic integration tests pass

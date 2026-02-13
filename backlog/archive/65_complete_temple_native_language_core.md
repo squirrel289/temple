@@ -1,13 +1,13 @@
 ---
 title: "Complete Temple Native Language Core for MVP Templates"
 id: 65
-status: testing
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: high
 estimated_hours: 24
 actual_hours: 6
-completed_date: null
+completed_date: 2026-02-13
 related_commit:
   - fd8f61f
 test_results: "27 parser/integration tests pass, 16 type-checker tests pass, 63 serializer tests pass; new MVP language-core test suite added."
@@ -60,8 +60,8 @@ The parser/type/eval stack exists, but key constructs in docs and fixtures are c
 
 ## Acceptance Criteria
 
-- [ ] `{% set %}` statements are parsed and evaluated with defined scoping rules
-- [ ] `elif` syntax is supported in canonical form and validated
-- [ ] List literals parse and evaluate correctly
-- [ ] Official template examples avoid unsupported syntax for MVP surface area
-- [ ] New and existing language-core tests pass
+- [x] `{% set %}` statements are parsed and evaluated with defined scoping rules
+- [x] `elif` syntax is supported in canonical form and validated
+- [x] List literals parse and evaluate correctly
+- [x] Official template examples avoid unsupported syntax for MVP surface area
+- [x] New and existing language-core tests pass
