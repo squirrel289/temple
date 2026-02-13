@@ -1,22 +1,25 @@
 ---
 title: "Fix temple-linter Packaging and CLI Entrypoints"
 id: 64
-status: not_started
+status: testing
 state_reason: null
 priority: high
 complexity: low
 estimated_hours: 4
-actual_hours: null
+actual_hours: 2
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "Local: ruff passes on updated entrypoint files; pytest temple-linter/tests/test_lsp_entrypoint.py (5 tests) passes."
 dependencies:
-  - "[[63_stabilize_uv_tooling_and_ci_commands.md]]"
+  - "[[archive/63_stabilize_uv_tooling_and_ci_commands.md]]"
 related_backlog:
   - "archive/61_fix_temple_linter_packaged_grammar.md"
 related_spike: []
 notes: |
   Ensures package metadata, interpreter constraints, and entrypoints are internally consistent.
+  Implemented explicit lsp_server.main() and routed __main__ execution through the same callable.
+  Aligned pyproject/setuptools package discovery and setup.py metadata (python_requires and dependencies).
+  Added packaging smoke tests for importable entrypoint and metadata consistency.
 ---
 
 ## Goal
