@@ -1,15 +1,15 @@
 ---
 title: "Fix LSP Base Diagnostics Transport Wiring"
 id: 67
-status: not_started
+status: testing
 state_reason: null
 priority: high
 complexity: medium
 estimated_hours: 12
-actual_hours: null
+actual_hours: 5
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "31 temple-linter transport/integration tests pass (test_lsp_transport_wiring, test_base_linting_service, test_integration, test_lsp_entrypoint). Ruff passes on updated transport files."
 dependencies:
   - "[[66_integrate_semantic_validation_in_temple_linter.md]]"
 related_backlog:
@@ -17,6 +17,9 @@ related_backlog:
 related_spike: []
 notes: |
   Corrects server-client transport assumptions so base-linter delegation works in real LSP sessions.
+  Replaced unbound LanguageClient singleton usage with active server-session transport wiring.
+  BaseLintingService now resolves protocol transport from either callable server protocol() or client protocol attribute.
+  Added transport-specific tests for success and graceful fallback when protocol transport is unavailable.
 ---
 
 ## Goal

@@ -49,7 +49,7 @@ class LintOrchestrator:
         self,
         text: str,
         uri: str,
-        language_client: LanguageClient,
+        request_transport: LanguageClient | Any,
         temple_extensions: list[str] | None = None,
         semantic_context: dict[str, Any] | None = None,
         semantic_schema: Any = None,
@@ -60,7 +60,7 @@ class LintOrchestrator:
         Args:
             text: Template content
             uri: Document URI
-            language_client: LSP client for base linting delegation
+            request_transport: Active session transport for request/response calls
             temple_extensions: List of temple file extensions (e.g., [".tmpl", ".template"])
 
         Returns:
@@ -90,7 +90,7 @@ class LintOrchestrator:
 
         # 4. Base linting
         base_diagnostics = self.base_linting_service.request_base_diagnostics(
-            language_client,
+            request_transport,
             cleaned_text,
             uri,
             detected_format,
