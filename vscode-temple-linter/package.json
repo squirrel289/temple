@@ -3,11 +3,15 @@
   "displayName": "Temple Linter",
   "description": "Lint and preprocess temple templated files for correct linting and diagnostics in VS Code.",
   "version": "0.0.1",
+  "license": "MIT",
   "engines": {
     "vscode": ">=1.70.0"
   },
   "categories": [
     "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:templated-any"
   ],
   "main": "./dist/src/extension.js",
   "contributes": {
@@ -37,6 +41,16 @@
             "type": "string"
           },
           "description": "File extensions to treat as temple template files (e.g., .tmpl, .template)"
+        },
+        "temple.semanticSchemaPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional JSON Schema path used for semantic validation and schema-aware language features."
+        },
+        "temple.semanticContext": {
+          "type": "object",
+          "default": {},
+          "description": "Optional context object used for semantic validation when schema is not provided."
         }
       }
     }
@@ -45,7 +59,8 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p .",
     "watch": "tsc -watch -p .",
-    "lint": "eslint --ext .ts src"
+    "lint": "eslint --ext .ts src",
+    "package:check": "vsce ls"
   },
   "repository": {
     "type": "git",
@@ -66,8 +81,8 @@
     "vscode-languageserver-textdocument": "^1.0.1"
   },
   "files": [
-    "lib",
-    "out",
+    "dist",
+    "language-configuration.json",
     "node_modules",
     "package.json",
     "README.md"
