@@ -1,7 +1,8 @@
 ---
 title: Publish ADR-003 and Adapter Spec
 id: 53
-status: testing
+status: completed
+state_reason: success
 related_commit:
   - 6d8c044
   - 0ea574c  # docs(release): publish ADR-003 and adapter spec notes
@@ -10,6 +11,8 @@ dependencies:
   - "[[003-market-role-and-adapter-architecture.md]]"
   - "[[ADAPTER_SPEC.md]]"
 estimated_hours: 4
+actual_hours: 1
+completed_date: 2026-02-13
 priority: low
 ---
 

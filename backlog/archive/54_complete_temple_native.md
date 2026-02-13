@@ -1,7 +1,8 @@
 ---
 title: Complete Temple-native Templating & Linting
 id: 54
-status: testing
+status: completed
+state_reason: success
 related_commit:
   - 6d8c044  # docs(adr): clarify market role and adapter architecture (ADR-003); add adapter spec; archive backlog/48_jinja_integration.md
   - f00459b  # feat(parser): canonicalize control-flow end tokens; restore expression validation; align typed AST ranges
@@ -10,6 +11,8 @@ test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with-e
 dependencies:
   - "[[19_unified_token_model.md]]"
 estimated_hours: 40
+actual_hours: 14
+completed_date: 2026-02-13
 priority: critical
 ---
 

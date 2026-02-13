@@ -4,6 +4,22 @@
 
 The Temple project is executing a **Typed DSL Compiler MVP** (8-week effort) after completing architectural decision-making (see `archive/33_decision_snapshot.md`).
 
+### MVP Closeout (2026-02-13)
+
+The active MVP closeout items were completed and archived:
+
+- `44_implement_semantic_validation.md`
+- `45_implement_lsp_language_features.md`
+- `46_integration_and_performance_tests.md`
+- `47_documentation_updates_for_core_integration.md`
+- `52_parity_tests_and_ci.md`
+- `53_publish_adr_and_spec.md`
+- `54_complete_temple_native.md`
+- `55_adapter_spec_impl.md`
+- `56_jinja2_adapter_prototype.md`
+- `57_vscode_packaging_and_init_contract_hardening.md`
+- `58_mvp_release_readiness_docs_and_metadata.md`
+
 ### Active Work Items (Production MVP)
 
 The following 4 items form the critical path for the typed DSL compiler:

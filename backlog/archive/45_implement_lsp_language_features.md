@@ -1,11 +1,12 @@
 ---
 title: "45_implement_lsp_language_features"
-status: testing
+status: completed
+state_reason: success
 priority: Medium
 complexity: High
 estimated_effort: 16 hours
 actual_effort: 5
-completed_date: null
+completed_date: 2026-02-13
 related_commit:
   - 98facb7  # feat(vscode-extension): update LSP integration and diagnostics handling
   - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
