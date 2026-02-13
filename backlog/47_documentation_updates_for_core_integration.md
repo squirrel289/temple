@@ -1,13 +1,13 @@
 ---
 title: "47_documentation_updates_for_core_integration"
-status: not_started
+status: testing
 priority: Medium
 complexity: Low
 estimated_effort: 6 hours
-actual_effort: null
+actual_effort: 2
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "Updated temple-linter README to match current setup, LSP feature set, and test commands (including performance threshold checks)."
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
   - [[43_implement_template_syntax_validation.md]] ⏳
@@ -20,6 +20,7 @@ related_spike: []
 
 notes: |
   Updates all temple-linter documentation to reflect temple core integration: installation, architecture, API reference, user guides, migration notes.
+  2026-02-13: Rewrote `temple-linter/README.md` to remove stale setup instructions and align with current MVP behavior.
 ---
 
 ## Goal

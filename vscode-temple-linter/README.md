@@ -16,6 +16,7 @@ Language support for Temple templated files with integrated linting and diagnost
 ### From Source
 
 1. **Install Python LSP Server:**
+
    ```bash
    cd ..
    ./scripts/setup-hooks.sh
@@ -25,6 +26,7 @@ Language support for Temple templated files with integrated linting and diagnost
    ```
 
 2. **Build Extension:**
+
    ```bash
    npm install
    npm run compile
@@ -35,6 +37,7 @@ Language support for Temple templated files with integrated linting and diagnost
    - Open a `.tmpl` file to activate
 
 4. **Package for Installation:**
+
    ```bash
    npm install -g vsce
    vsce package
@@ -56,10 +59,10 @@ Configure in `.vscode/settings.json` or User Settings:
 
 ### Settings Reference
 
-| Setting                        | Type     | Default                | Description                          |
-|--------------------------------|----------|------------------------|--------------------------------------|
-| `temple.fileExtensions`        | array    | `[".tmpl", ".template"]` | File extensions treated as templates |
-| `python.defaultInterpreterPath`| string   | `"python"`             | Path to Python interpreter           |
+| Setting                         | Type   | Default                  | Description                          |
+|---------------------------------|--------|--------------------------|--------------------------------------|
+| `temple.fileExtensions`         | array  | `[".tmpl", ".template"]` | File extensions treated as templates |
+| `python.defaultInterpreterPath` | string | `"python"`               | Path to Python interpreter           |
 
 ## Usage
 
@@ -76,7 +79,7 @@ Create files with `.tmpl` or `.template` extensions:
 
 Temple uses Jinja-like syntax:
 
-```
+```temple
 {% if condition %}...{% end %}   # Statements
 {{ variable }}                      # Expressions
 {# comment #}                       # Comments
@@ -99,6 +102,7 @@ Create `package.json.tmpl`:
 ```
 
 The extension will:
+
 1. ✅ Validate template syntax (`{% %}`, `{{ }}` matching)
 2. ✅ Strip template tokens
 3. ✅ Validate JSON structure
@@ -140,6 +144,7 @@ Unknown formats automatically pass through to VS Code for detection.
 ### Template Linting
 
 Validates template-specific syntax:
+
 - Unclosed blocks: `{% if %}` without `{% end %}`
 - Invalid statements: `{% invalid %}`
 - Malformed expressions: `{{ unclosed`
@@ -148,6 +153,7 @@ Validates template-specific syntax:
 ### Base Format Linting
 
 Delegates to native VS Code linters:
+
 - JSON: Validates JSON schema, detects syntax errors
 - YAML: Validates YAML structure, indentation
 - HTML: Validates HTML5 standards, accessibility
@@ -158,7 +164,7 @@ Delegates to native VS Code linters:
 
 Accurately maps diagnostics from cleaned content back to original template:
 
-```
+```text
 Original:    1: {
              2:   "name": "{{ project.name }}",
              3:   "invalid": true true
@@ -176,51 +182,33 @@ The extension correctly reports the error at line 3 in the original template.
 
 ## Extension Architecture
 
+<!-- BEGIN:project-structure -->
+```mermaid
+flowchart TD
+   subgraph VSCodeExt["VS Code Extension"]
+      direction TB
+      LC["Language Client (TypeScript)<br>- Activates on .tmpl files<br>- Starts Python LSP server<br>- Passes configuration"]
+      LSP["Python LSP Server<br>(temple-linter)<br>- Tokenizes templates<br>- Cleans DSL tokens<br>- Detects format"]
+      VDP["Virtual Document Provider<br>- Creates temple-cleaned:// documents<br>- Triggers native linters<br>- Collects diagnostics"]
+      NATIVE["Native VS Code Linters<br>(JSON, YAML, HTML, etc.)"]
+      LC -- "LSP (JSON-RPC)" --> LSP
+      LSP -- "temple/requestBaseDiagnostics" --> VDP
+      VDP -- "Diagnostics" --> NATIVE
+   end
 ```
-┌──────────────────────────────────────────────────┐
-│              VS Code Extension                   │
-│                                                  │
-│  ┌────────────────────────────────────────────┐ │
-│  │  Language Client (TypeScript)              │ │
-│  │  - Activates on .tmpl files                │ │
-│  │  - Starts Python LSP server                │ │
-│  │  - Passes configuration                    │ │
-│  └──────────────┬─────────────────────────────┘ │
-│                 │ LSP (JSON-RPC)                │
-│                 ▼                                │
-│  ┌────────────────────────────────────────────┐ │
-│  │  Python LSP Server                         │ │
-│  │  (temple-linter)                           │ │
-│  │  - Tokenizes templates                     │ │
-│  │  - Cleans DSL tokens                       │ │
-│  │  - Detects format                          │ │
-│  └──────────────┬─────────────────────────────┘ │
-│                 │ temple/requestBaseDiagnostics │
-│                 ▼                                │
-│  ┌────────────────────────────────────────────┐ │
-│  │  Virtual Document Provider                 │ │
-│  │  - Creates temple-cleaned:// documents     │ │
-│  │  - Triggers native linters                 │ │
-│  │  - Collects diagnostics                    │ │
-│  └──────────────┬─────────────────────────────┘ │
-│                 │ Diagnostics                    │
-│                 ▼                                │
-│  ┌────────────────────────────────────────────┐ │
-│  │  Native VS Code Linters                    │ │
-│  │  (JSON, YAML, HTML, etc.)                  │ │
-│  └────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────┘
-```
+<!-- END:project-structure -->
 
 ## Troubleshooting
 
 ### Extension Not Activating
 
 **Check file extension:**
+
 - File must end with `.tmpl` or `.template` (or custom configured extension)
 - Verify `temple.fileExtensions` setting
 
 **Check language ID:**
+
 - Bottom-right corner of VS Code should show "Templated File"
 - Click to manually select language if incorrect
 
@@ -231,6 +219,7 @@ The extension correctly reports the error at line 3 in the original template.
    - Look for connection errors
 
 2. **Verify Python Server:**
+
    ```bash
    # Test LSP server manually
    cd ../temple-linter
@@ -273,28 +262,30 @@ npm run watch
 
 ### Project Structure
 
-```
+Critical files to know first:
+
+- `src/extension.ts` - VS Code extension activation + LanguageClient wiring
+- `package.json` - extension manifest, activation events, language contributions
+- `tsconfig.json` - TypeScript compiler configuration
+- `language-configuration.json` - editor behavior for templated files
+
+Generated mini-tree (auto-synced):
+
+<!-- BEGIN:project-structure path=vscode-temple-linter depth=2 annotations=vscode-temple-linter/.structure-notes.yaml -->
+```text
 vscode-temple-linter/
-├── src/
-│   └── extension.ts          # Extension entry point
-├── package.json              # Extension manifest
-├── language-configuration.json # Language config
-├── tsconfig.json             # TypeScript config
-└── README.md
+├── .eslintrc.cjs                # ESLint configuration
+├── ARCHITECTURE.md
+├── language-configuration.json  # Editor behavior for templated files
+├── package-lock.json
+├── package.json                 # Extension manifest and VS Code contributions
+├── README.md                    # ⭐ You are here
+├── test_sample.json.tmpl
+├── tsconfig.json                # TypeScript compiler configuration
+└── src/                         # Extension source code
+    └── extension.ts             # LanguageClient bootstrap and LSP wiring
 ```
-
-### Key Files
-
-**package.json** - Extension manifest:
-- Contribution points (languages, commands, settings)
-- Activation events
-- Language configuration
-
-**extension.ts** - Extension logic:
-- Language client setup
-- LSP server configuration
-- Virtual document provider
-- Base diagnostics handler
+<!-- END:project-structure -->
 
 ## Known Limitations
 
