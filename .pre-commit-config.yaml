@@ -52,7 +52,7 @@ repos:
 
       - id: validate-benchmarks
         name: "validate: benchmarks quick"
-        entry: bash -c "cd temple && uv pip run pytest"
+        entry: scripts/pre-commit/validate-benchmarks.sh
         language: system
         pass_filenames: false
         types: [python]
@@ -60,7 +60,7 @@ repos:
 
       - id: build-docs
         name: "build: docs (sphinx)"
-        entry: bash -c "cd temple-linter/docs && uv pip run sphinx-build -b html . _build/html"
+        entry: scripts/pre-commit/build-docs.sh
         language: system
         pass_filenames: false
         types: [python, yaml, markdown]

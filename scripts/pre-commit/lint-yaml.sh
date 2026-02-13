@@ -5,7 +5,22 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
-echo "Running yamllint via uv..."
+if [ -f "$ROOT_DIR/scripts/ci/venv_utils.sh" ]; then
+  . "$ROOT_DIR/scripts/ci/venv_utils.sh"
+fi
+
+if ! ensure_ci_venv_ready; then
+  print_ci_venv_instructions || true
+  exit 1
+fi
+
+YAMLLINT="$(command -v yamllint || true)"
+if [ -z "$YAMLLINT" ]; then
+  echo "yamllint not found on PATH; ensure .ci-venv is active or run ./scripts/setup-hooks.sh" >&2
+  exit 1
+fi
+
+echo "Running yamllint..."
 
 targets=("$@")
 if [ "${#targets[@]}" -eq 0 ]; then
@@ -34,9 +49,9 @@ for target in "${targets[@]}"; do
 done
 
 if [ "${#workflow_targets[@]}" -gt 0 ]; then
-  uv tool run yamllint -c .github/workflows/.yamllint "${workflow_targets[@]}"
+  "$YAMLLINT" -c .github/workflows/.yamllint "${workflow_targets[@]}"
 fi
 
 if [ "${#default_targets[@]}" -gt 0 ]; then
-  uv tool run yamllint -c .yamllint "${default_targets[@]}"
+  "$YAMLLINT" -c .yamllint "${default_targets[@]}"
 fi
