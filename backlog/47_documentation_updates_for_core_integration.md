@@ -6,8 +6,9 @@ complexity: Low
 estimated_effort: 6 hours
 actual_effort: 2
 completed_date: null
-related_commit: []
-test_results: "Updated temple-linter README to match current setup, LSP feature set, and test commands (including performance threshold checks)."
+related_commit:
+  - 87bb8ea  # docs(repo): automate markdown structure trees with scoped notes
+test_results: "python3 scripts/docs/sync_readme_structure.py --check --failure-threshold WARN passes; pre-commit docs sync hook passes; README structure blocks synchronized."
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
   - [[43_implement_template_syntax_validation.md]] ⏳
@@ -21,6 +22,7 @@ related_spike: []
 notes: |
   Updates all temple-linter documentation to reflect temple core integration: installation, architecture, API reference, user guides, migration notes.
   2026-02-13: Rewrote `temple-linter/README.md` to remove stale setup instructions and align with current MVP behavior.
+  2026-02-13: Added automated markdown tree sync + scoped YAML notes and updated project README structures in commit `87bb8ea`.
 ---
 
 ## Goal

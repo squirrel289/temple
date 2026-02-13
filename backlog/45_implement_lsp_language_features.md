@@ -11,7 +11,8 @@ related_commit:
   - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
   - 58fe36a  # chore(typings): update temple typed_ast stub and diagnostics docs (backlog #45)
   - 7be8f73  # docs(backlog): record serializers commit and clean tmp file (backlog #35)
-test_results: "Local: pytest temple-linter/tests/test_lsp_features.py temple-linter/tests/test_lsp_entrypoint.py passes (11 tests)."
+  - a38d007  # feat(temple-linter): add native LSP providers and perf checks
+test_results: "Local: uv run --with pytest --with ./temple --with ./temple-linter python -m pytest temple-linter/tests/test_lsp_features.py temple-linter/tests/test_lsp_entrypoint.py -q passes (14 tests incl. updated feature coverage)."
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
   - [[43_implement_template_syntax_validation.md]] ⏳
@@ -24,6 +25,7 @@ notes: |
   Implements advanced LSP features using temple core's parser and type system: completions, hover, go-to-definition, find references, rename.
   2026-02-13: Started implementation of native LSP feature providers and server wiring.
   2026-02-13: Added `lsp_features.py` providers and registered completion/hover/definition/references/rename handlers in lsp_server.
+  2026-02-13: Committed integrated provider implementation and parser dependency guards in `a38d007`.
 ---
 
 ## Goal
