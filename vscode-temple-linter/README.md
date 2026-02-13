@@ -17,9 +17,11 @@ Language support for Temple templated files with integrated linting and diagnost
 
 1. **Install Python LSP Server:**
    ```bash
-   cd ../temple-linter
-   pip install -r requirements.txt
-   pip install -e .
+   cd ..
+   ./scripts/setup-hooks.sh
+   ./.ci-venv/bin/pip install -e ./temple[dev,ci]
+   ./.ci-venv/bin/pip install -e ./temple-linter[dev,ci]
+   cd vscode-temple-linter
    ```
 
 2. **Build Extension:**
@@ -237,7 +239,7 @@ The extension correctly reports the error at line 3 in the original template.
 
 3. **Check Python Path:**
    - Ensure `python.defaultInterpreterPath` is correct
-   - Python 3.8+ required
+   - Python 3.10+ required
 
 ### Incorrect Diagnostic Positions
 
