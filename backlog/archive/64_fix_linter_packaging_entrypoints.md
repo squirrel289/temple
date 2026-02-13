@@ -1,14 +1,15 @@
 ---
 title: "Fix temple-linter Packaging and CLI Entrypoints"
 id: 64
-status: testing
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: low
 estimated_hours: 4
 actual_hours: 2
-completed_date: null
-related_commit: []
+completed_date: 2026-02-13
+related_commit:
+  - 1acd1c7
 test_results: "Local: ruff passes on updated entrypoint files; pytest temple-linter/tests/test_lsp_entrypoint.py (5 tests) passes."
 dependencies:
   - "[[archive/63_stabilize_uv_tooling_and_ci_commands.md]]"
@@ -52,7 +53,7 @@ Make `temple-linter` installable and executable through declared console scripts
 
 ## Acceptance Criteria
 
-- [ ] `temple-linter-lsp` resolves to an existing callable entrypoint
-- [ ] Module execution and console script path are consistent
-- [ ] Packaging metadata fields do not contradict each other
-- [ ] Smoke checks pass for import and script dispatch
+- [x] `temple-linter-lsp` resolves to an existing callable entrypoint
+- [x] Module execution and console script path are consistent
+- [x] Packaging metadata fields do not contradict each other
+- [x] Smoke checks pass for import and script dispatch
