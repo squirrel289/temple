@@ -9,6 +9,7 @@ description = "Core templating engine for Temple DSL - tokenization, parsing, an
 authors = [
     { name="Chris Caldwell", email="chris@calan.co" }
 ]
+license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
