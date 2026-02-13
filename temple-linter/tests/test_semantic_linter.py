@@ -1,5 +1,7 @@
 """Semantic validation integration tests for Temple linter."""
 
+import json
+
 from temple.diagnostics import DiagnosticSeverity
 from temple_linter.linter import TemplateLinter
 from temple_linter.services.lint_orchestrator import LintOrchestrator
@@ -38,6 +40,83 @@ def test_template_linter_emits_type_mismatch_for_non_iterable_for_loop() -> None
     )
 
     assert any(d.code == "type_mismatch" for d in diagnostics)
+
+
+def test_template_linter_emits_undefined_variable_from_schema() -> None:
+    linter = TemplateLinter()
+    diagnostics = linter.lint(
+        "{{ account.id }}",
+        schema={
+            "type": "object",
+            "properties": {
+                "user": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                }
+            },
+        },
+    )
+
+    assert any(d.code == "undefined_variable" for d in diagnostics)
+
+
+def test_template_linter_emits_missing_property_from_schema() -> None:
+    linter = TemplateLinter()
+    diagnostics = linter.lint(
+        "{{ user.email }}",
+        schema={
+            "type": "object",
+            "properties": {
+                "user": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                }
+            },
+        },
+    )
+
+    assert any(d.code == "missing_property" for d in diagnostics)
+
+
+def test_template_linter_emits_type_mismatch_from_schema() -> None:
+    linter = TemplateLinter()
+    diagnostics = linter.lint(
+        "{% for item in user.name %}{{ item }}{% end %}",
+        schema={
+            "type": "object",
+            "properties": {
+                "user": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                }
+            },
+        },
+    )
+
+    assert any(d.code == "type_mismatch" for d in diagnostics)
+
+
+def test_template_linter_loads_schema_from_path(tmp_path) -> None:
+    schema_path = tmp_path / "schema.json"
+    schema_path.write_text(
+        json.dumps(
+            {
+                "type": "object",
+                "properties": {
+                    "user": {
+                        "type": "object",
+                        "properties": {"name": {"type": "string"}},
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    linter = TemplateLinter()
+    diagnostics = linter.lint("{{ user.email }}", schema_path=str(schema_path))
+
+    assert any(d.code == "missing_property" for d in diagnostics)
 
 
 def test_template_linter_skips_semantic_checks_when_syntax_invalid() -> None:

@@ -32,6 +32,7 @@ from .types import (
     BooleanType,
     ObjectType,
     StringType,
+    UnionType,
     infer_type_from_value,
 )
 
@@ -77,8 +78,36 @@ class TypeChecker:
 
         # Initialize root environment with data types
         self.root_env = TypeEnvironment()
+        if schema is not None:
+            self._initialize_schema_types(schema.root_type)
         if data is not None:
             self._initialize_data_types(data)
+
+    def _initialize_schema_types(self, schema_type: BaseType, prefix: str = ""):
+        """Initialize type environment from schema definitions."""
+        if isinstance(schema_type, UnionType):
+            if schema_type.types:
+                self._initialize_schema_types(schema_type.types[0], prefix)
+            return
+
+        if isinstance(schema_type, ObjectType):
+            if prefix:
+                self.root_env.bind(prefix, schema_type)
+            for key, value in schema_type.properties.items():
+                var_name = f"{prefix}.{key}" if prefix else key
+                self.root_env.bind(var_name, value)
+                self._initialize_schema_types(value, var_name)
+            return
+
+        if isinstance(schema_type, ArrayType):
+            if prefix:
+                self.root_env.bind(prefix, schema_type)
+            item_prefix = f"{prefix}.0" if prefix else "0"
+            self._initialize_schema_types(schema_type.item_type, item_prefix)
+            return
+
+        if prefix:
+            self.root_env.bind(prefix, schema_type)
 
     def _initialize_data_types(self, data: Any, prefix: str = ""):
         """Initialize type environment from input data."""
@@ -210,6 +239,10 @@ class TypeChecker:
         for i, prop in enumerate(parts[1:], 1):
             if isinstance(current_type, ObjectType):
                 if prop not in current_type.properties:
+                    if current_type.additional_properties is True:
+                        return AnyType()
+                    if isinstance(current_type.additional_properties, BaseType):
+                        return current_type.additional_properties
                     self.errors.add_missing_property(
                         source_range=source_range,
                         property_name=prop,

@@ -2,11 +2,11 @@
 Tests for the type checker.
 """
 
-from temple.compiler.type_checker import TypeChecker, TypeEnvironment
-from temple.typed_ast import Text, Expression, If, For, Block
-from temple.diagnostics import Position, SourceRange
 from temple.compiler.schema import object_schema
-from temple.compiler.types import StringType, NumberType
+from temple.compiler.type_checker import TypeChecker, TypeEnvironment
+from temple.compiler.types import NumberType, StringType
+from temple.diagnostics import Position, SourceRange
+from temple.typed_ast import Block, Expression, For, If, Text
 
 
 class TestTypeEnvironment:
@@ -172,6 +172,29 @@ class TestSchemaValidation:
 
         assert checker.check(node)
         assert not checker.errors.has_errors()
+
+    def test_schema_only_detects_missing_property(self):
+        schema = object_schema({"user": object_schema({"name": StringType()}).root_type})
+        checker = TypeChecker(schema=schema)
+        node = Expression(SourceRange(Position(0, 0), Position(0, 0)), "user.email")
+
+        assert not checker.check(node)
+        assert checker.errors.has_errors()
+        assert checker.errors.errors[0].kind == "missing_property"
+
+    def test_schema_only_detects_non_iterable_loop_target(self):
+        schema = object_schema({"user": object_schema({"name": StringType()}).root_type})
+        checker = TypeChecker(schema=schema)
+        node = For(
+            SourceRange(Position(0, 0), Position(1, 0)),
+            "item",
+            "user.name",
+            Block([Expression(SourceRange(Position(1, 0), Position(1, 4)), "item")]),
+        )
+
+        assert not checker.check(node)
+        assert checker.errors.has_errors()
+        assert checker.errors.errors[0].kind == "type_mismatch"
 
 
 class TestErrorMessages:
