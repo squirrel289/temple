@@ -40,6 +40,20 @@ jobs:
         working-directory: temple
         run: python -m pytest tests -q
 
+  temple-parity-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Python Setup (temple parity)
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.11'
+          working-directory: temple
+          extras: "[test]"
+      - name: Install parity dependencies
+        run: uv pip install "jinja2>=3.1"
+      - name: Run native-vs-adapter parity suite
+        run: python -m pytest temple/tests/parity/test_native_vs_jinja2_parity.py -q
+
   temple-linter-tests:
     runs-on: ubuntu-latest
     steps:
