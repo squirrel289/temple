@@ -18,15 +18,57 @@ import re
 from collections.abc import Sequence
 from typing import Any, Literal, overload
 
-from lark import (
-    Lark,
-    Token,
-    Transformer,
-    Tree,
-    UnexpectedCharacters,
-    UnexpectedInput,
-    UnexpectedToken,
-)
+try:
+    from lark import (
+        Lark,
+        Token,
+        Transformer,
+        Tree,
+        UnexpectedCharacters,
+        UnexpectedInput,
+        UnexpectedToken,
+    )
+    _LARK_IMPORT_ERROR: ModuleNotFoundError | None = None
+except ModuleNotFoundError as exc:
+    _LARK_IMPORT_ERROR = exc
+
+    class UnexpectedInput(Exception):
+        """Fallback parser exception when lark dependency is unavailable."""
+
+    class UnexpectedToken(UnexpectedInput):
+        """Fallback parser exception when lark dependency is unavailable."""
+
+    class UnexpectedCharacters(UnexpectedInput):
+        """Fallback parser exception when lark dependency is unavailable."""
+
+    class Token(str):  # type: ignore[misc]
+        """Minimal token shim for typing/runtime import safety."""
+
+        line = 1
+        column = 1
+        end_line = 1
+        end_column = 1
+        type = "TOKEN"
+
+    class Tree:  # type: ignore[no-redef]
+        """Minimal parse-tree shim for typing/runtime import safety."""
+
+    class Transformer:  # type: ignore[no-redef]
+        """Minimal transformer shim for typing/runtime import safety."""
+
+        def __class_getitem__(cls, _item):
+            return cls
+
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    class Lark:  # type: ignore[no-redef]
+        """Minimal parser shim for typing/runtime import safety."""
+
+        def __init__(self, *_args, **_kwargs):
+            raise ModuleNotFoundError(
+                "temple parser dependency 'lark' is missing"
+            ) from _LARK_IMPORT_ERROR
 
 from temple.diagnostics import (
     Diagnostic,
@@ -90,6 +132,10 @@ GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), "typed_grammar.lark")
 
 def get_parser() -> Lark:
     """Load and return Lark parser for Temple grammar."""
+    if _LARK_IMPORT_ERROR is not None:
+        raise ModuleNotFoundError(
+            "temple parser dependency 'lark' is missing; install temple with parser requirements"
+        ) from _LARK_IMPORT_ERROR
     with open(GRAMMAR_PATH) as f:
         grammar = f.read()
     return Lark(grammar, start="start", parser="lalr")
@@ -155,6 +201,14 @@ def parse_with_diagnostics(
         True
     """
     collector = node_collector or DiagnosticCollector()
+    if _LARK_IMPORT_ERROR is not None:
+        collector.add_error(
+            "Temple parser dependency 'lark' is missing; install temple with parser requirements.",
+            SourceRange(Position(0, 0), Position(0, 1)),
+            code="PARSER_DEPENDENCY_MISSING",
+        )
+        return Block([]), collector.diagnostics
+
     ast = None
 
     # First, scan for expression syntax errors directly from text

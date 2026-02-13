@@ -53,3 +53,5 @@ jobs:
         run: uv pip install ./temple-linter[test]
       - name: Run temple-linter tests
         run: python -m pytest temple-linter/tests -q
+      - name: Enforce temple-linter E2E/performance thresholds
+        run: python -m pytest temple-linter/tests/test_e2e_performance.py -q

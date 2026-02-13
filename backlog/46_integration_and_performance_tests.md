@@ -1,15 +1,15 @@
 ---
 title: "46_integration_and_performance_tests"
-status: not_started
+status: testing
 priority: Medium
 complexity: Medium
 estimated_effort: 10 hours
-actual_effort: null
+actual_effort: 3
 completed_date: null
 related_commit:
-    - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
-    - a397997  # fix(asv): fallback example path for benchmark template loading; add smoke tests (backlog #46)
-test_results: null
+  - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
+  - a397997  # fix(asv): fallback example path for benchmark template loading; add smoke tests (backlog #46)
+test_results: "Local: pytest temple-linter/tests/test_e2e_performance.py passes (3 tests); tests workflow now explicitly runs the performance threshold suite."
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
   - [[43_implement_template_syntax_validation.md]] ⏳
@@ -22,6 +22,8 @@ related_spike: []
 
 notes: |
   Comprehensive E2E tests and performance benchmarks validating complete linting pipeline with temple core integration.
+  2026-02-13: Added `test_e2e_performance.py` with pipeline merge checks and runtime thresholds.
+  2026-02-13: Updated `.github/workflows/tests.yml` to explicitly enforce the performance threshold suite.
 ---
 
 ## Goal
