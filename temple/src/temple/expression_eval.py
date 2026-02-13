@@ -11,10 +11,14 @@ from __future__ import annotations
 
 import ast
 import re
+from dataclasses import dataclass
 from typing import Any
+
+from temple.filter_registry import DEFAULT_FILTER_ADAPTER
 
 _SIMPLE_PATH_RE = re.compile(r"^[A-Za-z_]\w*(?:\.(?:[A-Za-z_]\w*|\d+))*$")
 _INDEX_ACCESS_RE = re.compile(r"(?<=[A-Za-z_\]\)])\.(\d+)\b")
+_FILTER_CALL_RE = re.compile(r"^([A-Za-z_]\w*)(?:\((.*)\))?$")
 
 
 def normalize_expression(expr: str) -> str:
@@ -46,6 +50,93 @@ def resolve_simple_path(path: str, context: dict[str, Any] | None) -> Any:
         else:
             return None
     return value
+
+
+@dataclass(frozen=True)
+class FilterInvocation:
+    """Parsed filter call in expression pipeline syntax."""
+
+    name: str
+    args: tuple[str, ...]
+
+
+def _split_top_level(text: str, delimiter: str) -> list[str]:
+    parts: list[str] = []
+    buff: list[str] = []
+    quote: str | None = None
+    escaped = False
+    depth = 0
+
+    for ch in text:
+        if quote is not None:
+            buff.append(ch)
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            continue
+
+        if ch in ("'", '"'):
+            quote = ch
+            buff.append(ch)
+            continue
+
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth = max(0, depth - 1)
+
+        if ch == delimiter and depth == 0:
+            parts.append("".join(buff).strip())
+            buff = []
+            continue
+
+        buff.append(ch)
+
+    parts.append("".join(buff).strip())
+    return parts
+
+
+def _parse_filter_invocation(raw: str) -> FilterInvocation | None:
+    text = raw.strip()
+    if not text:
+        return None
+
+    match = _FILTER_CALL_RE.match(text)
+    if match is None:
+        return None
+
+    name = match.group(1)
+    args_text = match.group(2)
+    if args_text is None:
+        return FilterInvocation(name=name, args=())
+
+    args = tuple(arg for arg in _split_top_level(args_text, ",") if arg)
+    return FilterInvocation(name=name, args=args)
+
+
+def parse_filter_pipeline(expr: str) -> tuple[str, tuple[FilterInvocation, ...]]:
+    """Parse ``a | b(c) | d`` into base expression + filter invocations."""
+    segments = _split_top_level(expr, "|")
+    if len(segments) <= 1:
+        return expr.strip(), ()
+
+    base_expr = segments[0].strip()
+    filters: list[FilterInvocation] = []
+    for segment in segments[1:]:
+        invocation = _parse_filter_invocation(segment)
+        if invocation is not None:
+            filters.append(invocation)
+    return base_expr, tuple(filters)
+
+
+def has_filter_pipeline(expr: str | None) -> bool:
+    if expr is None:
+        return False
+    _base_expr, filters = parse_filter_pipeline(expr)
+    return bool(filters)
 
 
 class _ExpressionEvaluator:
@@ -173,8 +264,7 @@ class _ExpressionEvaluator:
         return True
 
 
-def evaluate_expression(expr: str | None, context: dict[str, Any] | None) -> Any:
-    """Evaluate an expression against context. Returns None on unsupported/invalid input."""
+def _evaluate_base_expression(expr: str, context: dict[str, Any] | None) -> Any:
     if expr is None:
         return None
 
@@ -195,6 +285,25 @@ def evaluate_expression(expr: str | None, context: dict[str, Any] | None) -> Any
         return evaluator.eval(parsed.body)
     except Exception:
         return None
+
+
+def evaluate_expression(expr: str | None, context: dict[str, Any] | None) -> Any:
+    """Evaluate an expression against context. Returns None on unsupported/invalid input."""
+    if expr is None:
+        return None
+
+    stripped = expr.strip()
+    if not stripped:
+        return None
+
+    base_expr, filters = parse_filter_pipeline(stripped)
+    value = _evaluate_base_expression(base_expr, context)
+    for filter_call in filters:
+        args = tuple(_evaluate_base_expression(arg, context) for arg in filter_call.args)
+        value = DEFAULT_FILTER_ADAPTER.apply(value, filter_call.name, args)
+        if value is None and not DEFAULT_FILTER_ADAPTER.has_filter(filter_call.name):
+            return None
+    return value
 
 
 def _path_from_node(node: ast.AST) -> str | None:
@@ -239,11 +348,7 @@ class _VariablePathCollector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def extract_variable_paths(expr: str | None) -> set[str]:
-    """Extract variable paths referenced by an expression."""
-    if expr is None:
-        return set()
-
+def _extract_base_variable_paths(expr: str) -> set[str]:
     stripped = expr.strip()
     if not stripped:
         return set()
@@ -259,3 +364,19 @@ def extract_variable_paths(expr: str | None) -> set[str]:
     collector = _VariablePathCollector()
     collector.visit(parsed)
     return collector.paths
+
+
+def extract_variable_paths(expr: str | None) -> set[str]:
+    """Extract variable paths referenced by an expression."""
+    if expr is None:
+        return set()
+
+    stripped = expr.strip()
+    if not stripped:
+        return set()
+    base_expr, filters = parse_filter_pipeline(stripped)
+    paths = _extract_base_variable_paths(base_expr)
+    for filter_call in filters:
+        for arg in filter_call.args:
+            paths.update(_extract_base_variable_paths(arg))
+    return paths

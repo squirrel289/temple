@@ -197,6 +197,51 @@ class TestSchemaValidation:
         assert checker.errors.errors[0].kind == "type_mismatch"
 
 
+class TestFilterTypeChecking:
+    def test_filter_pipeline_with_map_join_is_valid(self):
+        checker = TypeChecker(data={"users": [{"name": "Ada"}, {"name": "Grace"}]})
+        node = Expression(
+            SourceRange(Position(0, 0), Position(0, 0)),
+            "users | map('name') | join(', ')",
+        )
+
+        assert checker.check(node)
+        assert not checker.errors.has_errors()
+
+    def test_filter_pipeline_unknown_filter_is_reported(self):
+        checker = TypeChecker(data={"users": [{"name": "Ada"}]})
+        node = Expression(
+            SourceRange(Position(0, 0), Position(0, 0)),
+            "users | no_such_filter('name')",
+        )
+
+        assert not checker.check(node)
+        assert checker.errors.has_errors()
+        assert "Unknown filter" in checker.errors.errors[0].message
+
+    def test_filter_pipeline_selectattr_requires_array_input(self):
+        checker = TypeChecker(data={"user": {"name": "Ada"}})
+        node = Expression(
+            SourceRange(Position(0, 0), Position(0, 0)),
+            "user | selectattr('active')",
+        )
+
+        assert not checker.check(node)
+        assert checker.errors.has_errors()
+        assert "expects an array input" in checker.errors.errors[0].message
+
+    def test_filter_pipeline_argument_paths_are_type_checked(self):
+        checker = TypeChecker(data={"users": [{"name": "Ada"}]})
+        node = Expression(
+            SourceRange(Position(0, 0), Position(0, 0)),
+            "users | map(missing_field) | join(', ')",
+        )
+
+        assert not checker.check(node)
+        assert checker.errors.has_errors()
+        assert checker.errors.errors[0].kind == "undefined_variable"
+
+
 class TestErrorMessages:
     """Test error message generation."""
 
