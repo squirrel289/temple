@@ -1,15 +1,15 @@
 ---
 title: "Repair VS Code Extension Build and Integration"
 id: 68
-status: not_started
+status: testing
 state_reason: null
 priority: medium
 complexity: medium
 estimated_hours: 10
-actual_hours: null
+actual_hours: 4
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "vscode-temple-linter: npm run compile passes, npm run lint passes."
 dependencies:
   - "[[67_fix_lsp_base_diagnostics_transport.md]]"
 related_backlog:
@@ -17,6 +17,9 @@ related_backlog:
 related_spike: []
 notes: |
   Focuses on TypeScript compile stability and removing dead/duplicated request paths.
+  Replaced duplicate connection wiring with a single LanguageClient-based integration path.
+  Hardened request/notification payload handling with runtime guards.
+  Normalized diagnostic code conversion to satisfy strict TypeScript typing.
 ---
 
 ## Goal
