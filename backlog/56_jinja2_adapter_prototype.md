@@ -4,6 +4,7 @@ id: 56
 status: testing
 related_commit:
   - 6d8c044  # ADAPTER_SPEC.md added
+  - f51a2ea  # feat(adapters): add jinja2 adapter prototype
 test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with jinja2 --with-editable ./temple python -m pytest temple/tests/test_jinja2_adapter.py -q (4 passed)."
 dependencies:
   - "[[55_adapter_spec_impl.md]]"

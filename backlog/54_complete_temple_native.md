@@ -5,6 +5,7 @@ status: testing
 related_commit:
   - 6d8c044  # docs(adr): clarify market role and adapter architecture (ADR-003); add adapter spec; archive backlog/48_jinja_integration.md
   - f00459b  # feat(parser): canonicalize control-flow end tokens; restore expression validation; align typed AST ranges
+  - fc1036e  # feat(temple): add typed filter pipeline support
 test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with-editable ./temple python -m pytest temple/tests/test_filter_registry.py temple/tests/test_mvp_language_core.py temple/tests/types/test_type_checker.py -q (33 passed)."
 dependencies:
   - "[[19_unified_token_model.md]]"
