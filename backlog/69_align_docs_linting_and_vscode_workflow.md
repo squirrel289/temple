@@ -1,15 +1,15 @@
 ---
 title: "Align Documentation, Linting Guidance, and VS Code Workflow"
 id: 69
-status: not_started
+status: testing
 state_reason: null
 priority: medium
 complexity: medium
 estimated_hours: 8
-actual_hours: null
+actual_hours: 5
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "Docs/workflow validation: vscode-temple-linter compile+lint pass; .vscode JSON files validate; docs HTML build passes (network-dependent intersphinx warnings only)."
 dependencies:
   - "[[68_repair_vscode_extension_integration.md]]"
 related_backlog:
@@ -18,6 +18,9 @@ related_backlog:
 related_spike: []
 notes: |
   Consolidates contributor guidance after tooling/runtime fixes land.
+  Rewrote CONTRIBUTING.md to remove duplicated/outdated setup sections and align with CI-parity commands.
+  Updated README and vscode-temple-linter README setup guidance for current Python/Node/tooling expectations.
+  Added .vscode tasks/launch/extensions recommendations for core, linter, and extension dev loops.
 ---
 
 ## Goal

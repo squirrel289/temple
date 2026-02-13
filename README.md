@@ -54,7 +54,7 @@ Visual Studio Code extension providing real-time linting via LSP proxy to native
 - **Python 3.10+** (for `temple` and `temple-linter`)
 
 > CI uses Python 3.11; using Python 3.11 locally is recommended to match CI runs.
-- **Node.js 14+** (for `vscode-temple-linter`)
+- **Node.js 18+** (for `vscode-temple-linter`)
 - **VS Code** (optional, for extension development)
 
 ### Setup Each Component
@@ -64,21 +64,16 @@ Visual Studio Code extension providing real-time linting via LSP proxy to native
 
 #### 1. temple (Core Engine)
 ```bash
-cd temple
-python -m venv .venv
-source .venv/bin/activate  # or `.venv\Scripts\activate` on Windows
-pip install -r requirements.txt
+./scripts/setup-hooks.sh
+./.ci-venv/bin/pip install -e ./temple[dev,ci]
 ```
 
 #### 2. temple-linter (LSP Server)
 ```bash
-cd temple-linter
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+./.ci-venv/bin/pip install -e ./temple-linter[dev,ci]
 
 # Run tests
-pytest tests/
+cd temple-linter && ../.ci-venv/bin/pytest tests -q
 ```
 
 #### 3. vscode-temple-linter (Extension)
@@ -153,7 +148,7 @@ cd temple && pytest tests/
 cd temple-linter && pytest tests/
 
 # vscode-temple-linter
-cd vscode-temple-linter && npm test
+cd vscode-temple-linter && npm run compile && npm run lint
 ```
 
 ## 📦 Dependency Isolation
@@ -253,7 +248,7 @@ What remains:
 
 ## 📄 License
 
-[Add your license here]
+License selection is pending; this repository does not yet publish a final license file.
 
 ## Changelog
 
