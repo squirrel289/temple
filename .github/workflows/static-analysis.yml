@@ -6,6 +6,8 @@ on:
     branches: [main, 'feature/**', 'release/**', 'hotfix/**', 'dependabot/**', 'ci/**', 'bugfix/**', 'chore/**']
   pull_request:
     types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 6 * * 1'
 
 jobs:
   markdown-structure:
@@ -14,8 +16,60 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve markdown scope
+        id: markdown_scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "schedule" ]]; then
+            echo "mode=all" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+            head_sha="${{ github.event.pull_request.head.sha }}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            base_sha="${{ github.event.before }}"
+            head_sha="${{ github.sha }}"
+          else
+            echo "mode=all" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [[ "${base_sha}" =~ ^0+$ ]]; then
+            echo "mode=all" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          mapfile -t markdown_files < <(git diff --name-only "${base_sha}" "${head_sha}" -- '*.md')
+          if [[ ${#markdown_files[@]} -eq 0 ]]; then
+            echo "mode=none" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          {
+            echo "mode=scoped"
+            echo "files<<EOF"
+            printf '%s\n' "${markdown_files[@]}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
       - name: Verify markdown structure blocks are synchronized
+        if: steps.markdown_scope.outputs.mode == 'all'
         run: python3 scripts/docs/sync_readme_structure.py --check --failure-threshold WARN
+      - name: Verify markdown structure blocks are synchronized (scoped files)
+        if: steps.markdown_scope.outputs.mode == 'scoped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t markdown_files < <(printf '%s\n' "${{ steps.markdown_scope.outputs.files }}")
+          python3 scripts/docs/sync_readme_structure.py --check --failure-threshold WARN "${markdown_files[@]}"
+      - name: Skip markdown structure check
+        if: steps.markdown_scope.outputs.mode == 'none'
+        run: echo "No markdown files in scope for this run."
 
   lint-yaml:
     name: Lint YAML

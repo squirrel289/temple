@@ -727,8 +727,51 @@ def process_markdown(
 
 
 def find_candidate_markdown(repo_root: Path, ignore_config: IgnoreConfig) -> list[Path]:
+    return _find_candidate_markdown_scoped(repo_root, ignore_config, scope_paths=None)
+
+
+def _expand_scope_paths(repo_root: Path, raw_paths: list[str]) -> list[Path]:
+    scoped_markdown: set[Path] = set()
+    for raw_path in raw_paths:
+        raw = raw_path.strip()
+        if not raw:
+            continue
+
+        candidate = Path(raw)
+        if not candidate.is_absolute():
+            candidate = repo_root / candidate
+
+        try:
+            resolved = candidate.resolve()
+            resolved.relative_to(repo_root)
+        except (FileNotFoundError, ValueError):
+            continue
+
+        if resolved.is_dir():
+            for markdown in resolved.rglob("*.md"):
+                if markdown.is_file():
+                    scoped_markdown.add(markdown)
+            continue
+
+        if resolved.is_file() and resolved.suffix.lower() == ".md":
+            scoped_markdown.add(resolved)
+
+    return sorted(scoped_markdown)
+
+
+def _find_candidate_markdown_scoped(
+    repo_root: Path,
+    ignore_config: IgnoreConfig,
+    scope_paths: list[str] | None,
+) -> list[Path]:
     files: list[Path] = []
-    for markdown in repo_root.rglob("*.md"):
+    candidates = (
+        _expand_scope_paths(repo_root, scope_paths)
+        if scope_paths
+        else sorted(repo_root.rglob("*.md"))
+    )
+
+    for markdown in candidates:
         rel_markdown = markdown.relative_to(repo_root)
         if should_exclude_path(rel_markdown, is_dir=False, ignore_config=ignore_config):
             continue
@@ -753,6 +796,11 @@ def main() -> int:
         default="ERROR",
         help="check mode threshold: WARN fails on warnings and errors; ERROR fails on errors only (default)",
     )
+    parser.add_argument(
+        "paths",
+        nargs="*",
+        help="optional markdown files/directories to validate; if omitted, all markdown with structure blocks is scanned",
+    )
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parents[2]
@@ -760,7 +808,9 @@ def main() -> int:
     changed_paths: list[Path] = []
     warning_records: list[tuple[Path, AnnotationWarning]] = []
 
-    for markdown in find_candidate_markdown(repo_root, ignore_config):
+    for markdown in _find_candidate_markdown_scoped(
+        repo_root, ignore_config, args.paths
+    ):
         changed, updated, annotation_warnings = process_markdown(
             markdown, repo_root, ignore_config
         )
