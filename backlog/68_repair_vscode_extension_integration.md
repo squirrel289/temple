@@ -8,7 +8,8 @@ complexity: medium
 estimated_hours: 10
 actual_hours: 4
 completed_date: null
-related_commit: []
+related_commit:
+  - 8927722
 test_results: "vscode-temple-linter: npm run compile passes, npm run lint passes."
 dependencies:
   - "[[67_fix_lsp_base_diagnostics_transport.md]]"
