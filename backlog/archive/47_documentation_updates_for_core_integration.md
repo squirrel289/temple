@@ -1,11 +1,12 @@
 ---
 title: "47_documentation_updates_for_core_integration"
-status: testing
+status: completed
+state_reason: success
 priority: Medium
 complexity: Low
 estimated_effort: 6 hours
 actual_effort: 2
-completed_date: null
+completed_date: 2026-02-13
 related_commit:
   - 87bb8ea  # docs(repo): automate markdown structure trees with scoped notes
   - 27f0660  # ci(docs): scope readme-structure validation to in-scope files

@@ -1,7 +1,8 @@
 ---
 title: Jinja2 Adapter Prototype
 id: 56
-status: testing
+status: completed
+state_reason: success
 related_commit:
   - 6d8c044  # ADAPTER_SPEC.md added
   - f51a2ea  # feat(adapters): add jinja2 adapter prototype
@@ -9,6 +10,8 @@ test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with j
 dependencies:
   - "[[55_adapter_spec_impl.md]]"
 estimated_hours: 40
+actual_hours: 8
+completed_date: 2026-02-13
 priority: high
 ---
 

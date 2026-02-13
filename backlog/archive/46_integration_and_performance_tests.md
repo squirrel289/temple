@@ -1,11 +1,12 @@
 ---
 title: "46_integration_and_performance_tests"
-status: testing
+status: completed
+state_reason: success
 priority: Medium
 complexity: Medium
 estimated_effort: 10 hours
 actual_effort: 3
-completed_date: null
+completed_date: 2026-02-13
 related_commit:
   - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
   - a397997  # fix(asv): fallback example path for benchmark template loading; add smoke tests (backlog #46)

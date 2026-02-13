@@ -1,7 +1,8 @@
 ---
 title: Implement Adapter Interface & SDK
 id: 55
-status: testing
+status: completed
+state_reason: success
 related_commit:
   - 6d8c044  # added ADAPTER_SPEC.md and ADR-003
   - 5d612db  # feat(sdk): add adapter interface contracts and tests
@@ -9,6 +10,8 @@ test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with-e
 dependencies:
   - "[[003-market-role-and-adapter-architecture.md]]"
 estimated_hours: 24
+actual_hours: 4
+completed_date: 2026-02-13
 priority: high
 ---
 

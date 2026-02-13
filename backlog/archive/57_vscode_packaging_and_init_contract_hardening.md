@@ -1,15 +1,20 @@
 ---
 title: VS Code Packaging and LSP Init Contract Hardening
 id: 57
-status: testing
+status: completed
+state_reason: success
 related_commit:
   - 8bb34ef  # feat(vscode): harden LSP init contract and packaging checks
   - 3f17a66  # ci(workflows): add vscode package validation to static analysis
+  - 35a540d  # chore(vscode): add extension publisher metadata
 dependencies:
   - "[[45_implement_lsp_language_features.md]]"
   - "[[46_integration_and_performance_tests.md]]"
 estimated_hours: 6
+actual_hours: 6
+completed_date: 2026-02-13
 priority: high
+test_results: "2026-02-13: ./scripts/pre-commit/validate-vscode-package.sh passes; extension package manifest now includes publisher + canonical monorepo repository URL."
 ---
 
 ## Test Results

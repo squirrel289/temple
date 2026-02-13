@@ -1,11 +1,12 @@
 ---
 title: "44_implement_semantic_validation"
-status: testing
+status: completed
+state_reason: success
 priority: High
 complexity: High
 estimated_effort: 12 hours
-actual_effort: null
-completed_date: null
+actual_effort: 6
+completed_date: 2026-02-13
 related_commit:
   - 62d1795  # feat(semantic): seed type checker from schema for lint diagnostics
 test_results: "2026-02-13: semantic/schema/type-check suites passing locally (temple/tests/types/test_type_checker.py, temple-linter/tests/test_semantic_linter.py, temple-linter/tests/test_lsp_mvp_smoke.py)"
