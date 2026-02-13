@@ -5,26 +5,23 @@ This server delegates all linting logic to service classes following
 Single Responsibility Principle. See services/ directory for implementation.
 """
 
-from pygls.lsp.server import LanguageServer
-from pygls.lsp.client import LanguageClient
+import logging
+
 from lsprotocol.types import (
+    INITIALIZE,
+    TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_OPEN,
+    TEXT_DOCUMENT_DID_SAVE,
+    DidChangeTextDocumentParams,
+    DidOpenTextDocumentParams,
+    DidSaveTextDocumentParams,
     InitializeParams,
     InitializeResult,
+    PublishDiagnosticsParams,
     TextDocumentSyncKind,
 )
-from lsprotocol.types import (
-    TEXT_DOCUMENT_DID_OPEN,
-    TEXT_DOCUMENT_DID_CHANGE,
-    TEXT_DOCUMENT_DID_SAVE,
-    INITIALIZE,
-)
-from lsprotocol.types import (
-    DidOpenTextDocumentParams,
-    DidChangeTextDocumentParams,
-    DidSaveTextDocumentParams,
-    PublishDiagnosticsParams,
-)
-import logging
+from pygls.lsp.client import LanguageClient
+from pygls.lsp.server import LanguageServer
 
 from .services.lint_orchestrator import LintOrchestrator
 
@@ -107,12 +104,11 @@ def did_save(ls: TempleLinterServer, params: DidSaveTextDocumentParams):
     )
 
 
-if __name__ == "__main__":
-    import sys
-    import os
-
-    print("[Temple LSP][DEBUG] sys.executable:", sys.executable, flush=True)
-    print("[Temple LSP][DEBUG] PATH:", os.environ.get("PATH"), flush=True)
-    print("[Temple LSP][DEBUG] VIRTUAL_ENV:", os.environ.get("VIRTUAL_ENV"), flush=True)
-    print("[Temple LSP][DEBUG] PYTHONPATH:", os.environ.get("PYTHONPATH"), flush=True)
+def main() -> int:
+    """Start the Temple LSP server over stdio."""
     ls.start_io()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

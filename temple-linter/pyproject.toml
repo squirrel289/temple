@@ -47,7 +47,9 @@ temple-linter-lsp = "temple_linter.lsp_server:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["temple_linter"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
