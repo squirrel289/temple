@@ -43,6 +43,13 @@ repos:
         files: ^vscode-temple-linter/src/.*\.ts$
         stages: [pre-commit]
 
+      - id: validate-vscode-package
+        name: "validate: vscode extension package"
+        entry: scripts/pre-commit/validate-vscode-package.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
       - id: secure-secrets-scan
         name: "secure: secrets scan (detect-secrets)"
         entry: scripts/pre-commit/secure-find-secrets.sh
