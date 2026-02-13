@@ -10,23 +10,24 @@ Produces valid HTML with proper handling of:
 - JavaScript/CSS content sanitization
 """
 
-import re
 import html
-from typing import Any, Dict, List, Optional, Set
+import re
+from typing import Any
+
 from temple.compiler.serializers.base import (
-    Serializer,
+    ASTNode,
     SerializationContext,
     SerializationError,
+    Serializer,
 )
-from temple.compiler.serializers.base import ASTNode
-from temple.typed_ast import Block, Text, Expression, If, For, Include
+from temple.typed_ast import Block, Expression, For, If, Include, Set, Text
 
 
 class HTMLSerializer(Serializer):
     """Serializer for HTML output format."""
 
     # Self-closing/void elements
-    VOID_ELEMENTS: Set[str] = {
+    VOID_ELEMENTS: set[str] = {
         "area",
         "base",
         "br",
@@ -58,7 +59,7 @@ class HTMLSerializer(Serializer):
         self.sanitize = sanitize
         self.indent_level = 0
 
-    def serialize(self, ast: ASTNode, data: Dict[str, Any]) -> str:
+    def serialize(self, ast: ASTNode, data: dict[str, Any]) -> str:
         """
         Serialize AST with input data to HTML string.
 
@@ -155,6 +156,10 @@ class HTMLSerializer(Serializer):
         elif isinstance(node, Include):
             return ""
 
+        elif isinstance(node, Set):
+            context.current_scope[node.name] = context.get_variable(node.expr)
+            return ""
+
         else:
             return ""
 
@@ -163,7 +168,7 @@ class HTMLSerializer(Serializer):
         return html.escape(str(value))
 
     def _evaluate_block(
-        self, children: List[ASTNode], context: SerializationContext
+        self, children: list[ASTNode], context: SerializationContext
     ) -> str:
         """Evaluate block of nodes."""
         results = []
@@ -185,7 +190,7 @@ class HTMLSerializer(Serializer):
         self,
         name: str,
         content: str = "",
-        attributes: Optional[Dict[str, str]] = None,
+        attributes: dict[str, str] | None = None,
         self_closing: bool = False,
     ) -> str:
         """
@@ -228,7 +233,7 @@ class HTMLSerializer(Serializer):
             return f"<{name}{attr_str}>{content}</{name}>"
 
     def _tag_indented(
-        self, name: str, content: str = "", attributes: Optional[Dict[str, str]] = None
+        self, name: str, content: str = "", attributes: dict[str, str] | None = None
     ) -> str:
         """Generate tag with proper indentation."""
         if not self.pretty:
