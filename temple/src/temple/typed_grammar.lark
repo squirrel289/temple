@@ -36,7 +36,7 @@ _EXPR_CLOSE: "}}"
 // Compound terminals for control-flow closers (avoid LALR ambiguity)
 END_TAG: _STMT_OPEN "end" _STMT_CLOSE
 ELSE_TAG: _STMT_OPEN "else" _STMT_CLOSE
-ELSE_IF_TAG: _STMT_OPEN /else\s+if/ STMT_ARGS _STMT_CLOSE
+ELSE_IF_TAG: _STMT_OPEN /(else\s+if|elif)/ STMT_ARGS _STMT_CLOSE
 
 _STMT_OPEN:  /\{%\s*/
 _STMT_CLOSE: /\s*%\}/

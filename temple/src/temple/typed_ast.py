@@ -1,5 +1,7 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
+
 from temple.diagnostics import Position, SourceRange
+from temple.expression_eval import evaluate_expression
 
 
 class TemplateError(Exception):
@@ -20,10 +22,10 @@ class Node:
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
+        mapping: list[tuple[str, Position]] | None = None,
     ) -> Any:
         raise NotImplementedError()
 
@@ -35,44 +37,29 @@ class Text(Node):
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
+        mapping: list[tuple[str, Position]] | None = None,
     ) -> str:
         return self.text
 
 
 class Expression(Node):
-    def __init__(self, source_range: SourceRange, expr: Optional[str] = None):
+    def __init__(self, source_range: SourceRange, expr: str | None = None):
         expr_val = expr
         super().__init__(source_range)
         self.expr = expr_val
 
-    def _resolve(self, context: Dict[str, Any]) -> Any:
-        # very small dot-notation resolver (supports integers for list indices)
-        parts = self.expr.split(".") if self.expr else []
-        cur: Any = context
-        for p in parts:
-            if isinstance(cur, list) and p.isdigit():
-                idx = int(p)
-                try:
-                    cur = cur[idx]
-                except Exception as e:
-                    raise TemplateError(f"Index error in expression '{self.expr}': {e}")
-            elif isinstance(cur, dict) and p in cur:
-                cur = cur[p]
-            else:
-                # missing -> None
-                return None
-        return cur
+    def _resolve(self, context: dict[str, Any]) -> Any:
+        return evaluate_expression(self.expr, context)
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
+        mapping: list[tuple[str, Position]] | None = None,
     ) -> Any:
         val = self._resolve(context)
         if mapping is not None:
@@ -86,7 +73,7 @@ class If(Node):
         source_range: "SourceRange",
         condition: str,
         body: "Block",
-        else_if_parts: Optional[List[Tuple[str, "Block"]]] = None,
+        else_if_parts: list[tuple[str, "Block"]] | None = None,
         else_body: Optional["Block"] = None,
     ):
         super().__init__(source_range)
@@ -97,10 +84,10 @@ class If(Node):
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
+        mapping: list[tuple[str, Position]] | None = None,
     ) -> Any:
         cond_val = Expression(self.source_range, self.condition).evaluate(
             context, includes, path + "/cond", mapping
@@ -147,11 +134,11 @@ class For(Node):
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
-    ) -> List[Any]:
+        mapping: list[tuple[str, Position]] | None = None,
+    ) -> list[Any]:
         iterable = Expression(self.source_range, self.iterable).evaluate(
             context, includes, path + "/iter", mapping
         )
@@ -192,10 +179,10 @@ class Include(Node):
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
+        mapping: list[tuple[str, Position]] | None = None,
     ) -> Any:
         if not includes or self.name not in includes:
             raise TemplateError(f"Include not found: {self.name}")
@@ -204,11 +191,31 @@ class Include(Node):
         )
 
 
+class Set(Node):
+    def __init__(self, source_range: "SourceRange", name: str, expr: str):
+        super().__init__(source_range)
+        self.name = name
+        self.expr = expr
+
+    def evaluate(
+        self,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
+        path: str = "",
+        mapping: list[tuple[str, Position]] | None = None,
+    ) -> None:
+        if self.name:
+            context[self.name] = evaluate_expression(self.expr, context)
+        if mapping is not None:
+            mapping.append((path or "/", self.source_range.start))
+        return None
+
+
 class Block(Node):
     def __init__(
         self,
-        nodes: Optional[List[Node]],
-        name: Optional[str] = None,
+        nodes: list[Node] | None,
+        name: str | None = None,
     ):
         sr = (
             SourceRange(nodes[0].source_range.start, nodes[-1].source_range.end)
@@ -233,12 +240,12 @@ class Block(Node):
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
+        mapping: list[tuple[str, Position]] | None = None,
     ) -> Any:
-        out: List[Any] = []
+        out: list[Any] = []
         for idx, n in enumerate(self.nodes):
             v = n.evaluate(context, includes, path + f"/{idx}", mapping)
             # flatten nested Blocks and For results conservatively
@@ -257,19 +264,19 @@ class Array(Node):
     def __init__(
         self,
         source_range: "SourceRange",
-        items: Optional[List[Node]] = None,
+        items: list[Node] | None = None,
     ):
         super().__init__(source_range)
         self.items = items or []
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
-    ) -> List[Any]:
-        out: List[Any] = []
+        mapping: list[tuple[str, Position]] | None = None,
+    ) -> list[Any]:
+        out: list[Any] = []
         for idx, it in enumerate(self.items):
             v = it.evaluate(context, includes, path + f"/{idx}", mapping)
             if isinstance(v, list):
@@ -287,7 +294,7 @@ class ObjectNode(Node):
     def __init__(
         self,
         source_range: "SourceRange",
-        pairs: Optional[List[Tuple[str, Node]]] = None,
+        pairs: list[tuple[str, Node]] | None = None,
     ):
         super().__init__(source_range)
         # pairs: list of (key, Node)
@@ -295,12 +302,12 @@ class ObjectNode(Node):
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        includes: Optional[Dict[str, "Block"]] = None,
+        context: dict[str, Any],
+        includes: dict[str, "Block"] | None = None,
         path: str = "",
-        mapping: Optional[List[Tuple[str, Position]]] = None,
-    ) -> Dict[str, Any]:
-        out: Dict[str, Any] = {}
+        mapping: list[tuple[str, Position]] | None = None,
+    ) -> dict[str, Any]:
+        out: dict[str, Any] = {}
         for key, node in self.pairs:
             v = node.evaluate(context, includes, path + f"/{key}", mapping)
             # if v is a single-item list, unwrap to scalar
@@ -329,6 +336,7 @@ __all__ = [
     "If",
     "For",
     "Include",
+    "Set",
     "Block",
     "Array",
     "ObjectNode",

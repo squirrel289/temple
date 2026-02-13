@@ -1,23 +1,28 @@
 ---
 title: "Complete Temple Native Language Core for MVP Templates"
 id: 65
-status: not_started
+status: testing
 state_reason: null
 priority: high
 complexity: high
 estimated_hours: 24
-actual_hours: null
+actual_hours: 6
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "27 parser/integration tests pass, 16 type-checker tests pass, 63 serializer tests pass; new MVP language-core test suite added."
 dependencies:
-  - "[[64_fix_linter_packaging_entrypoints.md]]"
+  - "[[archive/64_fix_linter_packaging_entrypoints.md]]"
   - "[[54_complete_temple_native.md]]"
 related_backlog:
   - "54_complete_temple_native.md"
 related_spike: []
 notes: |
   Focuses on missing language constructs required by documented examples and benchmark fixtures.
+  Implemented Set AST support with runtime assignment semantics and type-checker binding support.
+  Added canonical `elif` parsing while preserving `else if` compatibility.
+  Added expression evaluation support for list literals and boolean/comparison operators.
+  Updated serializer variable lookup/evaluation paths to use shared expression evaluation semantics.
+  Added focused MVP language-core regression tests.
 ---
 
 ## Goal

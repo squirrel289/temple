@@ -10,14 +10,15 @@ Produces valid YAML with proper handling of:
 - Anchors and references
 """
 
-from typing import Any, Dict, List
+from typing import Any
+
 from temple.compiler.serializers.base import (
-    Serializer,
+    ASTNode,
     SerializationContext,
     SerializationError,
+    Serializer,
 )
-from temple.compiler.serializers.base import ASTNode
-from temple.typed_ast import Block, Text, Expression, If, For, Include
+from temple.typed_ast import Block, Expression, For, If, Include, Set, Text
 
 
 class YAMLSerializer(Serializer):
@@ -38,7 +39,7 @@ class YAMLSerializer(Serializer):
         self.flow_style = flow_style
         self.indent_level = 0
 
-    def serialize(self, ast: ASTNode, data: Dict[str, Any]) -> str:
+    def serialize(self, ast: ASTNode, data: dict[str, Any]) -> str:
         """
         Serialize AST with input data to YAML string.
 
@@ -136,6 +137,10 @@ class YAMLSerializer(Serializer):
         elif isinstance(node, Include):
             return None
 
+        elif isinstance(node, Set):
+            context.current_scope[node.name] = context.get_variable(node.expr)
+            return None
+
         else:
             return None
 
@@ -144,7 +149,7 @@ class YAMLSerializer(Serializer):
         return self._to_yaml(value)
 
     def _evaluate_block(
-        self, children: List[ASTNode], context: SerializationContext
+        self, children: list[ASTNode], context: SerializationContext
     ) -> Any:
         """Evaluate block of nodes."""
         if not children:
@@ -210,7 +215,7 @@ class YAMLSerializer(Serializer):
 
         return s
 
-    def _dict_to_yaml(self, d: Dict[str, Any], indent: int) -> str:
+    def _dict_to_yaml(self, d: dict[str, Any], indent: int) -> str:
         """Convert dict to YAML string."""
         if not d:
             return "{}"
@@ -239,7 +244,7 @@ class YAMLSerializer(Serializer):
 
         return "\n".join(lines)
 
-    def _list_to_yaml(self, lst: List[Any], indent: int) -> str:
+    def _list_to_yaml(self, lst: list[Any], indent: int) -> str:
         """Convert list to YAML string."""
         if not lst:
             return "[]"
