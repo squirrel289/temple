@@ -18,9 +18,9 @@ repos:
         types: [yaml]
         stages: [pre-commit]
 
-      - id: sync-readme-structure
-        name: "docs: sync markdown structure blocks"
-        entry: python3 scripts/docs/sync_readme_structure.py --write
+      - id: validate-readme-structure
+        name: "docs: confirm markdown structure blocks match current state (sync_readme_structure.py)"
+        entry: python3 scripts/docs/sync_readme_structure.py --check
         language: system
         pass_filenames: false
         files: \.md$
