@@ -8,7 +8,8 @@ complexity: high
 estimated_hours: 24
 actual_hours: 6
 completed_date: null
-related_commit: []
+related_commit:
+  - fd8f61f
 test_results: "27 parser/integration tests pass, 16 type-checker tests pass, 63 serializer tests pass; new MVP language-core test suite added."
 dependencies:
   - "[[archive/64_fix_linter_packaging_entrypoints.md]]"
