@@ -1,9 +1,10 @@
 ---
 title: Implement Adapter Interface & SDK
 id: 55
-status: proposed
+status: testing
 related_commit:
   - 6d8c044  # added ADAPTER_SPEC.md and ADR-003
+test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with-editable ./temple python -m pytest temple/tests/test_adapter_sdk.py -q (4 passed)."
 dependencies:
   - "[[003-market-role-and-adapter-architecture.md]]"
 estimated_hours: 24
@@ -25,3 +26,7 @@ Design and implement the concrete adapter SDK in `temple/sdk/adapter.py` and doc
 - Adapter interfaces are type-annotated and importable
 - Tests pass validating sample parse results and diagnostic shapes
 - Documentation added linking to ADR-003
+
+## Progress Notes
+
+- 2026-02-13: Added `temple/sdk/adapter.py` with typed IR nodes, `AdapterParseResult`, `AdapterBase`, source-map mapping helpers, and filter-discovery traversal utilities plus unit coverage in `temple/tests/test_adapter_sdk.py`.
