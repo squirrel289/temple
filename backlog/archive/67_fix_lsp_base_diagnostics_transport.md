@@ -1,13 +1,13 @@
 ---
 title: "Fix LSP Base Diagnostics Transport Wiring"
 id: 67
-status: testing
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: medium
 estimated_hours: 12
 actual_hours: 5
-completed_date: null
+completed_date: 2026-02-13
 related_commit:
   - d1ea621
 test_results: "31 temple-linter transport/integration tests pass (test_lsp_transport_wiring, test_base_linting_service, test_integration, test_lsp_entrypoint). Ruff passes on updated transport files."
@@ -53,7 +53,7 @@ The current server path relies on a standalone `LanguageClient` instance, which 
 
 ## Acceptance Criteria
 
-- [ ] Base diagnostics request path works in active LSP session context
-- [ ] Failures are logged and degraded gracefully without crashes
-- [ ] Existing diagnostics publishing behavior remains intact
-- [ ] Integration tests pass for request transport flows
+- [x] Base diagnostics request path works in active LSP session context
+- [x] Failures are logged and degraded gracefully without crashes
+- [x] Existing diagnostics publishing behavior remains intact
+- [x] Integration tests pass for request transport flows
