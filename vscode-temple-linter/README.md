@@ -40,8 +40,28 @@ Language support for Temple templated files with integrated linting and diagnost
 
    ```bash
    npm install -g vsce
+   npm run package:check
    vsce package
    # Install the generated .vsix file
+   ```
+
+### Publish Flow (MVP)
+
+1. Ensure `package.json` metadata is publish-ready (`name`, `publisher`, `repository`, `license`, `version`).
+2. Validate packaging locally:
+   ```bash
+   npm run compile
+   npm run lint
+   npm run package:check
+   vsce package
+   ```
+3. Install locally for smoke verification:
+   ```bash
+   code --install-extension vscode-temple-linter-0.0.1.vsix
+   ```
+4. Publish when ready:
+   ```bash
+   vsce publish
    ```
 
 ## Configuration
@@ -53,6 +73,10 @@ Configure in `.vscode/settings.json` or User Settings:
 ```json
 {
   "temple.fileExtensions": [".tmpl", ".template", ".tpl", ".jinja"],
+  "temple.semanticSchemaPath": "schemas/template.schema.json",
+  "temple.semanticContext": {
+    "user": { "name": "Alice" }
+  },
   "python.defaultInterpreterPath": "/path/to/python"
 }
 ```
@@ -62,6 +86,8 @@ Configure in `.vscode/settings.json` or User Settings:
 | Setting                         | Type   | Default                  | Description                          |
 |---------------------------------|--------|--------------------------|--------------------------------------|
 | `temple.fileExtensions`         | array  | `[".tmpl", ".template"]` | File extensions treated as templates |
+| `temple.semanticSchemaPath`     | string | `""`                     | Optional JSON Schema path for semantic validation/features |
+| `temple.semanticContext`        | object | `{}`                     | Optional semantic context object for runtime-like validation |
 | `python.defaultInterpreterPath` | string | `"python"`               | Path to Python interpreter           |
 
 ## Usage
@@ -179,6 +205,15 @@ Diagnostic:  Line 3: Duplicate value
 ```
 
 The extension correctly reports the error at line 3 in the original template.
+
+### Semantic Diagnostic Codes
+
+Semantic diagnostics from `temple-type-checker` use these stable codes:
+
+- `undefined_variable`
+- `missing_property`
+- `type_mismatch`
+- `schema_violation`
 
 ## Extension Architecture
 

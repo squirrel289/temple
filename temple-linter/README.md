@@ -198,9 +198,33 @@ Configure in `.vscode/settings.json`:
 ```json
 {
   "temple.fileExtensions": [".tmpl", ".template", ".tpl", ".jinja"],
+  "temple.semanticSchemaPath": "schemas/template.schema.json",
+  "temple.semanticContext": {
+    "user": { "name": "Alice" }
+  },
   "python.defaultInterpreterPath": "/path/to/python"
 }
 ```
+
+### LSP Initialization Contract
+
+The VS Code extension sends these initialization options to `temple_linter.lsp_server`:
+
+- `templeExtensions` (`string[]`) - file extensions treated as Temple templates.
+- `semanticSchema` (`object`, optional) - parsed JSON schema object used for semantic checks and schema-aware language features.
+- `semanticSchemaPath` (`string`, optional) - schema file path fallback when `semanticSchema` is not provided.
+- `semanticContext` (`object`, optional) - context object for semantic checks.
+
+### Stable Diagnostic Conventions
+
+Temple semantic diagnostics from `temple-type-checker` currently use `ERROR` severity and these stable codes:
+
+| Code | Meaning |
+|------|---------|
+| `undefined_variable` | Root variable path is not defined in context/schema |
+| `missing_property` | Property access does not exist on an object type |
+| `type_mismatch` | Expression/operation uses an incompatible type (e.g., iterating non-array) |
+| `schema_violation` | Value or structure violates schema constraints |
 
 ### Custom Delimiters
 
@@ -270,6 +294,7 @@ temple-linter/tests/
 ├── test_linter.py
 ├── test_lsp_entrypoint.py
 ├── test_lsp_features.py                # Completion/hover/definition/references/rename tests
+├── test_lsp_mvp_smoke.py
 ├── test_lsp_transport_wiring.py
 ├── test_preprocessing.py
 ├── test_semantic_linter.py
@@ -301,7 +326,6 @@ temple-linter/
 ├── README.md                         # ⭐ You are here
 ├── requirements.txt
 ├── setup.py
-├── .benchmarks/
 ├── .vscode/
 │   └── settings.json
 ├── docs/                             # Sphinx docs and developer guides
@@ -323,6 +347,7 @@ temple-linter/
 │   ├── test_linter.py
 │   ├── test_lsp_entrypoint.py
 │   ├── test_lsp_features.py
+│   ├── test_lsp_mvp_smoke.py
 │   ├── test_lsp_transport_wiring.py
 │   ├── test_preprocessing.py
 │   ├── test_semantic_linter.py
@@ -445,7 +470,7 @@ Or view online: [docs/api/](docs/api/)
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file for details
+MIT License - See [LICENSE](../LICENSE) file for details
 
 ## Related Projects
 

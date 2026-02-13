@@ -248,10 +248,11 @@ What remains:
 
 ## 📄 License
 
-License selection is pending; this repository does not yet publish a final license file.
+MIT License. See [`LICENSE`](LICENSE).
 
 ## Changelog
 
+- Repository changelog: [`CHANGELOG.md`](CHANGELOG.md)
 - January 2026: Clarified market positioning and adapter architecture in [ADR-003](temple/docs/adr/003-market-role-and-adapter-architecture.md). Temple now targets declarative, type-safe transformations and defines an adapter contract for engine integrations (Jinja2 first).
 
 ## 🤝 Contributing
