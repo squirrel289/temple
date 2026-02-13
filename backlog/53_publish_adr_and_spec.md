@@ -1,9 +1,10 @@
 ---
 title: Publish ADR-003 and Adapter Spec
 id: 53
-status: proposed
+status: testing
 related_commit:
   - 6d8c044
+test_results: "2026-02-13: docs-only validation; changelog + release-note draft added and linked to ADR-003/ADAPTER_SPEC."
 dependencies:
   - "[[003-market-role-and-adapter-architecture.md]]"
   - "[[ADAPTER_SPEC.md]]"
@@ -25,3 +26,8 @@ Publish ADR-003 and `ADAPTER_SPEC.md` via repository changelog, update top-level
 
 - PR or changelog entry merged
 - Stakeholder acknowledgment or feedback captured
+
+## Progress Notes
+
+- 2026-02-13: Added release-note draft + internal announcement template at `temple/docs/release/ADR003_ADAPTER_SPEC_ANNOUNCEMENT.md`.
+- 2026-02-13: Updated `CHANGELOG.md` to explicitly publish and link ADR-003 and `ADAPTER_SPEC.md` alongside adapter/parity implementation updates.
