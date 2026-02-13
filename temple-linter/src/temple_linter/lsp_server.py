@@ -20,7 +20,6 @@ from lsprotocol.types import (
     PublishDiagnosticsParams,
     TextDocumentSyncKind,
 )
-from pygls.lsp.client import LanguageClient
 from pygls.lsp.server import LanguageServer
 
 from .services.lint_orchestrator import LintOrchestrator
@@ -37,7 +36,6 @@ class TempleLinterServer(LanguageServer):
 
 
 ls = TempleLinterServer()
-lc = LanguageClient("temple-linter-client", "v1")
 
 
 @ls.feature(INITIALIZE)
@@ -64,7 +62,7 @@ def did_open(ls: TempleLinterServer, params: DidOpenTextDocumentParams):
     """Handle document open event."""
     text_doc = params.text_document
     diagnostics = ls.orchestrator.lint_template(
-        text_doc.text, text_doc.uri, lc, ls.temple_extensions
+        text_doc.text, text_doc.uri, ls, ls.temple_extensions
     )
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
@@ -79,7 +77,7 @@ def did_change(ls: TempleLinterServer, params: DidChangeTextDocumentParams):
     """Handle document change event."""
     text_doc = ls.workspace.get_text_document(params.text_document.uri)
     diagnostics = ls.orchestrator.lint_template(
-        text_doc.source, text_doc.uri, lc, ls.temple_extensions
+        text_doc.source, text_doc.uri, ls, ls.temple_extensions
     )
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
@@ -94,7 +92,7 @@ def did_save(ls: TempleLinterServer, params: DidSaveTextDocumentParams):
     """Handle document save event."""
     text_doc = ls.workspace.get_text_document(params.text_document.uri)
     diagnostics = ls.orchestrator.lint_template(
-        text_doc.source, text_doc.uri, lc, ls.temple_extensions
+        text_doc.source, text_doc.uri, ls, ls.temple_extensions
     )
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
