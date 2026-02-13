@@ -10,7 +10,9 @@ related_commit:
   - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
   - a397997  # fix(asv): fallback example path for benchmark template loading; add smoke tests (backlog #46)
   - a38d007  # feat(temple-linter): add native LSP providers and perf checks
-test_results: "Local: uv run --with pytest --with ./temple --with ./temple-linter python -m pytest temple-linter/tests/test_e2e_performance.py -q passes; CI tests workflow enforces this suite."
+  - 8bb34ef  # feat(vscode): harden LSP init contract and packaging checks
+  - 3f17a66  # ci(workflows): add vscode package validation to static analysis
+test_results: "Local: uv run --with pytest --with-editable ./temple --with-editable ./temple-linter python -m pytest temple-linter/tests/test_e2e_performance.py temple-linter/tests/test_lsp_mvp_smoke.py -q passes; static analysis now validates VS Code package checks via CI + pre-push parity."
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳
   - [[43_implement_template_syntax_validation.md]] ⏳
@@ -26,6 +28,7 @@ notes: |
   2026-02-13: Added `test_e2e_performance.py` with pipeline merge checks and runtime thresholds.
   2026-02-13: Updated `.github/workflows/tests.yml` to explicitly enforce the performance threshold suite.
   2026-02-13: Consolidated implementation and test wiring committed in `a38d007`.
+  2026-02-13: Added LSP/initialization smoke coverage in `8bb34ef` and moved VS Code package validation to static analysis in `3f17a66`.
 ---
 
 ## Goal
