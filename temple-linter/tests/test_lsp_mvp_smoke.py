@@ -1,0 +1,213 @@
+"""MVP smoke tests for LSP initialization and language-feature flow."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+from lsprotocol.types import (
+    CompletionParams,
+    DefinitionParams,
+    DidOpenTextDocumentParams,
+    HoverParams,
+    InitializeParams,
+    Position,
+    PrepareRenameParams,
+    ReferenceContext,
+    ReferenceParams,
+    RenameParams,
+    TextDocumentIdentifier,
+    TextDocumentItem,
+)
+
+from temple_linter import lsp_server
+from temple_linter.lsp_server import TempleLinterServer
+
+
+@dataclass
+class _Doc:
+    uri: str
+    source: str
+
+
+class _Workspace:
+    def __init__(self, docs: dict[str, _Doc], root_path: Path):
+        self._docs = docs
+        self.root_path = str(root_path)
+
+    def get_text_document(self, uri: str) -> _Doc:
+        return self._docs[uri]
+
+
+def _semantic_schema() -> dict:
+    return {
+        "type": "object",
+        "properties": {
+            "user": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Display name",
+                    }
+                },
+            }
+        },
+    }
+
+
+def test_lsp_server_initialize_and_did_open_with_semantic_settings() -> None:
+    server = TempleLinterServer()
+    init_result = lsp_server.on_initialize(
+        server,
+        InitializeParams(
+            capabilities={},
+            initialization_options={
+                "templeExtensions": [".tmpl", ".template"],
+                "semanticSchema": _semantic_schema(),
+                "semanticContext": {"user": {"name": "Alice"}},
+            },
+        ),
+    )
+
+    assert init_result.capabilities.completion_provider is not None
+    assert init_result.capabilities.hover_provider is True
+    assert init_result.capabilities.definition_provider is True
+    assert init_result.capabilities.references_provider is True
+    assert init_result.capabilities.rename_provider is not None
+
+    published = {}
+
+    def _capture(params):
+        published["params"] = params
+
+    server.text_document_publish_diagnostics = _capture  # type: ignore[method-assign]
+    server.orchestrator.base_linting_service.request_base_diagnostics = (
+        lambda *_args, **_kwargs: []
+    )
+    lsp_server.did_open(
+        server,
+        DidOpenTextDocumentParams(
+            text_document=TextDocumentItem(
+                uri="file:///tmp/template.tmpl",
+                language_id="templated-any",
+                version=1,
+                text="{{ user.id }}",
+            )
+        ),
+    )
+
+    diagnostics = published["params"].diagnostics
+    assert any(str(getattr(diag, "code", "")) == "missing_property" for diag in diagnostics)
+
+
+def test_lsp_server_language_features_smoke(tmp_path: Path) -> None:
+    includes_dir = tmp_path / "includes"
+    includes_dir.mkdir(parents=True, exist_ok=True)
+    include_file = includes_dir / "header.html.tmpl"
+    include_file.write_text("<header>Hello</header>", encoding="utf-8")
+
+    template_path = tmp_path / "main.html.tmpl"
+    template_text = "\n".join(
+        [
+            "{% include 'includes/header.html' %}",
+            "{{ user.na }}",
+            "{{ user.name }} {{ user.name }}",
+        ]
+    )
+    template_path.write_text(template_text, encoding="utf-8")
+    template_uri = template_path.as_uri()
+
+    server = TempleLinterServer()
+    lsp_server.on_initialize(
+        server,
+        InitializeParams(
+            capabilities={},
+            initialization_options={"semanticSchema": _semantic_schema()},
+        ),
+    )
+    server.protocol._workspace = _Workspace(  # type: ignore[attr-defined]
+        docs={template_uri: _Doc(uri=template_uri, source=template_text)},
+        root_path=tmp_path,
+    )
+
+    completion_list = lsp_server.completion(
+        server,
+        CompletionParams(
+            text_document=TextDocumentIdentifier(uri=template_uri),
+            position=Position(line=1, character=10),
+        ),
+    )
+    assert completion_list is not None
+    assert "name" in {item.label for item in completion_list.items}
+
+    hover = lsp_server.hover(
+        server,
+        HoverParams(
+            text_document=TextDocumentIdentifier(uri=template_uri),
+            position=Position(line=2, character=8),
+        ),
+    )
+    assert hover is not None
+    assert "Display name" in hover.contents.value
+
+    definitions = lsp_server.definition(
+        server,
+        DefinitionParams(
+            text_document=TextDocumentIdentifier(uri=template_uri),
+            position=Position(line=0, character=23),
+        ),
+    )
+    assert definitions
+    assert definitions[0].uri == include_file.as_uri()
+
+    refs = lsp_server.references(
+        server,
+        ReferenceParams(
+            text_document=TextDocumentIdentifier(uri=template_uri),
+            position=Position(line=2, character=8),
+            context=ReferenceContext(include_declaration=False),
+        ),
+    )
+    assert refs is not None
+    assert len(refs) == 2
+
+    rename_range = lsp_server.prepare_rename(
+        server,
+        PrepareRenameParams(
+            text_document=TextDocumentIdentifier(uri=template_uri),
+            position=Position(line=2, character=8),
+        ),
+    )
+    assert rename_range is not None
+
+    rename_edit = lsp_server.rename(
+        server,
+        RenameParams(
+            text_document=TextDocumentIdentifier(uri=template_uri),
+            position=Position(line=2, character=8),
+            new_name="user.full_name",
+        ),
+    )
+    assert rename_edit is not None
+    assert template_uri in rename_edit.changes
+    assert len(rename_edit.changes[template_uri]) == 2
+
+
+def test_lsp_server_loads_semantic_schema_from_path(tmp_path: Path) -> None:
+    schema_path = tmp_path / "template.schema.json"
+    schema_path.write_text(json.dumps(_semantic_schema()), encoding="utf-8")
+
+    server = TempleLinterServer()
+    lsp_server.on_initialize(
+        server,
+        InitializeParams(
+            capabilities={},
+            initialization_options={"semanticSchemaPath": str(schema_path)},
+        ),
+    )
+
+    assert server.semantic_schema is not None
+    assert server.semantic_schema_raw is not None
+    assert "user" in server.semantic_schema_raw.get("properties", {})

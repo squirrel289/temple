@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -28,6 +30,8 @@ type PublishNodeDiagnosticsParams = {
   uri: string;
   diagnostics: LspDiagnostic[];
 };
+
+type JsonObject = Record<string, unknown>;
 
 function isBaseDiagnosticsRequest(value: unknown): value is BaseDiagnosticsRequest {
   if (!value || typeof value !== 'object') {
@@ -62,6 +66,36 @@ function isPublishNodeDiagnosticsParams(
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function asJsonObject(value: unknown): JsonObject | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as JsonObject;
+}
+
+function resolveWorkspacePath(rawPath: string): string {
+  if (path.isAbsolute(rawPath)) {
+    return rawPath;
+  }
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  if (!workspaceFolder) {
+    return rawPath;
+  }
+  return path.join(workspaceFolder.uri.fsPath, rawPath);
+}
+
+function loadSemanticSchema(schemaPath: string): JsonObject | undefined {
+  const resolved = resolveWorkspacePath(schemaPath);
+  try {
+    const schemaText = fs.readFileSync(resolved, 'utf-8');
+    const parsed = JSON.parse(schemaText) as unknown;
+    return asJsonObject(parsed);
+  } catch (error) {
+    console.warn(`Failed to load temple semantic schema from '${resolved}':`, error);
+    return undefined;
+  }
 }
 
 function toVsRange(range: LspRange): vscode.Range {
@@ -187,6 +221,24 @@ export async function activate(
     'fileExtensions',
     ['.tmpl', '.template']
   );
+  const semanticContext = asJsonObject(
+    templeConfig.get<unknown>('semanticContext')
+  );
+  const semanticSchemaPathRaw = templeConfig.get<string>(
+    'semanticSchemaPath',
+    ''
+  );
+  const semanticSchemaPath = semanticSchemaPathRaw
+    ? resolveWorkspacePath(semanticSchemaPathRaw)
+    : undefined;
+  const semanticSchema = semanticSchemaPath
+    ? loadSemanticSchema(semanticSchemaPath)
+    : undefined;
+
+  const fileWatchers = templeExtensions.map((extension) =>
+    vscode.workspace.createFileSystemWatcher(`**/*${extension}`)
+  );
+  context.subscriptions.push(...fileWatchers);
 
   const linterRoot = context.asAbsolutePath('../temple-linter');
   const serverOptions: ServerOptions = {
@@ -197,11 +249,12 @@ export async function activate(
 
   const clientOptions: LanguageClientOptions = {
     documentSelector: [{ scheme: 'file', language: 'templated-any' }],
-    synchronize: {
-      fileEvents: vscode.workspace.createFileSystemWatcher('**/*.tmpl'),
-    },
+    synchronize: { fileEvents: fileWatchers },
     initializationOptions: {
       templeExtensions,
+      semanticContext,
+      semanticSchema,
+      semanticSchemaPath,
     },
   };
 

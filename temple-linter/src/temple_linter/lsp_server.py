@@ -5,6 +5,7 @@ This server delegates all linting logic to service classes following
 Single Responsibility Principle. See services/ directory for implementation.
 """
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -94,12 +95,22 @@ def on_initialize(ls: TempleLinterServer, params: InitializeParams):
             except Exception as exc:
                 ls.logger.warning("Failed to parse semanticSchema init option: %s", exc)
 
-        schema_path = init_options.get("schemaPath")
-        if ls.semantic_schema is None and isinstance(schema_path, str) and schema_path:
+        schema_path_option = init_options.get("semanticSchemaPath")
+        if not isinstance(schema_path_option, str) or not schema_path_option:
+            schema_path_option = init_options.get("schemaPath")
+        if (
+            ls.semantic_schema is None
+            and isinstance(schema_path_option, str)
+            and schema_path_option
+        ):
             try:
-                ls.semantic_schema = SchemaParser.from_file(schema_path)
+                schema_path = Path(schema_path_option).expanduser()
+                ls.semantic_schema = SchemaParser.from_file(str(schema_path))
+                ls.semantic_schema_raw = json.loads(schema_path.read_text())
             except Exception as exc:
-                ls.logger.warning("Failed to load schemaPath init option: %s", exc)
+                ls.logger.warning(
+                    "Failed to load semantic schema path init option: %s", exc
+                )
 
     return InitializeResult(
         capabilities=ServerCapabilities(
