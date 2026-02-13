@@ -1,15 +1,15 @@
 ---
 title: "Integrate Semantic Validation in temple-linter"
 id: 66
-status: not_started
+status: testing
 state_reason: null
 priority: high
 complexity: high
 estimated_hours: 20
-actual_hours: null
+actual_hours: 5
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "temple-linter semantic suites: 32 tests pass (test_semantic_linter, test_linter, test_integration). Ruff passes on updated linter/orchestrator files."
 dependencies:
   - "[[65_complete_temple_native_language_core.md]]"
   - "[[44_implement_semantic_validation.md]]"
@@ -18,6 +18,10 @@ related_backlog:
 related_spike: []
 notes: |
   Moves temple-linter from syntax-only diagnostics to schema-aware semantic diagnostics.
+  Extended TemplateLinter API to accept semantic context/schema and emit merged syntax+semantic diagnostics.
+  Added semantic short-circuit behavior when syntax errors are present.
+  Wired LintOrchestrator to forward semantic inputs into template linting.
+  Added integration tests for missing property, type mismatch, syntax short-circuit, and orchestrator pass-through.
 ---
 
 ## Goal
