@@ -1,19 +1,25 @@
 # Temple package initialization
-from temple.template_tokenizer import Token, TokenType, temple_tokenizer
-from temple.template_renderer import (
-    render,
-    render_passthrough,
-    RenderError,
-    BlockValidator,
-)
-from temple.lark_parser import parse_template, parse_with_diagnostics
 from temple.diagnostics import (
     Diagnostic,
-    DiagnosticSeverity,
     DiagnosticCollector,
+    DiagnosticSeverity,
     Position,
     SourceRange,
 )
+from temple.filter_registry import (
+    CORE_FILTER_SIGNATURES,
+    DEFAULT_FILTER_ADAPTER,
+    FilterAdapter,
+    FilterSignature,
+)
+from temple.lark_parser import parse_template, parse_with_diagnostics
+from temple.template_renderer import (
+    BlockValidator,
+    RenderError,
+    render,
+    render_passthrough,
+)
+from temple.template_tokenizer import Token, TokenType, temple_tokenizer
 
 __all__ = [
     "Token",
@@ -25,6 +31,10 @@ __all__ = [
     "BlockValidator",
     "parse_template",
     "parse_with_diagnostics",
+    "FilterAdapter",
+    "FilterSignature",
+    "DEFAULT_FILTER_ADAPTER",
+    "CORE_FILTER_SIGNATURES",
     "Diagnostic",
     "DiagnosticSeverity",
     "DiagnosticCollector",

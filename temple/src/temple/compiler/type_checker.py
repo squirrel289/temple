@@ -7,7 +7,8 @@ Walks AST, assigns types, validates against schema.
 
 from typing import Any, Optional
 
-from temple.expression_eval import extract_variable_paths, is_simple_path
+from temple.expression_eval import extract_variable_paths, is_simple_path, parse_filter_pipeline
+from temple.filter_registry import DEFAULT_FILTER_ADAPTER
 from temple.typed_ast import (
     Block,
     Expression,
@@ -174,6 +175,25 @@ class TypeChecker:
         if not expr:
             return AnyType()
 
+        base_expr, filter_pipeline = parse_filter_pipeline(expr)
+        if filter_pipeline:
+            current_type = self._check_expression(
+                Expression(source_range=node.source_range, expr=base_expr), env
+            )
+            for filter_call in filter_pipeline:
+                arg_paths: set[str] = set()
+                for arg in filter_call.args:
+                    arg_paths.update(extract_variable_paths(arg))
+                for path in self._most_specific_paths(arg_paths):
+                    self._resolve_var_path_type(path, env, node.source_range)
+                current_type = self._apply_filter_type(
+                    current_type,
+                    filter_name=filter_call.name,
+                    arg_count=len(filter_call.args),
+                    source_range=node.source_range,
+                )
+            return current_type
+
         # Literals are valid without variable lookups.
         if expr in ("true", "false", "True", "False"):
             return BooleanType()
@@ -196,19 +216,84 @@ class TypeChecker:
                 return ArrayType(AnyType())
             return AnyType()
 
-        # Keep the most specific paths to avoid duplicate errors.
-        paths = set(raw_paths)
-        for path in list(raw_paths):
-            if any(other.startswith(f"{path}.") for other in raw_paths if other != path):
-                paths.discard(path)
-
-        for path in sorted(paths):
+        for path in self._most_specific_paths(raw_paths):
             self._resolve_var_path_type(path, env, node.source_range)
 
         if is_list_literal:
             return ArrayType(AnyType())
         if self._looks_boolean_expression(expr):
             return BooleanType()
+        return AnyType()
+
+    def _most_specific_paths(self, raw_paths: set[str]) -> list[str]:
+        paths = set(raw_paths)
+        for path in list(raw_paths):
+            if any(other.startswith(f"{path}.") for other in raw_paths if other != path):
+                paths.discard(path)
+        return sorted(paths)
+
+    def _apply_filter_type(
+        self,
+        input_type: BaseType,
+        *,
+        filter_name: str,
+        arg_count: int,
+        source_range,
+    ) -> BaseType:
+        if not DEFAULT_FILTER_ADAPTER.has_filter(filter_name):
+            available = ", ".join(DEFAULT_FILTER_ADAPTER.list_names())
+            self.errors.add_error(
+                kind=TypeErrorKind.TYPE_MISMATCH,
+                message=f"Unknown filter '{filter_name}'",
+                source_range=source_range,
+                expected_type=f"one of: {available}",
+                actual_type=filter_name,
+            )
+            return AnyType()
+
+        if filter_name in ("selectattr", "map") and arg_count < 1:
+            self.errors.add_error(
+                kind=TypeErrorKind.TYPE_MISMATCH,
+                message=f"Filter '{filter_name}' requires at least one argument",
+                source_range=source_range,
+                expected_type=">= 1 filter arguments",
+                actual_type=str(arg_count),
+            )
+            return AnyType()
+
+        if filter_name == "default" and arg_count < 1:
+            self.errors.add_error(
+                kind=TypeErrorKind.TYPE_MISMATCH,
+                message="Filter 'default' requires a fallback argument",
+                source_range=source_range,
+                expected_type=">= 1 filter arguments",
+                actual_type=str(arg_count),
+            )
+            return AnyType()
+
+        if filter_name in ("selectattr", "map"):
+            if isinstance(input_type, ArrayType):
+                if filter_name == "selectattr":
+                    return input_type
+                return ArrayType(AnyType())
+            if isinstance(input_type, AnyType):
+                return AnyType()
+
+            self.errors.add_error(
+                kind=TypeErrorKind.TYPE_MISMATCH,
+                message=f"Filter '{filter_name}' expects an array input",
+                source_range=source_range,
+                expected_type="array",
+                actual_type=type(input_type).__name__,
+            )
+            return AnyType()
+
+        if filter_name == "join":
+            return StringType()
+
+        if filter_name == "default":
+            return input_type
+
         return AnyType()
 
     def _resolve_var_path_type(

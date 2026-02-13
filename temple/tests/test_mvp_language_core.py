@@ -60,3 +60,10 @@ def test_type_checker_handles_set_and_expression_operators() -> None:
 
     assert checker.check(root)
     assert not checker.errors.has_errors()
+
+
+def test_filter_pipeline_supports_map_and_join() -> None:
+    template = "{{ users | map('name') | join(', ') }}"
+    rendered = _render(template, {"users": [{"name": "Ada"}, {"name": "Grace"}]})
+
+    assert rendered == "Ada, Grace"
