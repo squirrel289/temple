@@ -8,6 +8,15 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
+  markdown-structure:
+    name: Markdown Structure Sync Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Verify markdown structure blocks are synchronized
+        run: python3 scripts/docs/sync_readme_structure.py --check --failure-threshold WARN
+
   lint-yaml:
     name: Lint YAML
     runs-on: ubuntu-latest

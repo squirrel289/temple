@@ -10,43 +10,52 @@
 
 ## Directory Structure
 
-```
+<!-- BEGIN:project-structure path=examples depth=3 annotations=examples/.structure-notes.yaml -->
+```text
 examples/
-├── 📄 README.md                          ⭐ You are here
-├── 🔧 run_example.py                     Script to render templates
-├── 📄 sample_data.json                   Input data for all examples
-│
-├── templates/                            📝 All template files
-│   ├── positive/                         ✅ Working examples
-│   │   ├── html_positive.html.tmpl
-│   │   ├── md_positive.md.tmpl
-│   │   ├── text_positive.txt.tmpl
-│   │   └── toml_positive.toml.tmpl
-│   ├── negative/                         ❌ Validation error examples
-│   │   ├── html_negative.html.tmpl
-│   │   ├── md_negative.md.tmpl
-│   │   ├── text_negative.txt.tmpl
-│   │   └── toml_negative.toml.tmpl
-│   ├── includes/                         🔄 Template composition
-│   │   ├── header.*.tmpl
-│   │   └── footer.*.tmpl
-│   └── bench/                            ⚡ Performance benchmarking
-│       ├── real_small.md.tmpl
-│       ├── real_medium.md.tmpl
-│       └── real_large.html.tmpl
-│
-└── outputs/                              📋 Expected rendering results
-    ├── html_positive.html.output
-    ├── md_positive.md.output
-    ├── text_positive.txt.output
-    └── toml_positive.toml.output
+├── README.md                        # ⭐ You are here
+├── run_example.py                   # Script to render templates
+├── sample_data.json                 # Input data for all examples
+├── bench/                           # asv benchmark harness
+├── outputs/                         # 📋 Expected rendering results
+│   ├── html_positive.html.output
+│   ├── md_positive.md.output
+│   ├── text_positive.txt.output
+│   └── toml_positive.toml.output
+└── templates/                       # 📝 All template files
+    ├── bench/                       # ⚡ Performance benchmarking
+    │   ├── README.md
+    │   ├── real_large.html.tmpl
+    │   ├── real_medium.md.tmpl
+    │   └── real_small.md.tmpl
+    ├── includes/                    # 🔄 Template composition
+    │   ├── footer.html.tmpl
+    │   ├── footer.md.tmpl
+    │   ├── footer.toml.tmpl
+    │   ├── footer.txt.tmpl
+    │   ├── header.html.tmpl
+    │   ├── header.md.tmpl
+    │   ├── header.toml.tmpl
+    │   └── header.txt.tmpl
+    ├── negative/                    # ❌ Validation error examples
+    │   ├── html_negative.html.tmpl
+    │   ├── md_negative.md.tmpl
+    │   ├── text_negative.txt.tmpl
+    │   └── toml_negative.toml.tmpl
+    └── positive/                    # ✅ Working examples
+        ├── html_positive.html.tmpl
+        ├── md_positive.md.tmpl
+        ├── text_positive.txt.tmpl
+        └── toml_positive.toml.tmpl
 ```
+<!-- END:project-structure -->
 
 ## DSL Examples (Core Examples)
 
 The templates in `templates/` directory demonstrate Temple's DSL syntax across multiple output formats. All examples use the same input data ([sample_data.json](sample_data.json)) to show how Temple adapts to different output formats.
 
 **What's included:**
+
 - ✅ **Positive examples** (`templates/positive/`): Valid templates with conditionals, loops, includes
 - ❌ **Negative examples** (`templates/negative/`): Templates with validation errors (missing required fields)
 - 📋 **Expected outputs** (`outputs/`): `.output` files for comparison
@@ -54,11 +63,12 @@ The templates in `templates/` directory demonstrate Temple's DSL syntax across m
 - 🔄 **Includes** (`templates/includes/`): Template composition examples
 
 **Template features demonstrated:**
+
 - Variable insertion: `{{ user.name }}`
 - Conditionals: `{% if user.active %}...{% end %}`
 - Loops: `{% for job in user.jobs %}...{% end %}`
 - Includes: `{% include 'header.html' %}`
-- Loop metadata: `{% if loop.last %}` 
+- Loop metadata: `{% if loop.last %}`
 
 ## Quick Start
 
@@ -94,6 +104,7 @@ python run_example.py all --compare     # Compare all formats
 ```
 
 **Script Features:**
+
 - Reusable across all 4 output formats
 - Automatic template parsing with `lark_parser` and rendering with `typed_renderer`
 - Loads sample data from `sample_data.json`
@@ -104,6 +115,7 @@ python run_example.py all --compare     # Compare all formats
 
 **Output Files:**
 Each format has an expected output file for validation in `outputs/`:
+
 - `html_positive.html.output` - Expected HTML rendering
 - `md_positive.md.output` - Expected Markdown rendering
 - `text_positive.txt.output` - Expected text rendering
@@ -185,7 +197,9 @@ Compose templates using includes:
 ## Other Directories
 
 ### Benchmark Templates (`templates/bench/`)
+
 Templates used for performance benchmarking with [airspeed velocity (asv)](https://asv.readthedocs.io/):
+
 - `real_small.md.tmpl` - Small Markdown template (~20 lines)
 - `real_medium.md.tmpl` - Medium Markdown template (~100 lines)
 - `real_large.html.tmpl` - Large HTML template (~500 lines)
@@ -193,7 +207,9 @@ Templates used for performance benchmarking with [airspeed velocity (asv)](https
 Use the same `run_example.py` script with the same data structure.
 
 ### Linter Examples (`temple/examples/`)
+
 Low-level examples used for testing the linter and base format validation:
+
 - `valid_*.{json,html,md}` - Syntactically valid base formats
 - `invalid_*.{json,html,md}` - Base format syntax errors
 - `lint_examples.py` - Programmatic linter usage

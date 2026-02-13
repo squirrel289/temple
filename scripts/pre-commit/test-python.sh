@@ -11,6 +11,22 @@ if [ -z "$PYTHON" ]; then
   exit 0
 fi
 
+run_pytest() {
+  if "$PYTHON" -m pytest --version >/dev/null 2>&1; then
+    "$PYTHON" -m pytest "$@"
+    return
+  fi
+
+  if command -v uv >/dev/null 2>&1; then
+    echo "pytest not available in interpreter; falling back to uv-managed pytest." >&2
+    uv run --with pytest --with ./temple --with ./temple-linter python -m pytest "$@"
+    return
+  fi
+
+  echo "pytest is unavailable and uv is not installed; cannot run test hook." >&2
+  exit 1
+}
+
 # If no filenames are provided, decide based on context.
 if [[ "$#" -eq 0 ]]; then
   if [[ "${GITHUB_EVENT_NAME:-}" == "pull_request" ]]; then
@@ -18,7 +34,7 @@ if [[ "$#" -eq 0 ]]; then
     base_ref="${GITHUB_BASE_REF:-}"
     if [[ -z "$base_ref" ]]; then
       echo "GITHUB_BASE_REF not set; falling back to full test run."
-      "$PYTHON" -m pytest tests/ -v --tb=short
+      run_pytest tests/ -v --tb=short
       exit 0
     fi
 
@@ -50,12 +66,12 @@ if [[ "$#" -eq 0 ]]; then
     done <<< "$uniq_patterns"
 
     echo "Running pytest for changed modules: $K_EXPR"
-    "$PYTHON" -m pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings
+    run_pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings
     exit 0
   fi
 
   echo "Non-PR run detected; running full test suite."
-  "$PYTHON" -m pytest tests/ -v --tb=short
+  run_pytest tests/ -v --tb=short
   exit 0
 fi
 
@@ -93,5 +109,4 @@ while IFS= read -r p; do
 done <<< "$uniq_patterns"
 
 echo "Running pytest for changed modules: $K_EXPR"
-"$PYTHON" -m pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings
-
+run_pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings

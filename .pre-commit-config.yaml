@@ -18,6 +18,14 @@ repos:
         types: [yaml]
         stages: [pre-commit]
 
+      - id: sync-readme-structure
+        name: "docs: sync markdown structure blocks"
+        entry: python3 scripts/docs/sync_readme_structure.py --write
+        language: system
+        pass_filenames: false
+        files: \.md$
+        stages: [pre-commit]
+
       - id: lint-python
         name: "lint: python (ruff)"
         entry: scripts/pre-commit/lint-python.sh
