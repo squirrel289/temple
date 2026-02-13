@@ -6,6 +6,7 @@ related_commit:
   - 6d8c044 # docs(adr): clarify market role and adapter architecture (ADR-003); add adapter spec; archive backlog/48_jinja_integration.md
   - 1008bbc  # chore(ci): update workflows and contributing with shared CI scripts
   - 067a1ac  # chore: workspace/backlog updates to support parity and CI readiness
+  - 5c4bcad  # test(parity): add native-vs-adapter parity suite
 test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with jinja2 --with-editable ./temple python -m pytest temple/tests/parity/test_native_vs_jinja2_parity.py -q (4 passed)."
 dependencies:
   - "[[54_complete_temple_native.md]]"

@@ -4,6 +4,7 @@ id: 53
 status: testing
 related_commit:
   - 6d8c044
+  - 0ea574c  # docs(release): publish ADR-003 and adapter spec notes
 test_results: "2026-02-13: docs-only validation; changelog + release-note draft added and linked to ADR-003/ADAPTER_SPEC."
 dependencies:
   - "[[003-market-role-and-adapter-architecture.md]]"

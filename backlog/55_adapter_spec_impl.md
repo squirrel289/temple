@@ -4,6 +4,7 @@ id: 55
 status: testing
 related_commit:
   - 6d8c044  # added ADAPTER_SPEC.md and ADR-003
+  - 5d612db  # feat(sdk): add adapter interface contracts and tests
 test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with-editable ./temple python -m pytest temple/tests/test_adapter_sdk.py -q (4 passed)."
 dependencies:
   - "[[003-market-role-and-adapter-architecture.md]]"
