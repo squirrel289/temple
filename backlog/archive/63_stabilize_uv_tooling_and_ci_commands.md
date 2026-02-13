@@ -1,15 +1,16 @@
 ---
 title: "Stabilize UV Tooling and CI Command Execution"
 id: 63
-status: in_progress
-state_reason: null
+status: completed
+state_reason: success
 priority: critical
 complexity: medium
 estimated_hours: 8
-actual_hours: 1
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 3
+completed_date: 2026-02-13
+related_commit:
+  - d61288c
+test_results: "Local checks: lint-yaml and lint-shell pass; no active `uv pip run` usage; docs linkcheck invocation works but requires networked DNS to fully pass."
 dependencies: []
 related_backlog:
   - "archive/57_fix_ci_workflow_wiring.md"
@@ -17,8 +18,9 @@ related_backlog:
   - "archive/62_update_auto_resolve_workflow_triggers.md"
 related_spike: []
 notes: |
-  Unblocks the entire MVP path by restoring deterministic local hooks and CI execution.
-  Work started: replacing invalid `uv pip run` invocations and restoring strict failure behavior.
+  Completed by normalizing hook/workflow command execution around shared CI venv activation.
+  Removed invalid `uv pip run` invocations and restored failing semantics for benchmark/docs checks.
+  Added local CI-parity command documentation in CONTRIBUTING.md.
 ---
 
 ## Goal
@@ -55,7 +57,7 @@ Recent workflow refactors introduced `uv pip run` invocations, which are not val
 
 ## Acceptance Criteria
 
-- [ ] No `uv pip run` usage remains in active hook/workflow/script paths
-- [ ] Required docs/benchmark/automation checks fail on actual errors
-- [ ] Local dry-run command set is documented and executable
-- [ ] CI workflow YAML remains valid
+- [x] No `uv pip run` usage remains in active hook/workflow/script paths
+- [x] Required docs/benchmark/automation checks fail on actual errors
+- [x] Local dry-run command set is documented and executable
+- [x] CI workflow YAML remains valid
