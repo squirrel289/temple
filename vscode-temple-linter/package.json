@@ -169,6 +169,7 @@
         "*.template": "templated-any"
       },
       "markdownlint.ignore": [
+        "**/.temple-base-lint/**",
         "**/temple-base-lint/**",
         "**/*.tmpl",
         "**/*.template"

@@ -17,9 +17,11 @@ import {
 const VIRTUAL_SCHEME = 'temple-cleaned';
 const EXTENSION_NAME = 'Temple Language Server';
 const DEFAULT_TEMPLE_EXTENSIONS = ['.tmpl', '.template'];
+const MIRROR_GHOST_DIRNAME = '.temple-base-lint';
 const cleanedContentMap = new Map<string, string>();
 const cleanedContentVersionMap = new Map<string, number>();
 const tempBaseLintFileMap = new Map<string, string>();
+const tempBaseLintDirectories = new Set<string>();
 let baseLintStorageRoot: string | undefined;
 
 let client: LanguageClient | undefined;
@@ -863,8 +865,9 @@ function stableTempPathFor(originalUri: vscode.Uri, fileExtension: string): stri
     .update(originalUri.toString())
     .digest('hex')
     .slice(0, 16);
-  const root = baseLintStorageRoot ?? path.join(os.tmpdir(), 'temple-base-lint');
+  const root = baseLintStorageRoot ?? path.join(os.tmpdir(), MIRROR_GHOST_DIRNAME);
   fs.mkdirSync(root, { recursive: true });
+  tempBaseLintDirectories.add(root);
   return path.join(root, `${hash}${fileExtension}`);
 }
 
@@ -878,15 +881,63 @@ function resolveMirrorFileTargetUri(
   }
 
   const ext = extensionForDetectedFormat(detectedFormat);
-  const tempPath = stableTempPathFor(originalUri, ext);
-  tempBaseLintFileMap.set(originalUri.toString(), tempPath);
-  return vscode.Uri.file(tempPath);
+  const hash = crypto
+    .createHash('sha1')
+    .update(originalUri.toString())
+    .digest('hex')
+    .slice(0, 16);
+  let mirrorPath: string;
+  if (originalUri.scheme === 'file') {
+    const sourceDir = path.dirname(originalUri.fsPath);
+    const mirrorDir = path.join(sourceDir, MIRROR_GHOST_DIRNAME);
+    fs.mkdirSync(mirrorDir, { recursive: true });
+    tempBaseLintDirectories.add(mirrorDir);
+    mirrorPath = path.join(mirrorDir, `${hash}${ext}`);
+  } else {
+    mirrorPath = stableTempPathFor(originalUri, ext);
+  }
+
+  tempBaseLintFileMap.set(originalUri.toString(), mirrorPath);
+  return vscode.Uri.file(mirrorPath);
+}
+
+function cleanupMirrorFileTargetUri(targetUri: vscode.Uri): void {
+  if (targetUri.scheme !== 'file') {
+    return;
+  }
+  try {
+    if (fileExists(targetUri.fsPath)) {
+      fs.unlinkSync(targetUri.fsPath);
+    }
+  } catch {
+    // Best effort cleanup.
+  }
+}
+
+function cleanupMirrorDirectories(): void {
+  const dirs = [...tempBaseLintDirectories].sort(
+    (a, b) => b.length - a.length
+  );
+  for (const dirPath of dirs) {
+    try {
+      if (!directoryExists(dirPath)) {
+        continue;
+      }
+      const entries = fs.readdirSync(dirPath);
+      if (entries.length === 0) {
+        fs.rmdirSync(dirPath);
+      }
+    } catch {
+      // Best effort cleanup.
+    }
+  }
 }
 
 function resetBaseLintSessionCaches(): void {
   cleanedContentMap.clear();
   cleanedContentVersionMap.clear();
   tempBaseLintFileMap.clear();
+  tempBaseLintDirectories.clear();
   cachedLanguageSuffixAssociations = undefined;
 }
 
@@ -1099,31 +1150,38 @@ export async function activate(
       const uriKey = targetUri.toString();
       const nextVersion = (cleanedContentVersionMap.get(uriKey) ?? 0) + 1;
       cleanedContentVersionMap.set(uriKey, nextVersion);
+      try {
+        if (strategyDecision.strategy === 'mirror-file') {
+          fs.writeFileSync(targetUri.fsPath, params.content, 'utf8');
+        } else {
+          cleanedContentMap.set(uriKey, params.content);
+          virtualDocumentChangeEmitter.fire(targetUri);
+        }
 
-      if (strategyDecision.strategy === 'mirror-file') {
-        fs.writeFileSync(targetUri.fsPath, params.content, 'utf8');
-      } else {
-        cleanedContentMap.set(uriKey, params.content);
-        virtualDocumentChangeEmitter.fire(targetUri);
-      }
-
-      const diagnostics = await collectDiagnosticsForVirtualUri(
-        targetUri,
-        nextVersion
-      );
-      if (shouldLogBaseLint(effectiveBaseLintLogLevel, 'trace')) {
-        const sources = dedupe(
-          diagnostics
-            .map((diag) => (diag.source ?? '').trim())
-            .filter((source) => source.length > 0)
+        const diagnostics = await collectDiagnosticsForVirtualUri(
+          targetUri,
+          nextVersion
         );
-        outputChannel.appendLine(
-          `[${EXTENSION_NAME}] Base lint strategy=${strategyDecision.strategy} target=${targetUri.toString()} (${normalizedFormat || 'unknown'}) -> ${diagnostics.length} diagnostics` +
-            ` [reason: ${strategyDecision.reason}]` +
-            (sources.length ? ` [sources: ${sources.join(', ')}]` : '')
-        );
+        if (shouldLogBaseLint(effectiveBaseLintLogLevel, 'trace')) {
+          const sources = dedupe(
+            diagnostics
+              .map((diag) => (diag.source ?? '').trim())
+              .filter((source) => source.length > 0)
+          );
+          outputChannel.appendLine(
+            `[${EXTENSION_NAME}] Base lint strategy=${strategyDecision.strategy} target=${targetUri.toString()} (${normalizedFormat || 'unknown'}) -> ${diagnostics.length} diagnostics` +
+              ` [reason: ${strategyDecision.reason}]` +
+              ` [publish-uri: ${originalUri.toString()}]` +
+              (sources.length ? ` [sources: ${sources.join(', ')}]` : '')
+          );
+        }
+        return { diagnostics: diagnostics.map(vscDiagToLspDiag) };
+      } finally {
+        if (strategyDecision.strategy === 'mirror-file') {
+          cleanupMirrorFileTargetUri(targetUri);
+          cleanupMirrorDirectories();
+        }
       }
-      return { diagnostics: diagnostics.map(vscDiagToLspDiag) };
     }
   );
 
@@ -1161,9 +1219,16 @@ export const __testing = {
   normalizeDetectedFormat,
   resolveBaseLintStrategy,
   DefaultBaseLintCapabilityRegistry,
+  resolveMirrorFileTargetUri,
+  cleanupMirrorFileTargetUri,
+  MIRROR_GHOST_DIRNAME,
 };
 
 export function deactivate(): Thenable<void> | undefined {
+  for (const mirrorPath of tempBaseLintFileMap.values()) {
+    cleanupMirrorFileTargetUri(vscode.Uri.file(mirrorPath));
+  }
+  cleanupMirrorDirectories();
   resetBaseLintSessionCaches();
   if (!client) {
     return undefined;
