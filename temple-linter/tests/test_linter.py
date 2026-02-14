@@ -1,6 +1,7 @@
 import unittest
-from temple_linter.linter import TemplateLinter
+
 from temple.diagnostics import DiagnosticSeverity
+from temple_linter.linter import TemplateLinter
 
 
 class TestTemplateLinter(unittest.TestCase):
@@ -86,6 +87,21 @@ class TestTemplateLinter(unittest.TestCase):
         diagnostics = linter.lint(text)
         # Should have multiple errors (unclosed blocks, malformed expression)
         self.assertGreaterEqual(len(diagnostics), 2)
+
+    def test_unclosed_expression_reports_open_delimiter_location(self):
+        """Unclosed '{{' should point to opener location, not a later recovery token."""
+        linter = TemplateLinter()
+        text = "line 1\n{{ user.name\nline 3\n"
+        diagnostics = linter.lint(text)
+
+        unclosed = [d for d in diagnostics if d.code == "UNCLOSED_DELIMITER"]
+        self.assertGreater(len(unclosed), 0)
+        self.assertTrue(
+            any(
+                d.source_range.start.line == 1 and d.source_range.start.column == 0
+                for d in unclosed
+            )
+        )
 
 
 if __name__ == "__main__":

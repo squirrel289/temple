@@ -53,6 +53,7 @@ class LintOrchestrator:
         temple_extensions: list[str] | None = None,
         semantic_context: dict[str, Any] | None = None,
         semantic_schema: Any = None,
+        include_base_lint: bool = True,
     ) -> list[Diagnostic]:
         """
         Execute complete linting workflow for a templated file.
@@ -79,29 +80,41 @@ class LintOrchestrator:
             semantic_schema=semantic_schema,
         )
 
-        # 2. Token cleaning
-        cleaned_text, text_tokens = self.token_cleaning_service.clean_text_and_tokens(
-            text
-        )
-
-        # 3. Format detection
+        # 2. Format detection
         filename = os.path.basename(uri) if uri else None
-        detected_format = self.format_linter.detect_base_format(filename, cleaned_text)
+        detected_format = self.format_linter.detect_base_format(filename, text)
+
+        # 3. Token cleaning
+        cleaned_text, text_tokens = self.token_cleaning_service.clean_text_and_tokens(
+            text,
+            format_hint=detected_format,
+        )
 
         # 4. Base linting
-        base_diagnostics = self.base_linting_service.request_base_diagnostics(
-            request_transport,
-            cleaned_text,
-            uri,
-            detected_format,
-            filename,
-            temple_extensions,
+        # Skip base-format lint when template syntax already has hard errors to keep
+        # diagnostics responsive and reduce downstream noise/false positives.
+        has_blocking_template_errors = any(
+            self._is_error_severity(getattr(diag, "severity", None))
+            and self._is_blocking_template_error(diag)
+            for diag in template_diagnostics
         )
+        if has_blocking_template_errors or not include_base_lint:
+            base_diagnostics: list[Diagnostic] = []
+        else:
+            base_diagnostics = self.base_linting_service.request_base_diagnostics(
+                request_transport,
+                cleaned_text,
+                uri,
+                detected_format,
+                filename,
+                temple_extensions,
+            )
 
         # 5. Diagnostic mapping
         mapped_base_diagnostics = self.diagnostic_mapping_service.map_diagnostics(
             base_diagnostics, text_tokens
         )
+        mapped_base_diagnostics = self._mark_base_diagnostics(mapped_base_diagnostics)
 
         # 6. Include node-attached diagnostics (from parser/transformation)
         node_diags: list[Diagnostic] = []
@@ -110,9 +123,7 @@ class LintOrchestrator:
 
         # 7. Merge diagnostics
         all_diagnostics = template_diagnostics + mapped_base_diagnostics + node_diags
-
-        # Return merged diagnostics list (template + mapped base + node-attached)
-        return all_diagnostics
+        return self._dedupe_diagnostics(all_diagnostics)
 
     def _lint_template_syntax(
         self,
@@ -139,3 +150,144 @@ class LintOrchestrator:
             schema=semantic_schema,
         )
         return [temple_to_lsp_diagnostic(d) for d in temple_diagnostics]
+
+    @staticmethod
+    def _diag_code(diag: Diagnostic) -> str:
+        code = getattr(diag, "code", None)
+        if code is None:
+            return ""
+        if isinstance(code, dict):
+            value = code.get("value")
+            return str(value) if value is not None else ""
+        return str(code)
+
+    @staticmethod
+    def _is_error_severity(severity: Any) -> bool:
+        if severity is None:
+            return False
+        try:
+            return int(severity) == 1
+        except (TypeError, ValueError):
+            return False
+
+    @staticmethod
+    def _is_blocking_template_error(diag: Diagnostic) -> bool:
+        source = (diag.source or "").strip().lower()
+        # Semantic diagnostics can coexist with useful base-format linting.
+        return source != "temple-type-checker"
+
+    @staticmethod
+    def _is_zero_range(diag: Diagnostic) -> bool:
+        try:
+            start = diag.range.start
+            end = diag.range.end
+            return (
+                start.line == 0
+                and start.character == 0
+                and end.line == 0
+                and end.character == 0
+            )
+        except Exception:
+            return False
+
+    @staticmethod
+    def _normalized_message(message: str) -> str:
+        lowered = (message or "").strip().lower()
+        for prefix in ("invalid expression syntax: ", "expression syntax: "):
+            if lowered.startswith(prefix):
+                return lowered[len(prefix) :]
+        return lowered
+
+    def _dedupe_diagnostics(self, diagnostics: list[Diagnostic]) -> list[Diagnostic]:
+        deduped: list[Diagnostic] = []
+        seen_exact: set[tuple[str, str, str, int, int, int, int]] = set()
+
+        for diag in diagnostics:
+            try:
+                start = diag.range.start
+                end = diag.range.end
+                exact_key = (
+                    (diag.source or "").strip().lower(),
+                    self._diag_code(diag),
+                    (diag.message or "").strip(),
+                    start.line,
+                    start.character,
+                    end.line,
+                    end.character,
+                )
+            except Exception:
+                exact_key = ("", self._diag_code(diag), diag.message or "", 0, 0, 0, 0)
+
+            if exact_key in seen_exact:
+                continue
+            seen_exact.add(exact_key)
+            deduped.append(diag)
+
+        # Collapse equivalent duplicates emitted by different internal sources.
+        collapsed: list[Diagnostic] = []
+        seen_collapsed: set[tuple[str, int, int, int, int, int]] = set()
+        for diag in deduped:
+            start = diag.range.start
+            end = diag.range.end
+            key = (
+                self._normalized_message(diag.message or ""),
+                int(getattr(diag, "severity", 0) or 0),
+                start.line,
+                start.character,
+                end.line,
+                end.character,
+            )
+            if key in seen_collapsed:
+                continue
+            seen_collapsed.add(key)
+            collapsed.append(diag)
+        deduped = collapsed
+
+        # If we already have precise non-zero diagnostics, drop equivalent 0:0 fallbacks.
+        non_zero_signatures = {
+            (
+                (diag.source or "").strip().lower(),
+                self._diag_code(diag),
+                self._normalized_message(diag.message or ""),
+            )
+            for diag in deduped
+            if not self._is_zero_range(diag)
+        }
+        filtered = [
+            diag
+            for diag in deduped
+            if not (
+                self._is_zero_range(diag)
+                and (
+                    (diag.source or "").strip().lower(),
+                    self._diag_code(diag),
+                    self._normalized_message(diag.message or ""),
+                )
+                in non_zero_signatures
+            )
+        ]
+
+        # Unclosed-delimiter diagnostics are clearer than cascading parse-end token errors.
+        has_unclosed_delimiter = any(
+            self._diag_code(diag) == "UNCLOSED_DELIMITER" for diag in filtered
+        )
+        if has_unclosed_delimiter:
+            filtered = [
+                diag
+                for diag in filtered
+                if self._diag_code(diag) != "UNEXPECTED_TOKEN"
+            ]
+
+        return filtered
+
+    @staticmethod
+    def _mark_base_diagnostics(diagnostics: list[Diagnostic]) -> list[Diagnostic]:
+        marked: list[Diagnostic] = []
+        for diag in diagnostics:
+            source = (diag.source or "").strip()
+            if source:
+                diag.source = f"temple-base:{source}"
+            else:
+                diag.source = "temple-base"
+            marked.append(diag)
+        return marked

@@ -12,7 +12,7 @@ class _FakeResult:
     def __init__(self, payload):
         self._payload = payload
 
-    def result(self):
+    def result(self, timeout=None):
         return self._payload
 
 
@@ -94,3 +94,84 @@ def test_orchestrator_uses_session_transport_for_base_diagnostics() -> None:
     )
 
     assert any(diag.message == "base diagnostic" for diag in diagnostics)
+    assert any((diag.source or "").startswith("temple-base:") for diag in diagnostics)
+
+
+def test_orchestrator_dedupes_identical_diagnostics() -> None:
+    orchestrator = LintOrchestrator()
+    transport = _ServerTransport({"diagnostics": []})
+
+    diagnostics = orchestrator.lint_template(
+        "{{ user. }}",
+        "file:///tmp/example.tmpl",
+        transport,
+    )
+
+    keys = {
+        (
+            diag.source,
+            str(getattr(diag, "code", "")),
+            diag.message,
+            diag.range.start.line,
+            diag.range.start.character,
+            diag.range.end.line,
+            diag.range.end.character,
+        )
+        for diag in diagnostics
+    }
+    assert len(keys) == len(diagnostics)
+
+
+def test_orchestrator_prefers_unclosed_delimiter_over_cascading_token_error() -> None:
+    orchestrator = LintOrchestrator()
+    transport = _ServerTransport({"diagnostics": []})
+
+    diagnostics = orchestrator.lint_template(
+        "{{ user.name",
+        "file:///tmp/example.tmpl",
+        transport,
+    )
+    codes = {str(getattr(diag, "code", "")) for diag in diagnostics}
+
+    assert "UNCLOSED_DELIMITER" in codes
+    assert "UNEXPECTED_TOKEN" not in codes
+
+
+def test_orchestrator_skips_base_lint_when_template_has_blocking_syntax_error() -> None:
+    orchestrator = LintOrchestrator()
+    transport = _ServerTransport(_diagnostics_payload())
+
+    diagnostics = orchestrator.lint_template(
+        "{% en %}",
+        "file:///tmp/example.md.tmpl",
+        transport,
+    )
+
+    assert not any(diag.message == "base diagnostic" for diag in diagnostics)
+    assert transport._protocol.sent == []
+
+
+def test_orchestrator_marks_base_diagnostic_with_default_source_when_missing() -> None:
+    orchestrator = LintOrchestrator()
+    payload = {
+        "diagnostics": [
+            LspDiagnostic(
+                range=LspRange(
+                    start=LspPosition(line=0, character=0),
+                    end=LspPosition(line=0, character=1),
+                ),
+                message="base without source",
+                severity=1,
+            )
+        ]
+    }
+    transport = _ServerTransport(payload)
+
+    diagnostics = orchestrator.lint_template(
+        "{}",
+        "file:///tmp/config.json.tmpl",
+        transport,
+    )
+
+    assert any(diag.message == "base without source" for diag in diagnostics)
+    assert any((diag.source or "") == "temple-base" for diag in diagnostics)
