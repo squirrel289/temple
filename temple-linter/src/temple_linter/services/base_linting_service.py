@@ -3,6 +3,7 @@ BaseLintingService - Delegates linting to VS Code's native linters
 """
 
 import logging
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Any
 
 from lsprotocol.types import Diagnostic
@@ -63,14 +64,16 @@ class BaseLintingService:
                     target_uri = f"{dir_uri}/{stripped}" if dir_uri else stripped
 
             # Send custom request to VS Code extension with format hint
-            result = protocol.send_request(
+            result_future = protocol.send_request(
                 "temple/requestBaseDiagnostics",
                 {
                     "uri": target_uri,
                     "content": cleaned_text,
                     "detectedFormat": detected_format,
                 },
-            ).result()
+            )
+            # Keep this short so template syntax diagnostics remain responsive.
+            result = result_future.result(timeout=0.5)
 
             # Coerce diagnostics to LSP Diagnostic objects
             raw_diagnostics = result.get("diagnostics", []) if result else []
@@ -104,6 +107,11 @@ class BaseLintingService:
 
             return valid_diagnostics
 
+        except FutureTimeoutError:
+            self.logger.warning(
+                "Timed out waiting for base diagnostics from extension transport"
+            )
+            return []
         except Exception as e:
             # Log and return no diagnostics on error
             self.logger.error(f"Error requesting base diagnostics: {e}")

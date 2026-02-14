@@ -1,5 +1,5 @@
 """
-Temple LSP Server - Thin adapter for Language Server Protocol
+Temple Language Server Server - Thin adapter for Language Server Protocol
 
 This server delegates all linting logic to service classes following
 Single Responsibility Principle. See services/ directory for implementation.
@@ -7,6 +7,7 @@ Single Responsibility Principle. See services/ directory for implementation.
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -63,6 +64,9 @@ class TempleLinterServer(LanguageServer):
         self.semantic_schema = None
         self.semantic_schema_raw: dict[str, Any] | None = None
         self.orchestrator = LintOrchestrator(logger=self.logger)
+        # Avoid blocking on expensive base-lint requests for every keystroke.
+        self.base_lint_debounce_seconds = 0.8
+        self._last_base_lint_at: dict[str, float] = {}
         self.completion_provider = TemplateCompletionProvider()
         self.hover_provider = TemplateHoverProvider()
         self.definition_provider = TemplateDefinitionProvider()
@@ -85,7 +89,7 @@ def on_initialize(ls: TempleLinterServer, params: InitializeParams):
 
         semantic_context = init_options.get("semanticContext")
         if isinstance(semantic_context, dict):
-            ls.semantic_context = semantic_context
+            ls.semantic_context = semantic_context or None
 
         semantic_schema = init_options.get("semanticSchema")
         if isinstance(semantic_schema, dict):
@@ -108,9 +112,11 @@ def on_initialize(ls: TempleLinterServer, params: InitializeParams):
                 ls.semantic_schema = SchemaParser.from_file(str(schema_path))
                 ls.semantic_schema_raw = json.loads(schema_path.read_text())
             except Exception as exc:
-                ls.logger.warning(
-                    "Failed to load semantic schema path init option: %s", exc
-                )
+                ls.logger.warning("Failed to load semantic schema path init option: %s", exc)
+
+        debounce_seconds = init_options.get("baseLintDebounceSeconds")
+        if isinstance(debounce_seconds, (int, float)) and debounce_seconds >= 0:
+            ls.base_lint_debounce_seconds = float(debounce_seconds)
 
     return InitializeResult(
         capabilities=ServerCapabilities(
@@ -143,12 +149,22 @@ def did_open(ls: TempleLinterServer, params: DidOpenTextDocumentParams):
             diagnostics=diagnostics,
         )
     )
+    ls._last_base_lint_at[text_doc.uri] = time.monotonic()
 
 
 @ls.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls: TempleLinterServer, params: DidChangeTextDocumentParams):
     """Handle document change event."""
     text_doc = ls.workspace.get_text_document(params.text_document.uri)
+    now = time.monotonic()
+    last_base_lint = ls._last_base_lint_at.get(text_doc.uri)
+    include_base_lint = (
+        last_base_lint is None
+        or (now - last_base_lint) >= ls.base_lint_debounce_seconds
+    )
+    if include_base_lint:
+        ls._last_base_lint_at[text_doc.uri] = now
+
     diagnostics = ls.orchestrator.lint_template(
         text_doc.source,
         text_doc.uri,
@@ -156,6 +172,7 @@ def did_change(ls: TempleLinterServer, params: DidChangeTextDocumentParams):
         ls.temple_extensions,
         semantic_context=ls.semantic_context,
         semantic_schema=ls.semantic_schema,
+        include_base_lint=include_base_lint,
     )
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
@@ -176,7 +193,9 @@ def did_save(ls: TempleLinterServer, params: DidSaveTextDocumentParams):
         ls.temple_extensions,
         semantic_context=ls.semantic_context,
         semantic_schema=ls.semantic_schema,
+        include_base_lint=True,
     )
+    ls._last_base_lint_at[text_doc.uri] = time.monotonic()
     ls.text_document_publish_diagnostics(
         PublishDiagnosticsParams(
             uri=text_doc.uri,
@@ -186,7 +205,7 @@ def did_save(ls: TempleLinterServer, params: DidSaveTextDocumentParams):
 
 
 def main() -> int:
-    """Start the Temple LSP server over stdio."""
+    """Start the Temple Language Server server over stdio."""
     ls.start_io()
     return 0
 
@@ -198,6 +217,7 @@ def completion(ls: TempleLinterServer, params: CompletionParams):
         text_doc.source,
         params.position,
         schema=ls.semantic_schema,
+        semantic_context=ls.semantic_context,
     )
 
 
