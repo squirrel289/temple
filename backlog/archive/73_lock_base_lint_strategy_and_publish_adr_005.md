@@ -1,15 +1,22 @@
 ---
 title: "Lock base-lint strategy and publish ADR-005"
 id: 73
-status: in_progress
-state_reason: null
+status: completed
+state_reason: success
 priority: critical
 complexity: medium
 estimated_hours: 4
-actual_hours: 1
-completed_date: null
-related_commit: []
-test_results: "Docs validation pending: verify ADR links and backlog dependencies."
+actual_hours: 1.5
+completed_date: 2026-02-14
+related_commit:
+  - 1fb4f83  # docs(planning): add ADR-005 and base-lint execution backlog
+test_results: |
+  Pre-commit hooks on staged files:
+  - docs: sync_readme_structure.py passed
+  - secure: detect-secrets passed
+  Manual verification:
+  - ADR-005 links resolve from README and temple/docs/ARCHITECTURE.md
+  - backlog items 74-77 created with explicit dependencies
 dependencies:
   - "[[archive/67_fix_lsp_base_diagnostics_transport.md]]"
   - "[[archive/68_repair_vscode_extension_integration.md]]"
@@ -21,6 +28,11 @@ notes: |
   embedded adapter -> virtual document -> mirror-file ghost fallback.
   It also locks UX/performance constraints before implementation work starts.
   Started implementation on 2026-02-14 with ADR drafting + backlog decomposition.
+
+  Completed on 2026-02-14:
+  - Published ADR-005 for base-lint strategy precedence and diagnostics pipeline.
+  - Added dependency-ordered backlog chain (74-77).
+  - Linked ADR-005 from root README and architecture docs.
 ---
 
 ## Goal
@@ -57,8 +69,8 @@ Recent extension/linter integration work exposed repeated regressions around tem
 
 ## Acceptance Criteria
 
-- [ ] ADR-005 exists with status, context, decision, alternatives, and consequences.
-- [ ] Strategy precedence and fallback behavior are explicitly defined.
-- [ ] Focus mode and diagnostics ownership rules are explicitly defined for all base languages.
-- [ ] Implementation work is broken into sequenced backlog items with dependencies.
-- [ ] Related docs reference ADR-005.
+- [x] ADR-005 exists with status, context, decision, alternatives, and consequences.
+- [x] Strategy precedence and fallback behavior are explicitly defined.
+- [x] Focus mode and diagnostics ownership rules are explicitly defined for all base languages.
+- [x] Implementation work is broken into sequenced backlog items with dependencies.
+- [x] Related docs reference ADR-005.
