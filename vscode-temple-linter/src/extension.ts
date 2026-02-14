@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
+import * as crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -12,13 +15,19 @@ import {
 } from 'vscode-languageserver/node';
 
 const VIRTUAL_SCHEME = 'temple-cleaned';
+const EXTENSION_NAME = 'Temple Language Server';
+const DEFAULT_TEMPLE_EXTENSIONS = ['.tmpl', '.template'];
 const cleanedContentMap = new Map<string, string>();
+const cleanedContentVersionMap = new Map<string, number>();
+const tempBaseLintFileMap = new Map<string, string>();
+let baseLintStorageRoot: string | undefined;
 
 let client: LanguageClient | undefined;
 
 type BaseDiagnosticsRequest = {
   uri: string;
   content: string;
+  detectedFormat?: string;
 };
 
 type CreateVirtualDocumentParams = {
@@ -32,13 +41,405 @@ type PublishNodeDiagnosticsParams = {
 };
 
 type JsonObject = Record<string, unknown>;
+type BaseLintFocusMode = 'all' | 'activeTemplate';
+type BaseLintStrategyMode = 'auto' | 'embedded' | 'vscode';
+type BaseLintTransportStrategy = 'embedded' | 'virtual' | 'mirror-file';
+type BaseLintLogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';
+
+type BaseLintCapabilities = {
+  hasEmbeddedAdapter: boolean;
+  supportsVirtualDocument: boolean;
+  supportsMirrorFile: boolean;
+};
+
+type BaseLintStrategyDecision = {
+  strategy: BaseLintTransportStrategy;
+  reason: string;
+};
+
+type ResolveBaseLintStrategyParams = {
+  mode: BaseLintStrategyMode;
+  detectedFormat: string;
+  capabilities: BaseLintCapabilities;
+};
+
+const LOG_LEVEL_ORDER: Record<BaseLintLogLevel, number> = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  debug: 3,
+  trace: 4,
+};
+
+const FORMATS_WITHOUT_RELIABLE_VIRTUAL_LINT = new Set(['md', 'markdown']);
+
+interface BaseLintCapabilityRegistry {
+  capabilitiesForFormat(format: string): BaseLintCapabilities;
+}
+
+type LanguageSuffixAssociation = {
+  suffix: string;
+  languageId: string;
+};
+
+class DefaultBaseLintCapabilityRegistry implements BaseLintCapabilityRegistry {
+  private readonly embeddedFormatSet: Set<string>;
+
+  constructor(embeddedFormats: string[]) {
+    this.embeddedFormatSet = new Set(
+      embeddedFormats.map((format) => normalizeDetectedFormat(format))
+    );
+  }
+
+  capabilitiesForFormat(format: string): BaseLintCapabilities {
+    const normalizedFormat = normalizeDetectedFormat(format);
+    return {
+      hasEmbeddedAdapter: this.embeddedFormatSet.has(normalizedFormat),
+      supportsVirtualDocument:
+        !FORMATS_WITHOUT_RELIABLE_VIRTUAL_LINT.has(normalizedFormat),
+      supportsMirrorFile: true,
+    };
+  }
+}
+
+let cachedLanguageSuffixAssociations: LanguageSuffixAssociation[] | undefined;
+
+function fileExists(filePath: string): boolean {
+  try {
+    return fs.statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function directoryExists(dirPath: string): boolean {
+  try {
+    return fs.statSync(dirPath).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function dedupe(items: string[]): string[] {
+  return [...new Set(items)];
+}
+
+function normalizeTempleExtension(extension: string): string {
+  const trimmed = extension.trim();
+  if (!trimmed) {
+    return '';
+  }
+  return trimmed.startsWith('.') ? trimmed : `.${trimmed}`;
+}
+
+function buildDocumentSelector(
+  templeExtensions: string[]
+): Array<{ scheme: 'file'; language?: string; pattern?: string }> {
+  const selector: Array<{ scheme: 'file'; language?: string; pattern?: string }> = [
+    { scheme: 'file', language: 'templated-any' },
+  ];
+
+  for (const extension of templeExtensions) {
+    const normalized = normalizeTempleExtension(extension);
+    if (!normalized) {
+      continue;
+    }
+    selector.push({
+      scheme: 'file',
+      pattern: `**/*${normalized}`,
+    });
+  }
+
+  return selector;
+}
+
+function isTempleTemplateDocument(
+  doc: vscode.TextDocument,
+  templeExtensions: string[]
+): boolean {
+  const lowerPath = doc.uri.fsPath.toLowerCase();
+  for (const extension of templeExtensions) {
+    const normalized = normalizeTempleExtension(extension).toLowerCase();
+    if (normalized && lowerPath.endsWith(normalized)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function workspaceRoots(): string[] {
+  return (vscode.workspace.workspaceFolders || []).map(
+    (folder) => folder.uri.fsPath
+  );
+}
+
+function expandWorkspaceVariables(rawValue: string): string {
+  let value = rawValue;
+  const folders = vscode.workspace.workspaceFolders || [];
+
+  for (const folder of folders) {
+    const namedPattern = new RegExp(
+      `\\$\\{workspaceFolder:${escapeRegExp(folder.name)}\\}`,
+      'g'
+    );
+    value = value.replace(namedPattern, folder.uri.fsPath);
+  }
+
+  if (folders.length > 0) {
+    value = value.replace(/\$\{workspaceFolder\}/g, folders[0].uri.fsPath);
+  }
+
+  return value;
+}
+
+function isPathLike(value: string): boolean {
+  return (
+    value.startsWith('~') ||
+    value.startsWith('.') ||
+    value.includes('/') ||
+    value.includes('\\')
+  );
+}
+
+function normalizePathValue(rawValue: string): string {
+  const expanded = expandWorkspaceVariables(rawValue.trim());
+  if (!expanded) {
+    return expanded;
+  }
+  if (expanded === '~') {
+    return os.homedir();
+  }
+  if (expanded.startsWith('~/')) {
+    return path.join(os.homedir(), expanded.slice(2));
+  }
+  if (path.isAbsolute(expanded)) {
+    return expanded;
+  }
+  if (isPathLike(expanded)) {
+    const firstWorkspace = vscode.workspace.workspaceFolders?.[0];
+    if (!firstWorkspace) {
+      return expanded;
+    }
+    return path.join(firstWorkspace.uri.fsPath, expanded);
+  }
+  return expanded;
+}
+
+function resolvePythonCommand(
+  templeConfig: vscode.WorkspaceConfiguration,
+  outputChannel: vscode.OutputChannel,
+  probeEnv: NodeJS.ProcessEnv
+): string {
+  const pythonConfig = vscode.workspace.getConfiguration('python');
+  const configuredTemplePython = templeConfig.get<string>('pythonPath', '');
+  const configuredDefaultPython =
+    pythonConfig.get<string>('defaultInterpreterPath', '');
+  const configuredLegacyPython = pythonConfig.get<string>('pythonPath', '');
+
+  const roots = workspaceRoots();
+  const searchRoots = dedupe([...roots, ...roots.map((root) => path.dirname(root))]);
+  const discoveredPaths: string[] = [];
+  const suffixes = [
+    path.join('.ci-venv', 'bin', 'python'),
+    path.join('.venv', 'bin', 'python'),
+    path.join('venv', 'bin', 'python'),
+    path.join('.ci-venv', 'Scripts', 'python.exe'),
+    path.join('.venv', 'Scripts', 'python.exe'),
+    path.join('venv', 'Scripts', 'python.exe'),
+    path.join('temple-linter', '.ci-venv', 'bin', 'python'),
+    path.join('temple-linter', '.venv', 'bin', 'python'),
+    path.join('temple-linter', 'venv', 'bin', 'python'),
+    path.join('temple-linter', '.ci-venv', 'Scripts', 'python.exe'),
+    path.join('temple-linter', '.venv', 'Scripts', 'python.exe'),
+    path.join('temple-linter', 'venv', 'Scripts', 'python.exe'),
+  ];
+  for (const root of searchRoots) {
+    for (const suffix of suffixes) {
+      discoveredPaths.push(path.join(root, suffix));
+    }
+  }
+
+  const rawCandidates = dedupe([
+    configuredTemplePython,
+    ...discoveredPaths,
+    configuredDefaultPython,
+    configuredLegacyPython,
+    'python3',
+    'python',
+  ]);
+
+  let firstExistingCandidate: string | undefined;
+
+  for (const rawCandidate of rawCandidates) {
+    if (!rawCandidate || !rawCandidate.trim()) {
+      continue;
+    }
+    const normalizedCandidate = normalizePathValue(rawCandidate);
+    if (!normalizedCandidate) {
+      continue;
+    }
+
+    if (isPathLike(normalizedCandidate) && !fileExists(normalizedCandidate)) {
+      outputChannel.appendLine(
+        `[${EXTENSION_NAME}] Skipping missing Python interpreter candidate: ${normalizedCandidate}`
+      );
+      continue;
+    }
+
+    if (!firstExistingCandidate) {
+      firstExistingCandidate = normalizedCandidate;
+    }
+
+    const probeResult = spawnSync(
+      normalizedCandidate,
+      [
+        '-c',
+        [
+          'import importlib.util as util',
+          'import sys',
+          'required = ("lsprotocol", "pygls", "temple_linter")',
+          'missing = [name for name in required if util.find_spec(name) is None]',
+          'sys.exit(0 if not missing else 1)',
+        ].join('; '),
+      ],
+      {
+        env: probeEnv,
+        encoding: 'utf-8',
+      }
+    );
+
+    if (probeResult.error) {
+      outputChannel.appendLine(
+        `[${EXTENSION_NAME}] Skipping interpreter '${normalizedCandidate}': ${probeResult.error.message}`
+      );
+      continue;
+    }
+
+    if (probeResult.status !== 0) {
+      const probeDetails =
+        probeResult.stderr?.trim() ||
+        probeResult.stdout?.trim() ||
+        `exit code ${String(probeResult.status)}`;
+      outputChannel.appendLine(
+        `[${EXTENSION_NAME}] Skipping interpreter '${normalizedCandidate}' because required modules are missing (${probeDetails}).`
+      );
+      continue;
+    }
+
+    outputChannel.appendLine(
+      `[${EXTENSION_NAME}] Using Python interpreter: ${normalizedCandidate}`
+    );
+    return normalizedCandidate;
+  }
+
+  if (firstExistingCandidate) {
+    outputChannel.appendLine(
+      `[${EXTENSION_NAME}] No interpreter satisfied module checks; falling back to: ${firstExistingCandidate}`
+    );
+    return firstExistingCandidate;
+  }
+
+  outputChannel.appendLine(
+    `[${EXTENSION_NAME}] No Python interpreter candidates found; falling back to: python`
+  );
+  return 'python';
+}
+
+function resolveServerCwd(
+  context: vscode.ExtensionContext,
+  templeConfig: vscode.WorkspaceConfiguration,
+  outputChannel: vscode.OutputChannel
+): string | undefined {
+  const configuredServerRoot = templeConfig.get<string>('serverRoot', '');
+  const roots = workspaceRoots();
+  const candidates: string[] = [];
+  if (configuredServerRoot && configuredServerRoot.trim()) {
+    candidates.push(normalizePathValue(configuredServerRoot));
+  }
+
+  for (const root of roots) {
+    candidates.push(root);
+    candidates.push(path.join(root, 'temple-linter'));
+  }
+  candidates.push(path.resolve(context.extensionPath, '..', 'temple-linter'));
+
+  const uniqueCandidates = dedupe(candidates.filter(Boolean));
+
+  for (const candidate of uniqueCandidates) {
+    const hasProjectMarkers =
+      fileExists(path.join(candidate, 'pyproject.toml')) &&
+      directoryExists(path.join(candidate, 'src', 'temple_linter'));
+    if (hasProjectMarkers) {
+      outputChannel.appendLine(`[${EXTENSION_NAME}] Using server cwd: ${candidate}`);
+      return candidate;
+    }
+  }
+
+  for (const candidate of uniqueCandidates) {
+    if (directoryExists(candidate)) {
+      outputChannel.appendLine(
+        `[${EXTENSION_NAME}] Using fallback server cwd: ${candidate}`
+      );
+      return candidate;
+    }
+  }
+
+  outputChannel.appendLine(`[${EXTENSION_NAME}] No server cwd resolved; using default process cwd`);
+  return undefined;
+}
+
+function buildServerEnv(
+  serverCwd: string | undefined
+): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  const pythonPathEntries: string[] = [];
+
+  if (serverCwd) {
+    const serverSrc = path.join(serverCwd, 'src');
+    if (directoryExists(serverSrc)) {
+      pythonPathEntries.push(serverSrc);
+    }
+  }
+
+  for (const root of workspaceRoots()) {
+    const linterSrc = path.join(root, 'temple-linter', 'src');
+    const coreSrc = path.join(root, 'temple', 'src');
+    if (directoryExists(linterSrc)) {
+      pythonPathEntries.push(linterSrc);
+    }
+    if (directoryExists(coreSrc)) {
+      pythonPathEntries.push(coreSrc);
+    }
+  }
+
+  const uniqueEntries = dedupe(pythonPathEntries);
+  if (uniqueEntries.length === 0) {
+    return env;
+  }
+
+  const existingPythonPath = env.PYTHONPATH;
+  env.PYTHONPATH = existingPythonPath
+    ? `${uniqueEntries.join(path.delimiter)}${path.delimiter}${existingPythonPath}`
+    : uniqueEntries.join(path.delimiter);
+  return env;
+}
 
 function isBaseDiagnosticsRequest(value: unknown): value is BaseDiagnosticsRequest {
   if (!value || typeof value !== 'object') {
     return false;
   }
   const maybe = value as Partial<BaseDiagnosticsRequest>;
-  return typeof maybe.uri === 'string' && typeof maybe.content === 'string';
+  const formatOk =
+    maybe.detectedFormat === undefined || typeof maybe.detectedFormat === 'string';
+  return (
+    typeof maybe.uri === 'string' &&
+    typeof maybe.content === 'string' &&
+    formatOk
+  );
 }
 
 function isCreateVirtualDocumentParams(
@@ -64,10 +465,6 @@ function isPublishNodeDiagnosticsParams(
   );
 }
 
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function asJsonObject(value: unknown): JsonObject | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return undefined;
@@ -75,15 +472,139 @@ function asJsonObject(value: unknown): JsonObject | undefined {
   return value as JsonObject;
 }
 
+function normalizeSemanticContext(
+  value: JsonObject | undefined
+): JsonObject | undefined {
+  if (!value) {
+    return undefined;
+  }
+  return Object.keys(value).length > 0 ? value : undefined;
+}
+
+function stripTempleSuffixFromPath(
+  fsPath: string,
+  templeExtensions: string[]
+): string {
+  const lowerPath = fsPath.toLowerCase();
+  for (const extension of templeExtensions) {
+    const normalized = normalizeTempleExtension(extension).toLowerCase();
+    if (!normalized) {
+      continue;
+    }
+    if (lowerPath.endsWith(normalized)) {
+      return fsPath.slice(0, fsPath.length - normalized.length);
+    }
+  }
+  return fsPath;
+}
+
+function getLanguageSuffixAssociations(): LanguageSuffixAssociation[] {
+  if (cachedLanguageSuffixAssociations) {
+    return cachedLanguageSuffixAssociations;
+  }
+
+  const associations: LanguageSuffixAssociation[] = [];
+  const seen = new Set<string>();
+
+  for (const extension of vscode.extensions.all) {
+    const packageJson = extension.packageJSON as
+      | {
+          contributes?: {
+            languages?: Array<{
+              id?: unknown;
+              extensions?: unknown;
+            }>;
+          };
+        }
+      | undefined;
+    const contributedLanguages = packageJson?.contributes?.languages ?? [];
+    for (const language of contributedLanguages) {
+      if (typeof language.id !== 'string') {
+        continue;
+      }
+      const languageId = language.id;
+      if (!Array.isArray(language.extensions)) {
+        continue;
+      }
+      for (const ext of language.extensions) {
+        if (typeof ext !== 'string') {
+          continue;
+        }
+        const suffix = ext.trim().toLowerCase();
+        if (!suffix.startsWith('.')) {
+          continue;
+        }
+        const key = `${languageId}::${suffix}`;
+        if (seen.has(key)) {
+          continue;
+        }
+        seen.add(key);
+        associations.push({ suffix, languageId });
+      }
+    }
+  }
+
+  associations.sort((a, b) => b.suffix.length - a.suffix.length);
+  cachedLanguageSuffixAssociations = associations;
+  return associations;
+}
+
+function preferredBaseLanguageIdForTemplatePath(
+  fsPath: string,
+  templeExtensions: string[]
+): string | undefined {
+  const strippedPath = stripTempleSuffixFromPath(fsPath, templeExtensions);
+  const lowerPath = strippedPath.toLowerCase();
+  for (const association of getLanguageSuffixAssociations()) {
+    if (lowerPath.endsWith(association.suffix)) {
+      return association.languageId;
+    }
+  }
+  return undefined;
+}
+
+async function ensurePreferredTemplateLanguage(
+  doc: vscode.TextDocument,
+  templeExtensions: string[],
+  outputChannel: vscode.OutputChannel
+): Promise<void> {
+  if (doc.uri.scheme !== 'file') {
+    return;
+  }
+  if (!isTempleTemplateDocument(doc, templeExtensions)) {
+    return;
+  }
+
+  const preferredLanguage = preferredBaseLanguageIdForTemplatePath(
+    doc.uri.fsPath,
+    templeExtensions
+  );
+  if (!preferredLanguage || doc.languageId === preferredLanguage) {
+    return;
+  }
+
+  try {
+    await vscode.languages.setTextDocumentLanguage(doc, preferredLanguage);
+    outputChannel.appendLine(
+      `[${EXTENSION_NAME}] Re-associated '${doc.uri.fsPath}' to '${preferredLanguage}' for base-language highlighting.`
+    );
+  } catch (error) {
+    outputChannel.appendLine(
+      `[${EXTENSION_NAME}] Failed to re-associate '${doc.uri.fsPath}' to '${preferredLanguage}': ${String(error)}`
+    );
+  }
+}
+
 function resolveWorkspacePath(rawPath: string): string {
-  if (path.isAbsolute(rawPath)) {
-    return rawPath;
+  const normalized = normalizePathValue(rawPath);
+  if (path.isAbsolute(normalized)) {
+    return normalized;
   }
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
-    return rawPath;
+    return normalized;
   }
-  return path.join(workspaceFolder.uri.fsPath, rawPath);
+  return path.join(workspaceFolder.uri.fsPath, normalized);
 }
 
 function loadSemanticSchema(schemaPath: string): JsonObject | undefined {
@@ -190,19 +711,199 @@ function lspDiagToVscDiag(diag: LspDiagnostic): vscode.Diagnostic {
 }
 
 async function collectDiagnosticsForVirtualUri(
-  virtualUri: vscode.Uri
+  virtualUri: vscode.Uri,
+  expectedVersion: number
 ): Promise<vscode.Diagnostic[]> {
+  const uriKey = virtualUri.toString();
+  if ((cleanedContentVersionMap.get(uriKey) ?? 0) !== expectedVersion) {
+    return [];
+  }
+
   await vscode.workspace.openTextDocument(virtualUri);
-  await wait(100);
+
+  await new Promise<void>((resolve) => {
+    let settled = false;
+    let settleTimer: NodeJS.Timeout | undefined;
+    let timeoutTimer: NodeJS.Timeout | undefined;
+
+    const finish = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (settleTimer) {
+        clearTimeout(settleTimer);
+      }
+      if (timeoutTimer) {
+        clearTimeout(timeoutTimer);
+      }
+      diagnosticsSub.dispose();
+      resolve();
+    };
+
+    const diagnosticsSub = vscode.languages.onDidChangeDiagnostics((event) => {
+      if (!event.uris.some((uri) => uri.toString() === uriKey)) {
+        return;
+      }
+      if ((cleanedContentVersionMap.get(uriKey) ?? 0) !== expectedVersion) {
+        finish();
+        return;
+      }
+      if (settleTimer) {
+        clearTimeout(settleTimer);
+      }
+      settleTimer = setTimeout(finish, 25);
+    });
+
+    timeoutTimer = setTimeout(finish, 350);
+  });
+
+  if ((cleanedContentVersionMap.get(uriKey) ?? 0) !== expectedVersion) {
+    return [];
+  }
+
   return vscode.languages.getDiagnostics(virtualUri);
+}
+
+function normalizeDetectedFormat(format: string | undefined): string {
+  return (format || '').trim().toLowerCase();
+}
+
+function normalizeBaseLintStrategyMode(
+  mode: string | undefined
+): BaseLintStrategyMode {
+  if (mode === 'embedded' || mode === 'vscode') {
+    return mode;
+  }
+  return 'auto';
+}
+
+function normalizeBaseLintLogLevel(
+  level: string | undefined
+): BaseLintLogLevel {
+  if (
+    level === 'error' ||
+    level === 'warn' ||
+    level === 'info' ||
+    level === 'debug' ||
+    level === 'trace'
+  ) {
+    return level;
+  }
+  return 'warn';
+}
+
+function shouldLogBaseLint(
+  configuredLevel: BaseLintLogLevel,
+  messageLevel: BaseLintLogLevel
+): boolean {
+  return LOG_LEVEL_ORDER[messageLevel] <= LOG_LEVEL_ORDER[configuredLevel];
+}
+
+export function resolveBaseLintStrategy(
+  params: ResolveBaseLintStrategyParams
+): BaseLintStrategyDecision {
+  const { mode, detectedFormat, capabilities } = params;
+  const formatLabel = detectedFormat || 'unknown';
+  const preferEmbedded = mode === 'auto' || mode === 'embedded';
+
+  if (preferEmbedded && capabilities.hasEmbeddedAdapter) {
+    return {
+      strategy: 'embedded',
+      reason: `embedded adapter registered for ${formatLabel}`,
+    };
+  }
+
+  if (capabilities.supportsVirtualDocument) {
+    return {
+      strategy: 'virtual',
+      reason:
+        mode === 'vscode'
+          ? `vscode mode selected virtual strategy for ${formatLabel}`
+          : `no embedded adapter available for ${formatLabel}; using virtual strategy`,
+    };
+  }
+
+  if (capabilities.supportsMirrorFile) {
+    return {
+      strategy: 'mirror-file',
+      reason: `virtual strategy unsupported for ${formatLabel}; using mirror-file fallback`,
+    };
+  }
+
+  return {
+    strategy: 'virtual',
+    reason: `no explicit capabilities for ${formatLabel}; using virtual fallback`,
+  };
+}
+
+function extensionForDetectedFormat(format: string): string {
+  switch (format) {
+    case 'md':
+    case 'markdown':
+      return '.md';
+    case 'json':
+      return '.json';
+    case 'yaml':
+      return '.yaml';
+    case 'xml':
+      return '.xml';
+    case 'html':
+      return '.html';
+    case 'toml':
+      return '.toml';
+    default:
+      return '.txt';
+  }
+}
+
+function stableTempPathFor(originalUri: vscode.Uri, fileExtension: string): string {
+  const hash = crypto
+    .createHash('sha1')
+    .update(originalUri.toString())
+    .digest('hex')
+    .slice(0, 16);
+  const root = baseLintStorageRoot ?? path.join(os.tmpdir(), 'temple-base-lint');
+  fs.mkdirSync(root, { recursive: true });
+  return path.join(root, `${hash}${fileExtension}`);
+}
+
+function resolveMirrorFileTargetUri(
+  originalUri: vscode.Uri,
+  detectedFormat: string
+): vscode.Uri {
+  const existing = tempBaseLintFileMap.get(originalUri.toString());
+  if (existing) {
+    return vscode.Uri.file(existing);
+  }
+
+  const ext = extensionForDetectedFormat(detectedFormat);
+  const tempPath = stableTempPathFor(originalUri, ext);
+  tempBaseLintFileMap.set(originalUri.toString(), tempPath);
+  return vscode.Uri.file(tempPath);
+}
+
+function resetBaseLintSessionCaches(): void {
+  cleanedContentMap.clear();
+  cleanedContentVersionMap.clear();
+  tempBaseLintFileMap.clear();
+  cachedLanguageSuffixAssociations = undefined;
 }
 
 export async function activate(
   context: vscode.ExtensionContext
-): Promise<void> {
+): Promise<{ __testing: typeof __testing }> {
+  const outputChannel = vscode.window.createOutputChannel(EXTENSION_NAME);
+  context.subscriptions.push(outputChannel);
+  outputChannel.appendLine(`[${EXTENSION_NAME}] Activating extension`);
+
+  const virtualDocumentChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+  context.subscriptions.push(virtualDocumentChangeEmitter);
+
   const providerDisposable = vscode.workspace.registerTextDocumentContentProvider(
     VIRTUAL_SCHEME,
     {
+      onDidChange: virtualDocumentChangeEmitter.event,
       provideTextDocumentContent(uri) {
         return cleanedContentMap.get(uri.toString()) || '';
       },
@@ -210,23 +911,63 @@ export async function activate(
   );
   context.subscriptions.push(providerDisposable);
 
-  const pythonConfig = vscode.workspace.getConfiguration('python');
-  const pythonCommand =
-    pythonConfig.get<string>('defaultInterpreterPath') ||
-    pythonConfig.get<string>('pythonPath') ||
-    'python';
-
   const templeConfig = vscode.workspace.getConfiguration('temple');
   const templeExtensions = templeConfig.get<string[]>(
     'fileExtensions',
-    ['.tmpl', '.template']
+    DEFAULT_TEMPLE_EXTENSIONS
   );
-  const semanticContext = asJsonObject(
-    templeConfig.get<unknown>('semanticContext')
+  const normalizedTempleExtensions = dedupe(
+    templeExtensions.map((ext) => normalizeTempleExtension(ext)).filter(Boolean)
+  );
+  const semanticContext = normalizeSemanticContext(
+    asJsonObject(templeConfig.get<unknown>('semanticContext'))
   );
   const semanticSchemaPathRaw = templeConfig.get<string>(
     'semanticSchemaPath',
     ''
+  );
+  const baseLintDebounceSeconds = templeConfig.get<number>(
+    'baseLintDebounceSeconds',
+    0.8
+  );
+  const traceBaseLintDiagnosticsLegacy = templeConfig.get<boolean>(
+    'traceBaseLintDiagnostics',
+    false
+  );
+  const baseLintLogLevel = normalizeBaseLintLogLevel(
+    templeConfig.get<string>('baseLintLogLevel', 'warn')
+  );
+  const effectiveBaseLintLogLevel: BaseLintLogLevel =
+    traceBaseLintDiagnosticsLegacy && baseLintLogLevel !== 'trace'
+      ? 'trace'
+      : baseLintLogLevel;
+  const baseLintStrategyMode = normalizeBaseLintStrategyMode(
+    templeConfig.get<string>('baseLintStrategyMode', 'auto')
+  );
+  const embeddedBaseLintFormats = templeConfig.get<string[]>(
+    'embeddedBaseLintFormats',
+    []
+  );
+  const capabilityRegistry = new DefaultBaseLintCapabilityRegistry(
+    embeddedBaseLintFormats
+  );
+  const baseLintFocusMode = templeConfig.get<BaseLintFocusMode>(
+    'baseLintFocusMode',
+    templeConfig.get<BaseLintFocusMode>(
+      // Backward compatibility for prior setting name.
+      'markdownBaseLintFocusMode',
+      'all'
+    )
+  );
+  resetBaseLintSessionCaches();
+  const storageRootCandidate =
+    context.storageUri?.fsPath ?? context.globalStorageUri?.fsPath;
+  if (storageRootCandidate) {
+    baseLintStorageRoot = path.join(storageRootCandidate, 'temple-base-lint');
+    fs.mkdirSync(baseLintStorageRoot, { recursive: true });
+  }
+  outputChannel.appendLine(
+    `[${EXTENSION_NAME}] Base lint mode=${baseLintStrategyMode} focus=${baseLintFocusMode} logLevel=${effectiveBaseLintLogLevel}`
   );
   const semanticSchemaPath = semanticSchemaPathRaw
     ? resolveWorkspacePath(semanticSchemaPathRaw)
@@ -235,32 +976,71 @@ export async function activate(
     ? loadSemanticSchema(semanticSchemaPath)
     : undefined;
 
-  const fileWatchers = templeExtensions.map((extension) =>
+  const fileWatchers = normalizedTempleExtensions.map((extension) =>
     vscode.workspace.createFileSystemWatcher(`**/*${extension}`)
   );
   context.subscriptions.push(...fileWatchers);
 
-  const linterRoot = context.asAbsolutePath('../temple-linter');
+  for (const doc of vscode.workspace.textDocuments) {
+    void ensurePreferredTemplateLanguage(
+      doc,
+      normalizedTempleExtensions,
+      outputChannel
+    );
+  }
+
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenTextDocument((doc) => {
+      void ensurePreferredTemplateLanguage(
+        doc,
+        normalizedTempleExtensions,
+        outputChannel
+      );
+      if (
+        isTempleTemplateDocument(doc, normalizedTempleExtensions) &&
+        doc.languageId !== 'templated-any'
+      ) {
+        outputChannel.appendLine(
+          `[${EXTENSION_NAME}] '${doc.uri.fsPath}' opened as '${doc.languageId}'. Temple will still lint by filename pattern.`
+        );
+      }
+    })
+  );
+
+  const linterRoot = resolveServerCwd(context, templeConfig, outputChannel);
+  const serverEnv = buildServerEnv(linterRoot);
+  const pythonCommand = resolvePythonCommand(
+    templeConfig,
+    outputChannel,
+    serverEnv
+  );
+  outputChannel.appendLine(
+    `[${EXTENSION_NAME}] Starting language server: ${pythonCommand} -m temple_linter.lsp_server`
+  );
   const serverOptions: ServerOptions = {
     command: pythonCommand,
     args: ['-m', 'temple_linter.lsp_server'],
-    options: { cwd: linterRoot },
+    options: { cwd: linterRoot, env: serverEnv },
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: 'file', language: 'templated-any' }],
+    documentSelector: buildDocumentSelector(normalizedTempleExtensions),
     synchronize: { fileEvents: fileWatchers },
+    outputChannel,
     initializationOptions: {
-      templeExtensions,
-      semanticContext,
+      templeExtensions: normalizedTempleExtensions,
+      semanticContext: semanticContext ?? null,
       semanticSchema,
       semanticSchemaPath,
+      baseLintDebounceSeconds,
+      baseLintStrategyMode,
+      embeddedBaseLintFormats,
     },
   };
 
   client = new LanguageClient(
     'templeLsp',
-    'Temple LSP',
+    EXTENSION_NAME,
     serverOptions,
     clientOptions
   );
@@ -269,7 +1049,18 @@ export async function activate(
     vscode.languages.createDiagnosticCollection('temple-node');
   context.subscriptions.push(nodeDiagCollection);
 
-  await client.start();
+  try {
+    await client.start();
+    outputChannel.appendLine(`[${EXTENSION_NAME}] Language server started`);
+  } catch (error) {
+    outputChannel.appendLine(
+      `[${EXTENSION_NAME}] Failed to start language server: ${String(error)}`
+    );
+    void vscode.window.showErrorMessage(
+      `${EXTENSION_NAME} failed to start. See Output -> ${EXTENSION_NAME} for details.`
+    );
+    throw error;
+  }
 
   client.onRequest(
     'temple/requestBaseDiagnostics',
@@ -279,10 +1070,59 @@ export async function activate(
       }
 
       const originalUri = vscode.Uri.parse(params.uri);
-      const virtualUri = originalUri.with({ scheme: VIRTUAL_SCHEME });
-      cleanedContentMap.set(virtualUri.toString(), params.content);
+      const normalizedFormat = normalizeDetectedFormat(params.detectedFormat);
+      if (baseLintFocusMode === 'activeTemplate') {
+        const activeUri = vscode.window.activeTextEditor?.document.uri.toString();
+        if (!activeUri || activeUri !== originalUri.toString()) {
+          return { diagnostics: [] };
+        }
+      }
+      const strategyDecision = resolveBaseLintStrategy({
+        mode: baseLintStrategyMode,
+        detectedFormat: normalizedFormat,
+        capabilities: capabilityRegistry.capabilitiesForFormat(normalizedFormat),
+      });
 
-      const diagnostics = await collectDiagnosticsForVirtualUri(virtualUri);
+      if (strategyDecision.strategy === 'embedded') {
+        if (shouldLogBaseLint(effectiveBaseLintLogLevel, 'debug')) {
+          outputChannel.appendLine(
+            `[${EXTENSION_NAME}] Base lint strategy=embedded for ${originalUri.toString()} (${normalizedFormat || 'unknown'}): ${strategyDecision.reason}; expecting embedded diagnostics from linter`
+          );
+        }
+        return { diagnostics: [] };
+      }
+
+      const targetUri =
+        strategyDecision.strategy === 'mirror-file'
+          ? resolveMirrorFileTargetUri(originalUri, normalizedFormat)
+          : originalUri.with({ scheme: VIRTUAL_SCHEME });
+      const uriKey = targetUri.toString();
+      const nextVersion = (cleanedContentVersionMap.get(uriKey) ?? 0) + 1;
+      cleanedContentVersionMap.set(uriKey, nextVersion);
+
+      if (strategyDecision.strategy === 'mirror-file') {
+        fs.writeFileSync(targetUri.fsPath, params.content, 'utf8');
+      } else {
+        cleanedContentMap.set(uriKey, params.content);
+        virtualDocumentChangeEmitter.fire(targetUri);
+      }
+
+      const diagnostics = await collectDiagnosticsForVirtualUri(
+        targetUri,
+        nextVersion
+      );
+      if (shouldLogBaseLint(effectiveBaseLintLogLevel, 'trace')) {
+        const sources = dedupe(
+          diagnostics
+            .map((diag) => (diag.source ?? '').trim())
+            .filter((source) => source.length > 0)
+        );
+        outputChannel.appendLine(
+          `[${EXTENSION_NAME}] Base lint strategy=${strategyDecision.strategy} target=${targetUri.toString()} (${normalizedFormat || 'unknown'}) -> ${diagnostics.length} diagnostics` +
+            ` [reason: ${strategyDecision.reason}]` +
+            (sources.length ? ` [sources: ${sources.join(', ')}]` : '')
+        );
+      }
       return { diagnostics: diagnostics.map(vscDiagToLspDiag) };
     }
   );
@@ -293,7 +1133,11 @@ export async function activate(
     }
 
     const uri = vscode.Uri.parse(params.uri);
-    cleanedContentMap.set(uri.toString(), params.content);
+    const uriKey = uri.toString();
+    const nextVersion = (cleanedContentVersionMap.get(uriKey) ?? 0) + 1;
+    cleanedContentVersionMap.set(uriKey, nextVersion);
+    cleanedContentMap.set(uriKey, params.content);
+    virtualDocumentChangeEmitter.fire(uri);
     await vscode.workspace.openTextDocument(uri);
   });
 
@@ -309,9 +1153,18 @@ export async function activate(
       nodeDiagCollection.set(uri, diagnostics);
     }
   );
+
+  return { __testing };
 }
 
+export const __testing = {
+  normalizeDetectedFormat,
+  resolveBaseLintStrategy,
+  DefaultBaseLintCapabilityRegistry,
+};
+
 export function deactivate(): Thenable<void> | undefined {
+  resetBaseLintSessionCaches();
   if (!client) {
     return undefined;
   }

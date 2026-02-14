@@ -4,12 +4,17 @@ Language support for Temple templated files with integrated linting and diagnost
 
 ## Features
 
-- **Syntax Highlighting**: Template-aware syntax highlighting for `.tmpl` and `.template` files
+- **Syntax Highlighting**: Template-aware syntax highlighting for temple blocks (`{% %}`, `{{ }}`, `{# #}`) in `.tmpl` and `.template` files
 - **Intelligent Linting**: Validates both template syntax and base format
 - **Format Detection**: Auto-detects JSON, YAML, HTML, XML, TOML, Markdown
 - **Native Linter Integration**: Delegates to VS Code's built-in linters
 - **Configurable Extensions**: Customize recognized temple file extensions
 - **Real-time Diagnostics**: Instant feedback as you type
+
+Syntax grammar maintenance note:
+
+- `syntaxes/templated-any.tmLanguage.json` and `syntaxes/temple.injection.tmLanguage.json` are generated from a shared source script: `scripts/generate-syntaxes.js`.
+- Run `npm run generate:syntaxes` (or `npm run compile`) after grammar changes.
 
 ## Installation
 
@@ -49,17 +54,22 @@ Language support for Temple templated files with integrated linting and diagnost
 
 1. Ensure `package.json` metadata is publish-ready (`name`, `publisher`, `repository`, `license`, `version`).
 2. Validate packaging locally:
+
    ```bash
    npm run compile
    npm run lint
    npm run package:check
    vsce package
    ```
+
 3. Install locally for smoke verification:
+
    ```bash
-   code --install-extension vscode-temple-linter-0.0.1.vsix
+   code --install-extension vscode-temple-linter-0.0.4.vsix
    ```
+
 4. Publish when ready:
+
    ```bash
    vsce publish
    ```
@@ -77,6 +87,11 @@ Configure in `.vscode/settings.json` or User Settings:
   "temple.semanticContext": {
     "user": { "name": "Alice" }
   },
+  "temple.baseLintStrategyMode": "auto",
+  "temple.embeddedBaseLintFormats": [],
+  "temple.baseLintLogLevel": "warn",
+  "temple.pythonPath": "/path/to/python",
+  "temple.serverRoot": "/path/to/temple-linter",
   "python.defaultInterpreterPath": "/path/to/python"
 }
 ```
@@ -88,6 +103,11 @@ Configure in `.vscode/settings.json` or User Settings:
 | `temple.fileExtensions`         | array  | `[".tmpl", ".template"]` | File extensions treated as templates |
 | `temple.semanticSchemaPath`     | string | `""`                     | Optional JSON Schema path for semantic validation/features |
 | `temple.semanticContext`        | object | `{}`                     | Optional semantic context object for runtime-like validation |
+| `temple.baseLintStrategyMode`   | string | `"auto"`                 | Base-lint strategy mode: `auto`, `embedded`, `vscode` |
+| `temple.embeddedBaseLintFormats`| array  | `[]`                     | Formats with embedded adapters available to Temple |
+| `temple.baseLintLogLevel`       | string | `"warn"`                 | Base-lint bridge log verbosity (`error`..`trace`) |
+| `temple.pythonPath`             | string | `""`                     | Optional explicit Python path for Temple Language Server server |
+| `temple.serverRoot`             | string | `""`                     | Optional temple-linter root path used as LSP server cwd |
 | `python.defaultInterpreterPath` | string | `"python"`               | Path to Python interpreter           |
 
 ## Usage
@@ -110,6 +130,11 @@ Temple uses Jinja-like syntax:
 {{ variable }}                      # Expressions
 {# comment #}                       # Comments
 ```
+
+Autocomplete notes:
+
+- Statement keyword completions (for `if`, `for`, `include`, etc.) work in `{% ... %}`.
+- Variable/property completions in `{{ ... }}` require either `temple.semanticSchemaPath` or `temple.semanticContext`.
 
 ### Example: JSON Template
 
@@ -246,11 +271,21 @@ flowchart TD
 
 - Bottom-right corner of VS Code should show "Templated File"
 - Click to manually select language if incorrect
+- If another extension claims `.tmpl` (for example Go templates), force Temple association:
+
+  ```json
+  {
+    "files.associations": {
+      "*.tmpl": "templated-any",
+      "*.template": "templated-any"
+    }
+  }
+  ```
 
 ### No Diagnostics Appearing
 
 1. **Check Output Panel:**
-   - View → Output → Select "Temple LSP"
+   - View → Output → Select "Temple Language Server"
    - Look for connection errors
 
 2. **Verify Python Server:**
@@ -262,7 +297,7 @@ flowchart TD
    ```
 
 3. **Check Python Path:**
-   - Ensure `python.defaultInterpreterPath` is correct
+   - Ensure `temple.pythonPath` or `python.defaultInterpreterPath` is correct
    - Python 3.10+ required
 
 ### Incorrect Diagnostic Positions
@@ -309,16 +344,25 @@ Generated mini-tree (auto-synced):
 <!-- BEGIN:project-structure path=vscode-temple-linter depth=2 annotations=vscode-temple-linter/.structure-notes.yaml -->
 ```text
 vscode-temple-linter/
-├── .eslintrc.cjs                # ESLint configuration
+├── .eslintrc.cjs                         # ESLint configuration
+├── .vscodeignore
 ├── ARCHITECTURE.md
-├── language-configuration.json  # Editor behavior for templated files
+├── language-configuration.json           # Editor behavior for templated files
 ├── package-lock.json
-├── package.json                 # Extension manifest and VS Code contributions
-├── README.md                    # ⭐ You are here
+├── package.json                          # Extension manifest and VS Code contributions
+├── README.md                             # ⭐ You are here
 ├── test_sample.json.tmpl
-├── tsconfig.json                # TypeScript compiler configuration
-└── src/                         # Extension source code
-    └── extension.ts             # LanguageClient bootstrap and LSP wiring
+├── tsconfig.json                         # TypeScript compiler configuration
+├── scripts/
+│   └── generate-syntaxes.js
+├── src/                                  # Extension source code
+│   └── extension.ts                      # LanguageClient bootstrap and LSP wiring
+├── syntaxes/
+│   ├── templated-any.tmLanguage.json
+│   └── temple.injection.tmLanguage.json
+└── test/
+    ├── runTest.js
+    └── suite/
 ```
 <!-- END:project-structure -->
 

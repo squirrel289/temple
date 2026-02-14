@@ -2,7 +2,7 @@
   "name": "vscode-temple-linter",
   "displayName": "Temple Linter",
   "description": "Lint and preprocess temple templated files for correct linting and diagnostics in VS Code.",
-  "version": "0.0.1",
+  "version": "0.0.10",
   "publisher": "squirrel289",
   "license": "MIT",
   "engines": {
@@ -12,7 +12,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:templated-any"
+    "onLanguage:templated-any",
+    "onStartupFinished"
   ],
   "main": "./dist/src/extension.js",
   "contributes": {
@@ -27,6 +28,25 @@
           ".template"
         ],
         "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "templated-any",
+        "scopeName": "source.templated-any",
+        "path": "./syntaxes/templated-any.tmLanguage.json"
+      },
+      {
+        "scopeName": "temple.injection",
+        "path": "./syntaxes/temple.injection.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown",
+          "source.json",
+          "source.yaml",
+          "text.html.basic",
+          "text.xml",
+          "source.toml"
+        ]
       }
     ],
     "configuration": {
@@ -49,19 +69,120 @@
           "description": "Optional JSON Schema path used for semantic validation and schema-aware language features."
         },
         "temple.semanticContext": {
-          "type": "object",
-          "default": {},
+          "type": [
+            "object",
+            "null"
+          ],
+          "default": null,
           "description": "Optional context object used for semantic validation when schema is not provided."
+        },
+        "temple.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional explicit Python interpreter path for temple_linter. When empty, Temple Language Server auto-detects a valid interpreter."
+        },
+        "temple.serverRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Optional temple-linter project root path used as server cwd. Leave empty for automatic discovery."
+        },
+        "temple.baseLintDebounceSeconds": {
+          "type": "number",
+          "default": 0.8,
+          "minimum": 0,
+          "description": "Minimum interval between base-language lint requests while typing. Higher values improve responsiveness under heavy edits."
+        },
+        "temple.baseLintStrategyMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "embedded",
+            "vscode"
+          ],
+          "default": "auto",
+          "description": "Select base-lint strategy mode. auto prefers embedded adapters when available, then falls back to VS Code bridge strategies."
+        },
+        "temple.embeddedBaseLintFormats": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Formats with embedded base-lint adapters available (e.g., [\"markdown\", \"json\"]). Used by strategy resolution in auto/embedded modes."
+        },
+        "temple.baseLintLogLevel": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
+          "default": "warn",
+          "description": "Verbosity of Temple base-lint bridge logs in the output panel."
+        },
+        "temple.traceBaseLintDiagnostics": {
+          "type": "boolean",
+          "default": false,
+          "description": "Deprecated. Use temple.baseLintLogLevel=trace."
+        },
+        "temple.baseLintFocusMode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "activeTemplate"
+          ],
+          "default": "all",
+          "description": "Controls when Temple requests base diagnostics: all templated files or only the active editor template."
+        },
+        "temple.markdownBaseLintFocusMode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "activeTemplate"
+          ],
+          "default": "all",
+          "description": "Deprecated. Use temple.baseLintFocusMode."
         }
       }
+    },
+    "configurationDefaults": {
+      "files.associations": {
+        "*.md.tmpl": "markdown",
+        "*.markdown.tmpl": "markdown",
+        "*.md.template": "markdown",
+        "*.markdown.template": "markdown",
+        "*.json.tmpl": "json",
+        "*.json.template": "json",
+        "*.yaml.tmpl": "yaml",
+        "*.yaml.template": "yaml",
+        "*.yml.tmpl": "yaml",
+        "*.yml.template": "yaml",
+        "*.html.tmpl": "html",
+        "*.html.template": "html",
+        "*.xml.tmpl": "xml",
+        "*.xml.template": "xml",
+        "*.toml.tmpl": "toml",
+        "*.toml.template": "toml",
+        "*.tmpl": "templated-any",
+        "*.template": "templated-any"
+      },
+      "markdownlint.ignore": [
+        "**/temple-base-lint/**",
+        "**/*.tmpl",
+        "**/*.template"
+      ]
     }
   },
   "scripts": {
+    "generate:syntaxes": "node ./scripts/generate-syntaxes.js",
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p .",
+    "compile": "npm run generate:syntaxes && tsc -p .",
     "watch": "tsc -watch -p .",
     "lint": "eslint --ext .ts src",
-    "package:check": "vsce ls"
+    "package:check": "vsce ls",
+    "test:integration": "node ./test/runTest.js"
   },
   "repository": {
     "type": "git",
@@ -72,6 +193,7 @@
     "@types/vscode": "^1.70.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "@vscode/test-electron": "^2.4.1",
     "eslint": "^8.57.1",
     "typescript": "^4.8.0",
     "vsce": "^2.10.0"
@@ -82,8 +204,9 @@
     "vscode-languageserver-textdocument": "^1.0.1"
   },
   "files": [
-    "dist",
+    "dist/src",
     "language-configuration.json",
+    "syntaxes",
     "node_modules",
     "package.json",
     "README.md"
