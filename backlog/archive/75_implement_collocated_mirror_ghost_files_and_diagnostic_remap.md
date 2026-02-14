@@ -1,15 +1,21 @@
 ---
 title: "Implement collocated mirror ghost files and diagnostic remapping"
 id: 75
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: high
 estimated_hours: 16
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 3.5
+completed_date: 2026-02-14
+related_commit:
+  - b9e4e0c  # fix(vscode): collocate mirror ghost files and clean lifecycle
+test_results: |
+  VS Code extension validation:
+  - npm run compile (passes)
+  - npm run test:integration (passes)
+  Added test coverage:
+  - collocated mirror-file path assertion under hidden `.temple-base-lint` sibling directory
 dependencies:
   - "[[archive/74_implement_base_lint_strategy_resolver_and_capability_registry.md]]"
 related_backlog:
@@ -18,6 +24,13 @@ related_spike: []
 notes: |
   Mirror-file fallback must preserve nested workspace config resolution while
   keeping ghost artifacts hidden, cleaned up, and mapped back to source URIs.
+  Started implementation on 2026-02-14 after completion of archived item 74.
+  Initial slice: collocated hidden ghost pathing + lifecycle cleanup.
+  Completed on 2026-02-14:
+  - Mirror fallback now writes hidden collocated files under `.temple-base-lint` near source template.
+  - Mirror files are cleaned after diagnostic collection and on extension deactivate.
+  - Directory cleanup is best-effort and avoids lingering empty ghost directories.
+  - Base-lint logging includes publish-uri context to make source-path mapping explicit.
 ---
 
 ## Goal
@@ -54,7 +67,7 @@ Temp-directory mirrors caused incorrect ownership, stale diagnostics, missing so
 
 ## Acceptance Criteria
 
-- [ ] Base-tool diagnostics are attached to original `.tmpl` documents, not ghost files.
-- [ ] Ghost file strategy resolves nested workspace configs correctly.
-- [ ] Ghost files are hidden and cleaned automatically with failsafe behavior.
-- [ ] No repo pollution from ghost files in normal workflows.
+- [x] Base-tool diagnostics are attached to original `.tmpl` documents, not ghost files.
+- [x] Ghost file strategy resolves nested workspace configs correctly.
+- [x] Ghost files are hidden and cleaned automatically with failsafe behavior.
+- [x] No repo pollution from ghost files in normal workflows.
