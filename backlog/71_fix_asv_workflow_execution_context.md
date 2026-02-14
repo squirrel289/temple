@@ -1,15 +1,18 @@
 ---
 title: "Fix ASV workflow execution context for benchmarks and publish"
 id: 71
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: low
 estimated_hours: 3
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 1
+completed_date: 2026-02-13
+related_commit:
+  - bd92dfe
+test_results: |
+  YAML validation: .github/workflows/benchmarks.yml passes yamllint
+  Workflow structure verification: all references and paths are consistent
 dependencies:
   - "[[archive/39_performance_benchmarks.md]]"
   - "[[archive/57_fix_ci_workflow_wiring.md]]"
@@ -18,8 +21,12 @@ related_spike: []
 notes: |
   Created from validated code review feedback in session
   rollout-2026-02-13T18-06-30-019c5941-80d2-7d03-a17d-e45bf33ca0ae.
-  ASV commands in benchmarks workflow currently execute from repo root while
-  ASV configuration lives at temple/asv.conf.json.
+
+  **Implementation Complete**: Set working-directory: temple for ASV steps.
+  All acceptance criteria met:
+  - ASV update, run, and publish steps properly resolve temple/asv.conf.json ✓
+  - Result paths maintained correctly (temple/asv/results per TEMPLE_BENCHMARKS_ROOT_PATH) ✓
+  - Workflow valid YAML and references consistent ✓
 ---
 
 ## Goal
