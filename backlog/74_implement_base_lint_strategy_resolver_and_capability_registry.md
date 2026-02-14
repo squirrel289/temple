@@ -1,12 +1,12 @@
 ---
 title: "Implement base-lint strategy resolver and capability registry"
 id: 74
-status: not_started
+status: in_progress
 state_reason: null
 priority: critical
 complexity: high
 estimated_hours: 14
-actual_hours: null
+actual_hours: 0.5
 completed_date: null
 related_commit: []
 test_results: null
@@ -18,6 +18,8 @@ related_spike: []
 notes: |
   Introduce a single strategy resolver for base linting: embedded, virtual,
   mirror-file. Include mode setting and capability registry extension points.
+  Started implementation planning on 2026-02-14 after completion of item 73.
+  First implementation slice: resolver contract + mode precedence tests.
 ---
 
 ## Goal
