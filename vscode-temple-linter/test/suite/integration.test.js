@@ -98,6 +98,23 @@ function runStrategyResolverTests(testing) {
   );
 }
 
+function runMirrorPathTests(testing, markdownTemplatePath) {
+  const markdownUri = vscode.Uri.file(markdownTemplatePath);
+  const mirrorUri = testing.resolveMirrorFileTargetUri(markdownUri, "markdown");
+  const sourceDir = path.dirname(markdownTemplatePath);
+  const expectedDir = path.join(sourceDir, testing.MIRROR_GHOST_DIRNAME);
+  assert.equal(
+    path.dirname(mirrorUri.fsPath),
+    expectedDir,
+    "mirror-file path should be collocated under hidden sibling directory"
+  );
+  assert.ok(
+    mirrorUri.fsPath.endsWith(".md"),
+    "markdown mirror-file should use .md extension"
+  );
+  testing.cleanupMirrorFileTargetUri(mirrorUri);
+}
+
 async function runIntegrationTests() {
   const extension = vscode.extensions.getExtension(
     "squirrel289.vscode-temple-linter"
@@ -128,6 +145,7 @@ async function runIntegrationTests() {
     "markdown",
     "Expected .md.tmpl files to use markdown language id"
   );
+  runMirrorPathTests(extension.exports.__testing, markdownTemplatePath);
 
   // 2) Diagnostics should appear end-to-end from Temple LSP for malformed template syntax.
   const integrationScratchRoot = path.join(workspaceRoot, ".debug", "vscode-it");
