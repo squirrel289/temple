@@ -51,3 +51,48 @@ def test_semantic_diagnostics_reports_undefined_or_missing_fields() -> None:
 
     assert diagnostics
     assert diagnostics[0]["code"] in {"missing_property", "undefined_variable"}
+
+
+def test_compare_operators_translate_to_python_syntax() -> None:
+    """Regression test for work item #70: compare ops should emit ==, !=, <, <=, >, >=."""
+    adapter = Jinja2Adapter()
+
+    test_cases = [
+        ("{% if user.age == 18 %}adult{% endif %}", "=="),
+        ("{% if user.age != 18 %}not 18{% endif %}", "!="),
+        ("{% if user.age < 18 %}minor{% endif %}", "<"),
+        ("{% if user.age <= 18 %}young{% endif %}", "<="),
+        ("{% if user.age > 18 %}adult{% endif %}", ">"),
+        ("{% if user.age >= 18 %}adult{% endif %}", ">="),
+    ]
+
+    for template, expected_op in test_cases:
+        result = adapter.parse_to_ir(template)
+        assert result.diagnostics == (), f"Unexpected diagnostics for {template}"
+
+        # Convert to typed AST to ensure semantic analysis can parse it
+        typed = adapter.to_typed_block(result.ir)
+        assert len(typed.nodes) >= 1
+
+        # Verify the condition contains the correct Python operator
+        if_node = typed.nodes[0]
+        assert hasattr(if_node, "condition"), "Expected If node with condition"
+        assert expected_op in if_node.condition, (
+            f"Expected operator '{expected_op}' in condition, "
+            f"got: {if_node.condition}"
+        )
+
+
+def test_chained_comparisons_preserve_all_operators() -> None:
+    """Test that chained comparisons like 'a < b < c' work correctly."""
+    adapter = Jinja2Adapter()
+    result = adapter.parse_to_ir("{% if 1 < x < 10 %}in range{% endif %}")
+
+    assert result.diagnostics == ()
+    typed = adapter.to_typed_block(result.ir)
+    if_node = typed.nodes[0]
+
+    # Should have both < operators
+    assert if_node.condition.count("<") == 2, (
+        f"Expected 2 '<' operators in chained comparison, got: {if_node.condition}"
+    )
