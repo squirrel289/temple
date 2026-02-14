@@ -13,6 +13,8 @@ from temple.diagnostics import (
     Diagnostic,
     DiagnosticCollector,
     DiagnosticSeverity,
+    Position,
+    SourceRange,
 )
 from temple.lark_parser import parse_with_diagnostics
 
@@ -68,6 +70,7 @@ class TemplateLinter:
             text, node_collector=node_collector
         )
         diagnostics = list(syntax_diagnostics)
+        diagnostics.extend(self._find_unclosed_delimiter_diagnostics(text))
 
         if not self.semantic_enabled:
             return diagnostics
@@ -128,6 +131,66 @@ class TemplateLinter:
                 )
             )
         return semantic_diagnostics
+
+    @staticmethod
+    def _find_unclosed_delimiter_diagnostics(text: str) -> list[Diagnostic]:
+        diagnostics: list[Diagnostic] = []
+        delimiter_specs = [
+            ("{{", "}}", "Unclosed expression tag '{{ ... }}'"),
+            ("{%", "%}", "Unclosed statement tag '{% ... %}'"),
+            ("{#", "#}", "Unclosed comment tag '{# ... #}'"),
+        ]
+
+        for open_token, close_token, message in delimiter_specs:
+            for offset in TemplateLinter._unclosed_open_offsets(
+                text, open_token, close_token
+            ):
+                line = text.count("\n", 0, offset)
+                line_start_offset = text.rfind("\n", 0, offset) + 1
+                column = offset - line_start_offset
+                diagnostics.append(
+                    Diagnostic(
+                        message=message,
+                        source_range=SourceRange(
+                            Position(line, column),
+                            Position(line, column + len(open_token)),
+                        ),
+                        severity=DiagnosticSeverity.ERROR,
+                        code="UNCLOSED_DELIMITER",
+                        source="temple-compiler",
+                    )
+                )
+
+        return diagnostics
+
+    @staticmethod
+    def _unclosed_open_offsets(
+        text: str, open_token: str, close_token: str
+    ) -> list[int]:
+        stack: list[int] = []
+        cursor = 0
+
+        while cursor < len(text):
+            next_open = text.find(open_token, cursor)
+            next_close = text.find(close_token, cursor)
+            has_open = next_open != -1
+            has_close = next_close != -1
+
+            if not has_open and not has_close:
+                break
+
+            if has_open and (not has_close or next_open < next_close):
+                stack.append(next_open)
+                cursor = next_open + len(open_token)
+                continue
+
+            # Close token appears first. Pop only if there is a prior opener.
+            if stack:
+                stack.pop()
+            cursor = next_close + len(close_token)
+
+        # Keep diagnostics deterministic by source order.
+        return sorted(set(stack))
 
 
 # CLI entry point for LSP server usage

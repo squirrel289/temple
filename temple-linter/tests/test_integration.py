@@ -14,6 +14,7 @@ Tests the full workflow:
 import pathlib
 import sys
 from unittest.mock import Mock
+
 import pytest
 from lsprotocol.types import DiagnosticSeverity
 
@@ -23,10 +24,11 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 try:
+    from lsprotocol.types import Diagnostic, Position, Range
+
+    from temple_linter.base_format_linter import BaseFormatLinter
     from temple_linter.services.lint_orchestrator import LintOrchestrator
     from temple_linter.services.token_cleaning_service import TokenCleaningService
-    from temple_linter.base_format_linter import BaseFormatLinter
-    from lsprotocol.types import Diagnostic, Range, Position
 except Exception:
     # Fall back to adjusting sys.path in test environments where package isn't
     # available on the PYTHONPATH.
@@ -36,10 +38,11 @@ except Exception:
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
+    from lsprotocol.types import Diagnostic, Position, Range
+
+    from temple_linter.base_format_linter import BaseFormatLinter
     from temple_linter.services.lint_orchestrator import LintOrchestrator
     from temple_linter.services.token_cleaning_service import TokenCleaningService
-    from temple_linter.base_format_linter import BaseFormatLinter
-    from lsprotocol.types import Diagnostic, Range, Position
 
 
 @pytest.fixture
@@ -150,7 +153,7 @@ dependencies:
   {% else %}
   <h1>Please log in</h1>
   {% end %}
-  
+
   <ul>
   {% for item in items %}
     <li>{{ item.name }}: ${{ item.price }}</li>
@@ -272,6 +275,58 @@ line 3"""
         assert "y" not in cleaned
         assert "comment" not in cleaned
         assert "text" in cleaned
+
+    def test_clean_preserves_offsets_with_whitespace_masking(self):
+        """Template delimiters should be masked, not removed, to keep offsets stable."""
+        service = TokenCleaningService()
+        template = "# {{ user.name }}\n{% if user.active %}\nvalue\n{% end %}\n"
+
+        cleaned, tokens = service.clean_text_and_tokens(template)
+
+        assert tokens == []
+        assert cleaned.count("\n") == template.count("\n")
+        assert len(cleaned.splitlines()) == len(template.splitlines())
+        assert cleaned.splitlines()[0].startswith("# ")
+        assert "{{" not in cleaned
+        assert "{%" not in cleaned
+
+    def test_template_only_lines_are_truly_blank(self):
+        """Template-only control lines should collapse to blank lines for markdown linting."""
+        service = TokenCleaningService()
+        template = "{% for item in items %}\n- {{ item.name }}\n{% end %}\n"
+
+        cleaned, _ = service.clean_text_and_tokens(template)
+        cleaned_lines = cleaned.splitlines()
+
+        assert cleaned_lines[0] == ""
+        assert cleaned_lines[2] == ""
+        assert cleaned_lines[1].startswith("- ")
+        assert cleaned_lines[1].strip() == "-"
+
+    def test_mixed_markdown_and_template_line_remains_non_blank(self):
+        """Lines that contain markdown plus temple tags should remain content lines."""
+        service = TokenCleaningService()
+        template = "### {{ project.name }}\n"
+
+        cleaned, _ = service.clean_text_and_tokens(template)
+        assert cleaned.splitlines()[0].startswith("### ")
+
+    def test_markdown_mode_replaces_expressions_with_placeholder_words(self):
+        service = TokenCleaningService()
+        template = "### {{ project.name }}\n"
+
+        cleaned, _ = service.clean_text_and_tokens(template, format_hint="md")
+        assert cleaned.strip() == "### lorem"
+
+    def test_markdown_mode_removes_statement_tags_and_keeps_blank_lines(self):
+        service = TokenCleaningService()
+        template = "{% for item in items %}\n- {{ item.name }}\n{% end %}\n"
+
+        cleaned, _ = service.clean_text_and_tokens(template, format_hint="markdown")
+        lines = cleaned.splitlines()
+        assert lines[0] == ""
+        assert lines[1] == "- lorem"
+        assert lines[2] == ""
 
 
 class TestFormatDetection:
