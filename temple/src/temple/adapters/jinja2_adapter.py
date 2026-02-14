@@ -238,11 +238,22 @@ class Jinja2Adapter(AdapterBase):
         if isinstance(node, nodes.Or):
             return f"{self._expr_to_text(node.left)} or {self._expr_to_text(node.right)}"
         if isinstance(node, nodes.Compare):
+            # Map Jinja2 compare operators to valid Python operators
+            op_map = {
+                "eq": "==",
+                "ne": "!=",
+                "lt": "<",
+                "lteq": "<=",
+                "gt": ">",
+                "gteq": ">=",
+            }
             left = self._expr_to_text(node.expr)
             ops: list[str] = []
             for operand in node.ops:
                 op = operand.op
-                ops.append(f"{op} {self._expr_to_text(operand.expr)}")
+                # Translate Jinja operator to Python operator
+                python_op = op_map.get(op, op)  # Fallback to original if unknown
+                ops.append(f"{python_op} {self._expr_to_text(operand.expr)}")
             return f"{left} {' '.join(ops)}".strip()
         if isinstance(node, nodes.Filter):
             base = self._expr_to_text(node.node)
