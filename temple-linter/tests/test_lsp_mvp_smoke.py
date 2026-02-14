@@ -9,6 +9,7 @@ from pathlib import Path
 from lsprotocol.types import (
     CompletionParams,
     DefinitionParams,
+    DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
     HoverParams,
     InitializeParams,
@@ -19,6 +20,7 @@ from lsprotocol.types import (
     RenameParams,
     TextDocumentIdentifier,
     TextDocumentItem,
+    VersionedTextDocumentIdentifier,
 )
 
 from temple_linter import lsp_server
@@ -100,6 +102,186 @@ def test_lsp_server_initialize_and_did_open_with_semantic_settings() -> None:
 
     diagnostics = published["params"].diagnostics
     assert any(str(getattr(diag, "code", "")) == "missing_property" for diag in diagnostics)
+
+
+def test_lsp_server_ignores_empty_semantic_context() -> None:
+    server = TempleLinterServer()
+    lsp_server.on_initialize(
+        server,
+        InitializeParams(
+            capabilities={},
+            initialization_options={"semanticContext": {}},
+        ),
+    )
+
+    assert server.semantic_context is None
+
+
+def test_lsp_server_empty_semantic_context_does_not_emit_undefined_variable() -> None:
+    server = TempleLinterServer()
+    lsp_server.on_initialize(
+        server,
+        InitializeParams(
+            capabilities={},
+            initialization_options={"semanticContext": {}},
+        ),
+    )
+
+    published = {}
+
+    def _capture(params):
+        published["params"] = params
+
+    server.text_document_publish_diagnostics = _capture  # type: ignore[method-assign]
+    server.orchestrator.base_linting_service.request_base_diagnostics = (
+        lambda *_args, **_kwargs: []
+    )
+    lsp_server.did_open(
+        server,
+        DidOpenTextDocumentParams(
+            text_document=TextDocumentItem(
+                uri="file:///tmp/template.tmpl",
+                language_id="templated-any",
+                version=1,
+                text="{{ user.name }}",
+            )
+        ),
+    )
+
+    diagnostics = published["params"].diagnostics
+    assert diagnostics == []
+
+
+def test_lsp_server_did_open_publishes_syntax_diagnostics() -> None:
+    server = TempleLinterServer()
+    lsp_server.on_initialize(
+        server,
+        InitializeParams(
+            capabilities={},
+            initialization_options={"templeExtensions": [".tmpl", ".template"]},
+        ),
+    )
+
+    published = {}
+
+    def _capture(params):
+        published["params"] = params
+
+    server.text_document_publish_diagnostics = _capture  # type: ignore[method-assign]
+    server.orchestrator.base_linting_service.request_base_diagnostics = (
+        lambda *_args, **_kwargs: []
+    )
+
+    lsp_server.did_open(
+        server,
+        DidOpenTextDocumentParams(
+            text_document=TextDocumentItem(
+                uri="file:///tmp/template.tmpl",
+                language_id="templated-any",
+                version=1,
+                text="{{ user. }}",
+            )
+        ),
+    )
+
+    diagnostics = published["params"].diagnostics
+    assert diagnostics
+    assert any(diag.severity == 1 for diag in diagnostics)
+
+
+def test_lsp_server_did_change_publishes_syntax_diagnostics(tmp_path: Path) -> None:
+    template_path = tmp_path / "edit.tmpl"
+    template_path.write_text("{{ user. }}", encoding="utf-8")
+    template_uri = template_path.as_uri()
+
+    server = TempleLinterServer()
+    lsp_server.on_initialize(
+        server,
+        InitializeParams(
+            capabilities={},
+            initialization_options={"templeExtensions": [".tmpl", ".template"]},
+        ),
+    )
+    server.protocol._workspace = _Workspace(  # type: ignore[attr-defined]
+        docs={template_uri: _Doc(uri=template_uri, source="{{ user. }}")},
+        root_path=tmp_path,
+    )
+
+    published = {}
+
+    def _capture(params):
+        published["params"] = params
+
+    server.text_document_publish_diagnostics = _capture  # type: ignore[method-assign]
+    server.orchestrator.base_linting_service.request_base_diagnostics = (
+        lambda *_args, **_kwargs: []
+    )
+
+    lsp_server.did_change(
+        server,
+        DidChangeTextDocumentParams(
+            text_document=VersionedTextDocumentIdentifier(uri=template_uri, version=2),
+            content_changes=[{"text": "{{ user. }}"}],
+        ),
+    )
+
+    diagnostics = published["params"].diagnostics
+    assert diagnostics
+    assert any(diag.severity == 1 for diag in diagnostics)
+
+
+def test_lsp_server_did_change_debounces_base_lint(tmp_path: Path) -> None:
+    template_path = tmp_path / "debounce.tmpl"
+    template_path.write_text("{{ user.name }}", encoding="utf-8")
+    template_uri = template_path.as_uri()
+
+    server = TempleLinterServer()
+    lsp_server.on_initialize(
+        server,
+        InitializeParams(
+            capabilities={},
+            initialization_options={"templeExtensions": [".tmpl", ".template"]},
+        ),
+    )
+    server.protocol._workspace = _Workspace(  # type: ignore[attr-defined]
+        docs={template_uri: _Doc(uri=template_uri, source="{{ user.name }}")},
+        root_path=tmp_path,
+    )
+    server.base_lint_debounce_seconds = 60.0
+
+    include_base_lint_calls: list[bool] = []
+
+    def _lint_stub(
+        text: str,
+        uri: str,
+        _transport,
+        _temple_extensions,
+        semantic_context=None,
+        semantic_schema=None,
+        include_base_lint: bool = True,
+    ):
+        include_base_lint_calls.append(include_base_lint)
+        return []
+
+    server.orchestrator.lint_template = _lint_stub  # type: ignore[method-assign]
+    server.text_document_publish_diagnostics = lambda _params: None  # type: ignore[method-assign]
+
+    lsp_server.did_change(
+        server,
+        DidChangeTextDocumentParams(
+            text_document=VersionedTextDocumentIdentifier(uri=template_uri, version=2),
+            content_changes=[{"text": "{{ user.name }}"}],
+        ),
+    )
+    lsp_server.did_change(
+        server,
+        DidChangeTextDocumentParams(
+            text_document=VersionedTextDocumentIdentifier(uri=template_uri, version=3),
+            content_changes=[{"text": "{{ user.name }}"}],
+        ),
+    )
+
+    assert include_base_lint_calls == [True, False]
 
 
 def test_lsp_server_language_features_smoke(tmp_path: Path) -> None:
