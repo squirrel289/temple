@@ -5,7 +5,7 @@ A declarative, type-safe transformation engine for structured data that validate
 
 Temple is designed to be data format-agnostic, supporting JSON, XML, YAML, TOML, and future formats. The architecture is modular, with pluggable parsers, a unified query engine, and a consistent templating DSL overlaying the target output format.
 
-See ADR: [Market Role & Adapter Architecture](adr/003-market-role-and-adapter-architecture.md) for the project's market positioning and the planned adapter abstraction for integrating external template engines (Jinja2 first).
+See ADRs: [Market Role & Adapter Architecture](adr/003-market-role-and-adapter-architecture.md) and [Base-Lint Strategy and Diagnostics Pipeline](adr/005-base-lint-strategy-and-diagnostics-pipeline.md) for market positioning and author-time diagnostics strategy across base-language tooling.
 
 ## Components
 
@@ -56,3 +56,4 @@ See `README.md` and `/backlog/temple.md` for vision, goals, and work items.
 ### Changelog
 
 - January 2026: Added ADR-003 describing market positioning and adapter architecture; plan to ship Temple-native first and provide an adapter interface for engine integrations.
+- February 2026: Added ADR-005 to define base-lint strategy precedence (`embedded -> virtual -> mirror-file`), focus mode scope, and diagnostics quality/performance constraints.
