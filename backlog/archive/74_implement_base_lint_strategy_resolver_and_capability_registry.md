@@ -1,15 +1,23 @@
 ---
 title: "Implement base-lint strategy resolver and capability registry"
 id: 74
-status: in_progress
-state_reason: null
+status: completed
+state_reason: success
 priority: critical
 complexity: high
 estimated_hours: 14
-actual_hours: 0.5
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 5
+completed_date: 2026-02-14
+related_commit:
+  - 4fffbab  # feat(vscode): add strategy resolver and generated temple grammars
+test_results: |
+  VS Code extension validation:
+  - npm run compile (passes)
+  - npm run test:integration (passes)
+  Coverage highlights:
+  - strategy resolver precedence tests (auto/embedded/vscode)
+  - markdown mirror-file fallback strategy test
+  - no regression in end-to-end diagnostics/completion smoke checks
 dependencies:
   - "[[archive/73_lock_base_lint_strategy_and_publish_adr_005.md]]"
 related_backlog:
@@ -20,6 +28,12 @@ notes: |
   mirror-file. Include mode setting and capability registry extension points.
   Started implementation planning on 2026-02-14 after completion of item 73.
   First implementation slice: resolver contract + mode precedence tests.
+  Completed on 2026-02-14:
+  - Added `baseLintStrategyMode`, `embeddedBaseLintFormats`, and `baseLintLogLevel` settings.
+  - Implemented strategy resolver + capability registry with auto precedence and fallback reasoning.
+  - Routed base diagnostics request flow through resolver-selected strategy.
+  - Added integration tests for resolver behavior and extension-host startup checks.
+  - Added generated syntax grammar pipeline from a shared source script.
 ---
 
 ## Goal
@@ -56,7 +70,7 @@ Current behavior is fragmented across extension/linter boundaries and does not c
 
 ## Acceptance Criteria
 
-- [ ] `auto` mode selects the highest available strategy by precedence.
-- [ ] Explicit mode honors user selection with clear fallback diagnostics when unsupported.
-- [ ] Strategy decision is test-covered and observable in logs.
-- [ ] No regressions in existing Temple diagnostics pipeline.
+- [x] `auto` mode selects the highest available strategy by precedence.
+- [x] Explicit mode honors user selection with clear fallback diagnostics when unsupported.
+- [x] Strategy decision is test-covered and observable in logs.
+- [x] No regressions in existing Temple diagnostics pipeline.

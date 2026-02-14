@@ -11,7 +11,7 @@ completed_date: null
 related_commit: []
 test_results: null
 dependencies:
-  - "[[74_implement_base_lint_strategy_resolver_and_capability_registry.md]]"
+  - "[[archive/74_implement_base_lint_strategy_resolver_and_capability_registry.md]]"
 related_backlog:
   - "archive/67_fix_lsp_base_diagnostics_transport.md"
 related_spike: []
