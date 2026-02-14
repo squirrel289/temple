@@ -24,7 +24,7 @@ The active MVP closeout items were completed and archived:
 
 The next implementation chain for base-language linting reliability/performance:
 
-- `73_lock_base_lint_strategy_and_publish_adr_005.md` (critical)
+- `archive/73_lock_base_lint_strategy_and_publish_adr_005.md` (completed, critical)
 - `74_implement_base_lint_strategy_resolver_and_capability_registry.md` (critical, depends on 73)
 - `75_implement_collocated_mirror_ghost_files_and_diagnostic_remap.md` (high, depends on 74)
 - `76_generalize_focus_mode_and_diagnostic_hygiene_across_base_types.md` (high, depends on 74/75)

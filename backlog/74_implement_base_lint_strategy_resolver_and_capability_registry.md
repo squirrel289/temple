@@ -11,7 +11,7 @@ completed_date: null
 related_commit: []
 test_results: null
 dependencies:
-  - "[[73_lock_base_lint_strategy_and_publish_adr_005.md]]"
+  - "[[archive/73_lock_base_lint_strategy_and_publish_adr_005.md]]"
 related_backlog:
   - "archive/67_fix_lsp_base_diagnostics_transport.md"
 related_spike: []

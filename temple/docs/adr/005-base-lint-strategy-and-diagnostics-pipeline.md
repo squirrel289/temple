@@ -81,7 +81,7 @@ Additional operational rules:
 
 ## Implementation Notes
 
-- Backlog implementation chain starts at `backlog/73_lock_base_lint_strategy_and_publish_adr_005.md`.
+- Backlog implementation chain starts at `backlog/archive/73_lock_base_lint_strategy_and_publish_adr_005.md` and continues with active items 74-77.
 - Resolver/capability registry and fallback strategies are implemented in subsequent backlog items 74-77.
 - Mirror-file fallback should use hidden collocated siblings and repo-safe ignore patterns.
 
@@ -90,4 +90,4 @@ Additional operational rules:
 - `temple/docs/adr/003-market-role-and-adapter-architecture.md`
 - `backlog/archive/67_fix_lsp_base_diagnostics_transport.md`
 - `backlog/archive/68_repair_vscode_extension_integration.md`
-- `backlog/73_lock_base_lint_strategy_and_publish_adr_005.md`
+- `backlog/archive/73_lock_base_lint_strategy_and_publish_adr_005.md`
