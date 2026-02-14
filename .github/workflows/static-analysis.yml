@@ -74,9 +74,13 @@ jobs:
   lint-yaml:
     name: Lint YAML
     runs-on: ubuntu-latest
+    env:
+      CI_VENV_PATH: ${{ github.workspace }}/.cache/ci-venv
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Bootstrap CI environment
+        run: ./scripts/ci/ensure_ci_venv.sh
       - name: Lint YAML (yamllint)
         run: ./scripts/pre-commit/lint-yaml.sh .github/workflows .github/actions .pre-commit-config.yaml .yamllint
 
