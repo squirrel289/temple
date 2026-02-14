@@ -64,11 +64,13 @@ jobs:
       - name: Configure deterministic ASV machine identity
         run: .github/scripts/configure_asv_machine.sh "$ASV_MACHINE_CONFIG" "$ASV_MACHINE_JSON" "$TEMPLE_BENCHMARKS_ROOT_PATH"
       - name: Run ASV benchmarks
+        working-directory: temple
         run: |
              "$CI_VENV_PATH/bin/python" -m asv update
              "$CI_VENV_PATH/bin/python" -m asv run --quick HEAD~4..HEAD
              "$CI_VENV_PATH/bin/python" -m asv run --quick HEAD
       - name: Build ASV HTML report
+        working-directory: temple
         run: |
           "$CI_VENV_PATH/bin/python" -m asv publish
       - name: Upload ASV results artifact
