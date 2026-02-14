@@ -12,7 +12,7 @@ related_commit: []
 test_results: null
 dependencies:
   - "[[archive/74_implement_base_lint_strategy_resolver_and_capability_registry.md]]"
-  - "[[75_implement_collocated_mirror_ghost_files_and_diagnostic_remap.md]]"
+  - "[[archive/75_implement_collocated_mirror_ghost_files_and_diagnostic_remap.md]]"
 related_backlog:
   - "archive/69_align_docs_linting_and_vscode_workflow.md"
 related_spike: []
