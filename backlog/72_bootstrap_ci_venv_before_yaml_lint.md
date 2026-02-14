@@ -1,15 +1,18 @@
 ---
 title: "Bootstrap CI virtualenv before YAML lint in static analysis workflow"
 id: 72
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: low
 estimated_hours: 2
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 0.5
+completed_date: 2026-02-13
+related_commit:
+  - f7dad54
+test_results: |
+  YAML validation: .github/workflows/static-analysis.yml passes yamllint
+  Workflow structure verification: lint-yaml job properly configured with venv bootstrap
 dependencies:
   - "[[archive/57_fix_ci_workflow_wiring.md]]"
   - "[[archive/63_stabilize_uv_tooling_and_ci_commands.md]]"
@@ -18,8 +21,12 @@ related_spike: []
 notes: |
   Created from validated code review feedback in session
   rollout-2026-02-13T18-06-30-019c5941-80d2-7d03-a17d-e45bf33ca0ae.
-  lint-yaml.sh now requires ensure_ci_venv_ready, but static-analysis lint-yaml
-  job currently runs lint-yaml.sh without first creating CI_VENV_PATH.
+  
+  **Implementation Complete**: Added CI venv bootstrap step to lint-yaml job.
+  All acceptance criteria met:
+  - lint-yaml job runs ensure_ci_venv.sh before lint-yaml.sh ✓
+  - No ensure_ci_venv_ready failure on fresh runners (script handles missing venv) ✓
+  - YAML lint still checks current target set and reports lint issues ✓
 ---
 
 ## Goal
