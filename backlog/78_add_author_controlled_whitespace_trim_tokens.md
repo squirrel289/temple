@@ -1,0 +1,70 @@
+---
+title: "Add author-controlled whitespace trim tokens across linter and renderer"
+id: 78
+status: not_started
+state_reason: null
+priority: high
+complexity: high
+estimated_hours: 20
+actual_hours: null
+completed_date: null
+related_commit: []
+test_results: null
+dependencies:
+  - "[[archive/76_generalize_focus_mode_and_diagnostic_hygiene_across_base_types.md]]"
+  - "[[77_add_base_lint_queueing_adaptive_debounce_and_observability.md]]"
+related_backlog:
+  - "archive/26_control_flow_rendering.md"
+  - "archive/65_complete_temple_native_language_core.md"
+related_spike: []
+notes: |
+  Introduce reusable whitespace-control semantics so template authors can
+  intentionally trim surrounding whitespace instead of relying on
+  markdown-specific cleaning heuristics.
+---
+
+## Goal
+
+Implement explicit whitespace-control tokens (e.g., `{{- ... -}}`, `{%- ... -%}`, `{#- ... -#}`) and apply them consistently in both lint cleaning and rendering pipelines.
+
+## Background
+
+Current markdown-specific cleaning behavior mitigates false positives but behaves as a heuristic. This makes behavior harder to reason about and does not generalize cleanly to all base languages. Author-controlled trim markers provide deterministic intent and a reusable cross-language feature.
+
+## Tasks
+
+1. **Define whitespace token semantics**
+   - Extend tokenizer/parser contracts to track `trim_left` and `trim_right` around template delimiters.
+   - Document default behavior vs trim-enabled behavior.
+
+2. **Implement trimming in lint-cleaning path**
+   - Apply trim flags in token cleaning before base lint delegation.
+   - Preserve diagnostic mapping guarantees and line/column stability where feasible.
+
+3. **Implement trimming in render path**
+   - Apply same trim semantics during rendering output generation.
+   - Verify parity between linter-cleaned text assumptions and rendered behavior.
+
+4. **Compatibility and migration behavior**
+   - Keep existing templates valid by default.
+   - Ensure old behavior remains unless trim markers are used.
+
+5. **Tests and docs**
+   - Add tokenizer/parser tests for trim markers.
+   - Add linter mapping tests and renderer golden tests for trim behavior.
+   - Update README/architecture/docs with examples and migration guidance.
+
+## Deliverables
+
+- Tokenizer/parser support for whitespace-trim delimiters.
+- Shared whitespace-trim behavior across linter cleaning and renderer.
+- Test coverage for trim semantics and diagnostic mapping outcomes.
+- Documentation for author-facing whitespace controls.
+
+## Acceptance Criteria
+
+- [ ] `{{- ... -}}`, `{%- ... -%}`, and `{#- ... -#}` parse and execute with defined semantics.
+- [ ] Lint cleaning and rendering apply matching trim behavior.
+- [ ] Existing templates without trim markers preserve current behavior.
+- [ ] Diagnostic mapping remains stable and test-covered under trim cases.
+- [ ] Markdown-specific heuristic logic is reduced or isolated behind compatibility fallback.
