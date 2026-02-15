@@ -288,7 +288,7 @@ The tree below is generated from the repository during pre-commit/CI to avoid dr
 temple-linter/tests/
 ├── test_base_format_linter.py          # Base format validation coverage
 ├── test_base_linting_service.py
-├── test_diagnostics.py                 # Diagnostic mapping and reporting coverage
+├── test_diagnostic_converter.py        # Diagnostic mapping and reporting coverage
 ├── test_e2e_performance.py             # E2E and performance guardrails
 ├── test_integration.py                 # End-to-end linting pipeline coverage
 ├── test_linter.py
@@ -296,7 +296,6 @@ temple-linter/tests/
 ├── test_lsp_features.py                # Completion/hover/definition/references/rename tests
 ├── test_lsp_mvp_smoke.py
 ├── test_lsp_transport_wiring.py
-├── test_preprocessing.py
 ├── test_semantic_linter.py
 └── fixtures/                           # Template fixtures for base-format and linting scenarios
     ├── valid_docker_compose.yaml.tmpl
@@ -310,51 +309,28 @@ temple-linter/tests/
 
 Critical files to know first:
 
-- `src/temple_linter/lsp_server.py` - LSP entry point and feature registration
-- `src/temple_linter/lsp_features.py` - completion/hover/definition/references/rename providers
-- `src/temple_linter/linter.py` - Temple syntax + semantic linting integration
-- `src/temple_linter/services/lint_orchestrator.py` - pipeline coordinator
-- `tests/test_integration.py` - broad pipeline coverage
-- `tests/test_e2e_performance.py` - E2E and performance thresholds
+- [[lsp_server.py]] - LSP entry point and feature registration
+- [[lsp_features.py]] - completion/hover/definition/references/rename providers
+- [[linter.py]] - Temple syntax + semantic linting integration
+- [[lint_orchestrator.py]] - pipeline coordinator
+- [[test_integration.py]] - broad pipeline coverage
+- [[test_e2e_performance.py]] - E2E and performance thresholds
 
 Generated mini-tree (auto-synced):
 
-<!-- BEGIN:project-structure path=temple-linter depth=2 annotations=temple-linter/.structure-notes.yaml section=project -->
+<!-- BEGIN:project-structure path=temple-linter depth=1 annotations=temple-linter/.structure-notes.yaml section=project exclude=.* include=src/temple_linter/ -->
 ```text
 temple-linter/
-├── pyproject.toml                    # Package metadata and tooling configuration
-├── README.md                         # ⭐ You are here
+├── pyproject.toml      # Package metadata and tooling configuration
+├── README.md           # ⭐ You are here
 ├── requirements.txt
 ├── setup.py
-├── .vscode/
-│   └── settings.json
-├── docs/                             # Sphinx docs and developer guides
-│   ├── api.rst
-│   ├── conf.py
-│   ├── diagnostics_api.md
-│   ├── EXTENDING.md
-│   ├── index.rst
-│   └── _static/
-├── src/                              # Python package sources
-│   ├── __init__.py
-│   └── temple_linter/                # Linter and LSP implementation
-├── tests/                            # Test suites and fixtures
-│   ├── test_base_format_linter.py
-│   ├── test_base_linting_service.py
-│   ├── test_diagnostics.py
-│   ├── test_e2e_performance.py
-│   ├── test_integration.py
-│   ├── test_linter.py
-│   ├── test_lsp_entrypoint.py
-│   ├── test_lsp_features.py
-│   ├── test_lsp_mvp_smoke.py
-│   ├── test_lsp_transport_wiring.py
-│   ├── test_preprocessing.py
-│   ├── test_semantic_linter.py
-│   └── fixtures/
+├── uv.lock
+├── docs/               # Sphinx docs and developer guides
+├── src/                # Python package sources
+│   └── temple_linter/  # Linter and LSP implementation
+├── tests/              # Test suites and fixtures
 └── typings/
-    ├── temple/
-    └── temple_linter/
 ```
 <!-- END:project-structure -->
 
@@ -419,13 +395,13 @@ pip list | grep temple-linter
 
 **Check VS Code Output:**
 
-- View → Output → Select "Temple LSP" from dropdown
+- View → Output → Select "Temple Language Server" from dropdown
 - Look for startup messages or errors
 
 ### Diagnostics Not Appearing
 
 1. **Verify file extension**: Must match `temple.fileExtensions` setting
-2. **Check LSP connection**: Look for "Temple LSP" client in VS Code
+2. **Check LSP connection**: Look for "Temple Language Server" client in VS Code
 3. **Test with known-good template**: Use examples from `tests/fixtures/`
 
 ### Wrong Diagnostic Positions
