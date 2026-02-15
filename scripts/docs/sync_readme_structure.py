@@ -2,8 +2,8 @@
 """Synchronize auto-generated Markdown structure blocks.
 
 Markers format:
+  <!-- BEGIN:project-structure path=<relative-path> [depth=<int>] [include=<glob>] -->
   <!-- BEGIN:project-structure path=<relative-path> [depth=<int>] [exclude=<glob>] -->
-  <!-- BEGIN:project-structure path=<relative-path> [depth=<int>] [exlude=<glob>] -->
   <!-- BEGIN:project-structure path=<relative-path> [annotations=<relative-path>] -->
   <!-- BEGIN:project-structure path=<relative-path> [section=<name>] -->
   <!-- BEGIN:project-structure path=<relative-path> ... path=<relative-path> ... -->
@@ -47,6 +47,15 @@ BLOCK_RE = re.compile(
 
 IGNORE_FILES = (".gitignore", ".ignore")
 
+ALLOWED_KEYS = {
+    "path",
+    "depth",
+    "exclude",
+    "include",
+    "annotations",
+    "section",
+}
+
 
 @dataclass(frozen=True)
 class IgnoreRule:
@@ -67,7 +76,9 @@ class IgnoreRule:
             candidates = [name, rel_path]
 
         if self.is_glob:
-            return any(fnmatch.fnmatchcase(candidate, self.pattern) for candidate in candidates)
+            return any(
+                fnmatch.fnmatchcase(candidate, self.pattern) for candidate in candidates
+            )
 
         if self.anchored or self.has_slash:
             return rel_path == self.pattern or rel_path.startswith(f"{self.pattern}/")
@@ -85,6 +96,7 @@ class PathRenderSpec:
     path: str
     depth: int
     excludes: tuple[str, ...]
+    includes: tuple[str, ...]
     annotations: str | None
     section: str | None
 
@@ -174,13 +186,18 @@ def build_ignore_config(repo_root: Path) -> IgnoreConfig:
     )
 
 
-def should_exclude_path(rel_path: Path, is_dir: bool, ignore_config: IgnoreConfig) -> bool:
+def should_exclude_path(
+    rel_path: Path, is_dir: bool, ignore_config: IgnoreConfig
+) -> bool:
     rel_posix = rel_path.as_posix()
     if rel_posix.startswith("./"):
         rel_posix = rel_posix[2:]
     name = rel_path.name
 
-    if rel_posix in ignore_config.excluded_files or name in ignore_config.excluded_files:
+    if (
+        rel_posix in ignore_config.excluded_files
+        or name in ignore_config.excluded_files
+    ):
         return True
 
     excluded = False
@@ -196,24 +213,41 @@ def _parse_tokens(attr_text: str) -> list[tuple[str, str]]:
     pairs: list[tuple[str, str]] = []
     for token in shlex.split(attr_text.strip()):
         if "=" not in token:
-            continue
+            raise ValueError(f"invalid attribute token (expected key=value): {token}")
         key, value = token.split("=", 1)
         pairs.append((key.strip(), value.strip()))
     return pairs
 
 
+ParamSpec = dict[str, int | str | list[str] | None]
+
+
 def parse_render_specs(attr_text: str) -> list[PathRenderSpec]:
     default_depth = 2
     default_excludes: list[str] = []
+    default_includes: list[str] = []
     default_annotations: str | None = None
     default_section: str | None = None
-    raw_specs: list[dict[str, object]] = []
-    current: dict[str, object] | None = None
+    raw_specs: list[ParamSpec] = []
+    current: ParamSpec | None = None
 
     for key, value in _parse_tokens(attr_text):
         normalized_key = key.lower()
+        if normalized_key not in ALLOWED_KEYS:
+            allowed_text = ", ".join(sorted(ALLOWED_KEYS))
+            raise ValueError(
+                f"unrecognized attribute key: {key} (allowed: {allowed_text})"
+            )
         if normalized_key == "path":
-            current = {"path": value, "depth": None, "excludes": [], "section": None}
+            EMPTY_LIST: list[str] = []
+            current = {
+                "path": value,
+                "depth": None,
+                "excludes": EMPTY_LIST.copy(),
+                "includes": EMPTY_LIST.copy(),
+                "annotations": None,
+                "section": None,
+            }
             raw_specs.append(current)
             continue
 
@@ -229,13 +263,24 @@ def parse_render_specs(attr_text: str) -> list[PathRenderSpec]:
                 current["depth"] = parsed_depth
             continue
 
-        if normalized_key in {"exclude", "exlude"}:
+        if normalized_key == "exclude":
             if current is None:
                 default_excludes.append(value)
             else:
                 excludes = current["excludes"]
                 assert isinstance(excludes, list)
                 excludes.append(value)
+            continue
+
+        if normalized_key == "include":
+            if current is None:
+                default_includes.append(value)
+            else:
+                includes = current.get("includes")
+                if not isinstance(includes, list):
+                    includes = []
+                    current["includes"] = includes
+                includes.append(value)
             continue
 
         if normalized_key == "annotations":
@@ -263,7 +308,11 @@ def parse_render_specs(attr_text: str) -> list[PathRenderSpec]:
         raw_excludes = spec["excludes"]
         scoped_excludes = list(default_excludes)
         if isinstance(raw_excludes, list):
-            scoped_excludes.extend(str(pattern) for pattern in raw_excludes)
+            scoped_excludes.extend(pattern for pattern in raw_excludes)
+        raw_includes = spec.get("includes")
+        scoped_includes = list(default_includes)
+        if isinstance(raw_includes, list):
+            scoped_includes.extend(pattern for pattern in raw_includes)
 
         annotations_obj = spec.get("annotations")
         annotations = (
@@ -279,6 +328,7 @@ def parse_render_specs(attr_text: str) -> list[PathRenderSpec]:
                 path=path,
                 depth=depth,
                 excludes=tuple(scoped_excludes),
+                includes=tuple(scoped_includes),
                 annotations=annotations,
                 section=section,
             )
@@ -405,7 +455,9 @@ def _parse_yaml_annotations(content: str, path: str) -> AnnotationManifest:
                     raise ValueError(
                         f"invalid default note at {path}:{line_no}: note text is required"
                     )
-                sections.setdefault("default", {})[_normalize_annotation_key(key)] = _parse_yaml_scalar(value)
+                sections.setdefault("default", {})[_normalize_annotation_key(key)] = (
+                    _parse_yaml_scalar(value)
+                )
                 continue
 
             if active_root == "scopes":
@@ -435,7 +487,9 @@ def _parse_yaml_annotations(content: str, path: str) -> AnnotationManifest:
                 raise ValueError(
                     f"invalid scoped note at {path}:{line_no}: note text is required"
                 )
-            sections.setdefault(active_scope, {})[_normalize_annotation_key(key)] = _parse_yaml_scalar(value)
+            sections.setdefault(active_scope, {})[_normalize_annotation_key(key)] = (
+                _parse_yaml_scalar(value)
+            )
 
     return AnnotationManifest(sections=sections)
 
@@ -449,7 +503,9 @@ def _normalize_scope_token(value: str) -> str:
     return normalized
 
 
-def load_annotations_manifest(repo_root: Path, annotations_path: str | None) -> AnnotationManifest:
+def load_annotations_manifest(
+    repo_root: Path, annotations_path: str | None
+) -> AnnotationManifest:
     if not annotations_path:
         return AnnotationManifest(sections={})
 
@@ -543,7 +599,9 @@ def format_annotated_lines(items: list[tuple[str, str | None]]) -> list[str]:
     return formatted
 
 
-def should_exclude_ad_hoc(rel_path: Path, is_dir: bool, patterns: tuple[str, ...]) -> bool:
+def should_exclude_ad_hoc(
+    rel_path: Path, is_dir: bool, patterns: tuple[str, ...]
+) -> bool:
     rel_posix = rel_path.as_posix()
     name = rel_path.name
 
@@ -570,20 +628,95 @@ def should_exclude_ad_hoc(rel_path: Path, is_dir: bool, patterns: tuple[str, ...
     return False
 
 
+def should_include_ad_hoc(
+    rel_path: Path, is_dir: bool, patterns: tuple[str, ...]
+) -> bool:
+    rel_posix = rel_path.as_posix()
+    name = rel_path.name
+
+    for raw_pattern in patterns:
+        pattern = raw_pattern.strip()
+        if not pattern:
+            continue
+
+        dir_only = pattern.endswith("/")
+        normalized = pattern[:-1] if dir_only else pattern
+        anchored = normalized.startswith("/")
+        if anchored:
+            normalized = normalized.lstrip("/")
+        if not normalized:
+            continue
+        if dir_only and not is_dir:
+            continue
+
+        has_slash = "/" in normalized
+        candidates = [rel_posix] if (anchored or has_slash) else [name, rel_posix]
+        if any(fnmatch.fnmatchcase(candidate, normalized) for candidate in candidates):
+            return True
+
+    return False
+
+
+def _directory_has_included_descendant(
+    directory: Path,
+    root_path: Path,
+    include_patterns: tuple[str, ...],
+    max_depth: int | None = None,
+) -> bool:
+    if max_depth is not None and max_depth <= 0:
+        return False
+
+    try:
+        children = sorted(
+            directory.iterdir(), key=lambda p: (p.is_dir(), p.name.lower(), p.name)
+        )
+    except OSError:
+        return False
+
+    for child in children:
+        rel_child = child.relative_to(root_path)
+        if should_include_ad_hoc(rel_child, child.is_dir(), include_patterns):
+            return True
+        next_depth = None if max_depth is None else max_depth - 1
+        if child.is_dir() and _directory_has_included_descendant(
+            child,
+            root_path,
+            include_patterns,
+            next_depth,
+        ):
+            return True
+    return False
+
+
 def visible_children(
     path: Path,
     root_path: Path,
     repo_root: Path,
     ignore_config: IgnoreConfig,
     ad_hoc_excludes: tuple[str, ...],
+    ad_hoc_includes: tuple[str, ...],
 ) -> list[Path]:
-    children = []
+    children: list[Path] = []
     for child in path.iterdir():
         rel_child = child.relative_to(repo_root)
-        if should_exclude_path(rel_child, child.is_dir(), ignore_config):
-            continue
         rel_child_from_root = child.relative_to(root_path)
-        if should_exclude_ad_hoc(rel_child_from_root, child.is_dir(), ad_hoc_excludes):
+        force_include = should_include_ad_hoc(
+            rel_child_from_root, child.is_dir(), ad_hoc_includes
+        )
+        excluded_by_ignore = should_exclude_path(
+            rel_child, child.is_dir(), ignore_config
+        )
+        excluded_by_ad_hoc = should_exclude_ad_hoc(
+            rel_child_from_root, child.is_dir(), ad_hoc_excludes
+        )
+
+        if (excluded_by_ignore or excluded_by_ad_hoc) and not force_include:
+            if child.is_dir() and _directory_has_included_descendant(
+                child,
+                root_path,
+                ad_hoc_includes,
+            ):
+                children.append(child)
             continue
         children.append(child)
     return sorted(children, key=lambda p: (p.is_dir(), p.name.lower(), p.name))
@@ -596,11 +729,10 @@ def build_tree_lines(
     repo_root: Path,
     ignore_config: IgnoreConfig,
     ad_hoc_excludes: tuple[str, ...],
+    ad_hoc_includes: tuple[str, ...],
     annotations: dict[str, str],
 ) -> tuple[list[str], tuple[str, ...]]:
-    rows: list[tuple[str, str | None]] = [
-        (f"{label.rstrip('/')}/", None)
-    ]
+    rows: list[tuple[str, str | None]] = [(f"{label.rstrip('/')}/", None)]
     used_annotation_keys: set[str] = set()
     root_note, root_key = lookup_annotation(Path("."), True, annotations)
     rows[0] = (rows[0][0], root_note)
@@ -608,17 +740,38 @@ def build_tree_lines(
         used_annotation_keys.add(root_key)
 
     def walk(path: Path, prefix: str, current_depth: int) -> None:
-        if current_depth >= depth:
+        if current_depth >= depth and not _directory_has_included_descendant(
+            path,
+            root_path,
+            ad_hoc_includes,
+        ):
             return
 
         children = visible_children(
-            path, root_path, repo_root, ignore_config, ad_hoc_excludes
+            path,
+            root_path,
+            repo_root,
+            ignore_config,
+            ad_hoc_excludes,
+            ad_hoc_includes,
         )
         for idx, child in enumerate(children):
+            rel_child_from_root = child.relative_to(root_path)
+            child_is_included = should_include_ad_hoc(
+                rel_child_from_root, child.is_dir(), ad_hoc_includes
+            )
+            child_has_included_descendant = child.is_dir() and _directory_has_included_descendant(
+                child,
+                root_path,
+                ad_hoc_includes,
+            )
+            within_depth = current_depth < depth
+            if not within_depth and not child_is_included and not child_has_included_descendant:
+                continue
+
             is_last = idx == len(children) - 1
             connector = "└── " if is_last else "├── "
             name = f"{child.name}/" if child.is_dir() else child.name
-            rel_child_from_root = child.relative_to(root_path)
             note, note_key = lookup_annotation(
                 rel_child_from_root, child.is_dir(), annotations
             )
@@ -626,7 +779,9 @@ def build_tree_lines(
                 used_annotation_keys.add(note_key)
             rows.append((f"{prefix}{connector}{name}", note))
 
-            if child.is_dir():
+            if child.is_dir() and (
+                current_depth + 1 < depth or child_has_included_descendant
+            ):
                 child_prefix = prefix + ("    " if is_last else "│   ")
                 walk(child, child_prefix, current_depth + 1)
 
@@ -684,6 +839,7 @@ def render_block(
             repo_root,
             ignore_config,
             tuple(scoped_excludes),
+            spec.includes,
             resolved_notes,
         )
         lines.extend(rendered_lines)
@@ -789,7 +945,9 @@ def main() -> int:
     )
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--write", action="store_true", help="update files in place")
-    mode.add_argument("--check", action="store_true", help="fail if files are out of date")
+    mode.add_argument(
+        "--check", action="store_true", help="fail if files are out of date"
+    )
     parser.add_argument(
         "--failure-threshold",
         choices=("WARN", "ERROR"),
@@ -816,11 +974,15 @@ def main() -> int:
         )
         if not changed:
             if annotation_warnings:
-                warning_records.extend((markdown, warning) for warning in annotation_warnings)
+                warning_records.extend(
+                    (markdown, warning) for warning in annotation_warnings
+                )
             continue
 
         if annotation_warnings:
-            warning_records.extend((markdown, warning) for warning in annotation_warnings)
+            warning_records.extend(
+                (markdown, warning) for warning in annotation_warnings
+            )
 
         changed_paths.append(markdown)
         if args.write:
@@ -830,7 +992,10 @@ def main() -> int:
         print("ERROR: Markdown structure blocks are out of date:", file=sys.stderr)
         for path in changed_paths:
             print(f"  - {path.relative_to(repo_root)}", file=sys.stderr)
-        print("Run: python3 scripts/docs/sync_readme_structure.py --write", file=sys.stderr)
+        print(
+            "Run: python3 scripts/docs/sync_readme_structure.py --write",
+            file=sys.stderr,
+        )
 
     if warning_records:
         stream = sys.stderr if args.check else sys.stdout
