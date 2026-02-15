@@ -8,6 +8,7 @@ from typing import Any
 
 from lsprotocol.types import Diagnostic
 
+from temple.defaults import DEFAULT_TEMPLE_EXTENSIONS
 from temple_linter.base_format_linter import strip_temple_extension
 
 
@@ -48,7 +49,7 @@ class BaseLintingService:
             List of diagnostics from base format linters
         """
         if temple_extensions is None:
-            temple_extensions = [".tmpl", ".template"]
+            temple_extensions = list(DEFAULT_TEMPLE_EXTENSIONS)
 
         try:
             protocol = self._resolve_protocol(request_transport)

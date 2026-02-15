@@ -11,6 +11,7 @@ from collections.abc import Iterator
 from functools import lru_cache
 from typing import Literal
 
+from temple.defaults import DEFAULT_TEMPLATE_DELIMITERS
 from temple.whitespace_control import parse_token_trim_markers
 
 TokenType = Literal["text", "statement", "expression", "comment"]
@@ -51,11 +52,7 @@ class Token:
     ):
         self.raw_token = raw_token
         self.start = start
-        self.delimiters = delimiters or {
-            "statement": ("{%", "%}"),
-            "expression": ("{{", "}}"),
-            "comment": ("{#", "#}"),
-        }
+        self.delimiters = delimiters or DEFAULT_TEMPLATE_DELIMITERS
         (
             self.type,
             self.value,
@@ -123,11 +120,7 @@ def temple_tokenizer(
         Token objects representing text, statement, expression, or comment regions.
     """
     # Default delimiters (Jinja-like)
-    delims = delimiters or {
-        "statement": ("{%", "%}"),
-        "expression": ("{{", "}}"),
-        "comment": ("{#", "#}"),
-    }
+    delims = delimiters or DEFAULT_TEMPLATE_DELIMITERS
 
     # Convert delimiters dict to frozen tuple for caching
     delims_tuple = tuple(sorted((k, v[0], v[1]) for k, v in delims.items()))

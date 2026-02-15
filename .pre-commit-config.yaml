@@ -34,6 +34,13 @@ repos:
         types: [python]
         stages: [pre-commit]
 
+      - id: validate-generated-defaults
+        name: "validate: generated defaults are in sync"
+        entry: scripts/pre-commit/validate-generated-defaults.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: lint-js
         name: "lint: js/ts (ESLint)"
         entry: bash -c "cd vscode-temple-linter && npx eslint"

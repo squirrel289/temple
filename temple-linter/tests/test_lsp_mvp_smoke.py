@@ -23,6 +23,7 @@ from lsprotocol.types import (
     VersionedTextDocumentIdentifier,
 )
 
+from temple.defaults import DEFAULT_TEMPLATE_DELIMITERS, DEFAULT_TEMPLE_EXTENSIONS
 from temple_linter import lsp_server
 from temple_linter.lsp_server import TempleLinterServer
 
@@ -56,6 +57,17 @@ def _semantic_schema() -> dict:
                 },
             }
         },
+    }
+
+
+def test_lsp_server_exposes_runtime_defaults() -> None:
+    server = TempleLinterServer()
+    defaults = lsp_server.get_defaults(server)
+
+    assert defaults["templeExtensions"] == list(DEFAULT_TEMPLE_EXTENSIONS)
+    assert defaults["templateDelimiters"] == {
+        token_type: [start, end]
+        for token_type, (start, end) in DEFAULT_TEMPLATE_DELIMITERS.items()
     }
 
 
