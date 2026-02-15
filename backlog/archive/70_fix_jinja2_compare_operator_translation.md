@@ -9,7 +9,7 @@ estimated_hours: 4
 actual_hours: 2
 completed_date: 2026-02-13
 related_commit:
-  - eff9e6b
+  - eff9e6b  # fix(adapters): translate Jinja2 compare operators to Python syntax
 test_results: |
   All 6 regression tests pass (test_compare_operators_translate_to_python_syntax)
   All 4 parity tests pass (native vs Jinja2 adapter diagnostics)

@@ -9,7 +9,7 @@ estimated_hours: 4
 actual_hours: 2
 completed_date: 2026-02-13
 related_commit:
-  - 1acd1c7
+  - 1acd1c7  # fix(temple-linter): align lsp entrypoint and packaging
 test_results: "Local: ruff passes on updated entrypoint files; pytest temple-linter/tests/test_lsp_entrypoint.py (5 tests) passes."
 dependencies:
   - "[[archive/63_stabilize_uv_tooling_and_ci_commands.md]]"

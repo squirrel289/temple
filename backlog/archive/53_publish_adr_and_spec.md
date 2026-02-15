@@ -4,7 +4,7 @@ id: 53
 status: completed
 state_reason: success
 related_commit:
-  - 6d8c044
+  - 6d8c044  # docs(adr): clarify market role and adapter architecture (ADR-003); add adapter spec; archive backlog/48_jinja_integration.md
   - 0ea574c  # docs(release): publish ADR-003 and adapter spec notes
 test_results: "2026-02-13: docs-only validation; changelog + release-note draft added and linked to ADR-003/ADAPTER_SPEC."
 dependencies:

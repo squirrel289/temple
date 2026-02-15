@@ -12,7 +12,7 @@ related_backlog:
   - [[07_error_reporting.md]]
   - [[15_testing_and_validation.md]]
 related_commit:
-  - bbea26b # feat(renderer): add passthrough renderer with block validation
+  - bbea26b  # feat(renderer): add passthrough renderer with block validation
 ---
 # Implement Rendering Engine (Object Model Input → Output Format)
 

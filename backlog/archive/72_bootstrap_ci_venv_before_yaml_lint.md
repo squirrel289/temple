@@ -9,7 +9,7 @@ estimated_hours: 2
 actual_hours: 0.5
 completed_date: 2026-02-13
 related_commit:
-  - f7dad54
+  - f7dad54  # fix(ci): bootstrap CI venv in lint-yaml job before running yamllint
 test_results: |
   YAML validation: .github/workflows/static-analysis.yml passes yamllint
   Workflow structure verification: lint-yaml job properly configured with venv bootstrap

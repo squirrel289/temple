@@ -11,8 +11,8 @@ related_commit:
   - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
   - a397997  # fix(asv): fallback example path for benchmark template loading; add smoke tests (backlog #46)
   - a38d007  # feat(temple-linter): add native LSP providers and perf checks
-  - 8bb34ef  # feat(vscode): harden LSP init contract and packaging checks
   - 3f17a66  # ci(workflows): add vscode package validation to static analysis
+  - 8bb34ef  # feat(vscode): harden LSP init contract and packaging checks
 test_results: "Local: uv run --with pytest --with-editable ./temple --with-editable ./temple-linter python -m pytest temple-linter/tests/test_e2e_performance.py temple-linter/tests/test_lsp_mvp_smoke.py -q passes; static analysis now validates VS Code package checks via CI + pre-push parity."
 dependencies:
   - [[42_integrate_temple_core_dependency.md]] ⏳

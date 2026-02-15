@@ -3,9 +3,9 @@ title: Integration & End-to-End Tests
 id: 38
 status: complete
 related_commit:
-	- 506f463  # test: add integration coverage for json/html/yaml
-	- 77d875c  # test: add markdown integration pipeline
-	- 06366df  # test: reorganize compiler tests (ADR-002 Phase 3 - integration tests preserved)
+  - 77d875c  # test: add markdown integration pipeline
+  - 506f463  # test: add integration coverage for json/html/yaml
+  - 06366df  # test: reorganize compiler tests into functional groupings (ADR-002 Phase 3)
 dependencies:
 	- "[[19_unified_token_model.md]]"
 	- "[[37_typed_dsl_serializers.md]]"
