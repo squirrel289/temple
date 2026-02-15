@@ -2,9 +2,9 @@
 Advanced tests for lark_parser with error handling (ported from compiler tests).
 """
 
-from temple.lark_parser import parse_template, parse_with_diagnostics
-from temple.typed_ast import Text, Expression, If, For, Include, Block
 from temple.diagnostics import DiagnosticSeverity
+from temple.lark_parser import parse_template, parse_with_diagnostics
+from temple.typed_ast import Block, Expression, For, If, Include, Text
 
 
 class TestParseTemplate:
@@ -50,6 +50,17 @@ class TestParseTemplate:
         assert len(if_node.else_if_parts) == 1
         assert if_node.else_if_parts[0][0] == "y"  # else if condition
         assert if_node.else_body is not None
+
+    def test_parse_if_else_if_allows_flexible_whitespace(self):
+        """Parse else-if with tabs/multiple spaces between `else` and `if`."""
+        template = "{% if x %}a{% else\t  if y %}b{% end %}"
+        ast = parse_template(template)
+        assert isinstance(ast, Block)
+        assert len(ast.nodes) == 1
+        if_node = ast.nodes[0]
+        assert isinstance(if_node, If)
+        assert len(if_node.else_if_parts) == 1
+        assert if_node.else_if_parts[0][0] == "y"
 
     def test_parse_for_loop(self):
         """Parse {% for %} ... {% end %}."""

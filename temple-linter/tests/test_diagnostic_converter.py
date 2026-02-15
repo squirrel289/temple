@@ -44,6 +44,7 @@ def test_humanizes_internal_expected_token_names() -> None:
     assert "ELSE_IF_TAG" not in converted.message
     assert "`{% end %}`" in converted.message
     assert "`{% else %}`" in converted.message
+    assert "`{% elif ... %}`" in converted.message
 
 
 def test_humanizes_unexpected_fragment_with_newline() -> None:
