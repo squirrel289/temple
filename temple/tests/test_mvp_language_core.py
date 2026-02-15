@@ -67,3 +67,10 @@ def test_filter_pipeline_supports_map_and_join() -> None:
     rendered = _render(template, {"users": [{"name": "Ada"}, {"name": "Grace"}]})
 
     assert rendered == "Ada, Grace"
+
+
+def test_parser_supports_trim_delimiters_in_control_and_expression() -> None:
+    template = "{%- if user.active -%}{{- user.name -}}{%- end -%}"
+    rendered = _render(template, {"user": {"active": True, "name": "Ada"}})
+
+    assert rendered == "Ada"

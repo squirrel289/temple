@@ -328,6 +328,27 @@ line 3"""
         assert lines[1] == "- lorem"
         assert lines[2] == ""
 
+    def test_clean_honors_expression_trim_markers(self):
+        service = TokenCleaningService()
+        template = "alpha {{- user.name -}} beta"
+
+        cleaned, _ = service.clean_text_and_tokens(template)
+        assert cleaned == "alphabeta"
+
+    def test_clean_honors_statement_trim_markers(self):
+        service = TokenCleaningService()
+        template = "start \n{%- if cond %}middle{% end -%}\n finish"
+
+        cleaned, _ = service.clean_text_and_tokens(template)
+        assert cleaned == "startmiddlefinish"
+
+    def test_clean_honors_tilde_trim_markers(self):
+        service = TokenCleaningService()
+        template = "left {{~ user.name ~}} right"
+
+        cleaned, _ = service.clean_text_and_tokens(template)
+        assert cleaned == "leftright"
+
 
 class TestFormatDetection:
     """Test format detection with various inputs."""
