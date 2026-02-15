@@ -9,17 +9,18 @@ and content heuristics; the registry selects the highest-confidence format.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Protocol
 
-from temple_linter.template_preprocessing import strip_template_tokens
+from temple.defaults import DEFAULT_TEMPLE_EXTENSIONS
+from temple_linter.services.token_cleaning_service import TokenCleaningService
 
 MIN_CONFIDENCE = 0.2  # below this threshold we use VS Code auto-detection
 VSCODE_PASSTHROUGH = "vscode-auto"  # sentinel for VS Code auto-detection
 
 
 def strip_temple_extension(
-    filename: Optional[str], extensions: List[str] = None
-) -> Optional[str]:
+    filename: str | None, extensions: list[str] = None
+) -> str | None:
     """Strip temple suffix from filename, preserving base extension for VS Code detection.
 
     Args:
@@ -41,7 +42,7 @@ def strip_temple_extension(
         return filename
 
     if extensions is None:
-        extensions = [".tmpl", ".template"]
+        extensions = list(DEFAULT_TEMPLE_EXTENSIONS)
 
     # Strip any matching temple extension (case-insensitive)
     base = filename
@@ -56,7 +57,7 @@ def strip_temple_extension(
 class FormatDetector(Protocol):
     """Protocol for pluggable format detectors."""
 
-    def matches(self, filename: Optional[str], content: str) -> float:
+    def matches(self, filename: str | None, content: str) -> float:
         """Return confidence score in [0.0, 1.0] for this format."""
 
     def format_name(self) -> str:
@@ -73,14 +74,14 @@ class FormatDetectorRegistry:
     """Registry that resolves file formats via pluggable detectors."""
 
     def __init__(self) -> None:
-        self._detectors: List[RegisteredDetector] = []
+        self._detectors: list[RegisteredDetector] = []
 
     def register(self, detector: FormatDetector, priority: int = 0) -> None:
         self._detectors.append(RegisteredDetector(priority, detector))
         # Sort descending priority to evaluate higher-priority detectors first
         self._detectors.sort(key=lambda d: d.priority, reverse=True)
 
-    def detect(self, filename: Optional[str], content: str) -> str:
+    def detect(self, filename: str | None, content: str) -> str:
         best_format = VSCODE_PASSTHROUGH
         best_score = MIN_CONFIDENCE
         for entry in self._detectors:
@@ -91,7 +92,7 @@ class FormatDetectorRegistry:
         return best_format
 
 
-def _has_extension(filename: Optional[str], extensions: List[str]) -> bool:
+def _has_extension(filename: str | None, extensions: list[str]) -> bool:
     if not filename:
         return False
     lower = filename.lower()
@@ -102,7 +103,7 @@ class _JsonDetector:
     def format_name(self) -> str:
         return "json"
 
-    def matches(self, filename: Optional[str], content: str) -> float:
+    def matches(self, filename: str | None, content: str) -> float:
         if _has_extension(filename, [".json", ".json.tmpl", ".json.template"]):
             return 1.0
         sample = content.lstrip()[:200].lower()
@@ -115,7 +116,7 @@ class _YamlDetector:
     def format_name(self) -> str:
         return "yaml"
 
-    def matches(self, filename: Optional[str], content: str) -> float:
+    def matches(self, filename: str | None, content: str) -> float:
         if _has_extension(
             filename,
             [
@@ -140,7 +141,7 @@ class _HtmlDetector:
     def format_name(self) -> str:
         return "html"
 
-    def matches(self, filename: Optional[str], content: str) -> float:
+    def matches(self, filename: str | None, content: str) -> float:
         if _has_extension(
             filename,
             [
@@ -165,7 +166,7 @@ class _TomlDetector:
     def format_name(self) -> str:
         return "toml"
 
-    def matches(self, filename: Optional[str], content: str) -> float:
+    def matches(self, filename: str | None, content: str) -> float:
         if _has_extension(filename, [".toml", ".toml.tmpl", ".toml.template"]):
             return 1.0
         sample = content.lstrip()[:400].lower()
@@ -180,7 +181,7 @@ class _XmlDetector:
     def format_name(self) -> str:
         return "xml"
 
-    def matches(self, filename: Optional[str], content: str) -> float:
+    def matches(self, filename: str | None, content: str) -> float:
         if _has_extension(filename, [".xml", ".xml.tmpl", ".xml.template"]):
             return 1.0
         sample = content.lstrip()[:400].lower()
@@ -195,7 +196,7 @@ class _MarkdownDetector:
     def format_name(self) -> str:
         return "md"
 
-    def matches(self, filename: Optional[str], content: str) -> float:
+    def matches(self, filename: str | None, content: str) -> float:
         if _has_extension(
             filename,
             [
@@ -219,9 +220,10 @@ class _MarkdownDetector:
 class BaseFormatLinter:
     """Integrates format detection with base format linting."""
 
-    def __init__(self, delimiters: Optional[Dict[str, tuple]] = None):
+    def __init__(self, delimiters: dict[str, tuple] | None = None):
         self.delimiters = delimiters
         self.registry = self._build_default_registry()
+        self._token_cleaner = TokenCleaningService()
 
     def _build_default_registry(self) -> FormatDetectorRegistry:
         registry = FormatDetectorRegistry()
@@ -233,20 +235,23 @@ class BaseFormatLinter:
         registry.register(_MarkdownDetector(), priority=50)
         return registry
 
-    def detect_base_format(self, filename: Optional[str], text: str) -> str:
+    def detect_base_format(self, filename: str | None, text: str) -> str:
         """Detect the base format using registered detectors with confidence scoring."""
         return self.registry.detect(filename, text)
 
     def lint_base_format(
-        self, text: str, filename: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, text: str, filename: str | None = None
+    ) -> list[dict[str, Any]]:
         """
         Lint the base format of a templated file by stripping template tokens first.
         Returns diagnostics from the base linter (placeholder).
         """
-        base_text = strip_template_tokens(text, self.delimiters)
+        base_text, _ = self._token_cleaner.clean_text_and_tokens(
+            text,
+            delimiters=self.delimiters,
+        )
         base_format = self.detect_base_format(filename, base_text)
-        diagnostics: List[Dict[str, Any]] = []
+        diagnostics: list[dict[str, Any]] = []
         diagnostics.append(
             {
                 "base_format": base_format,
