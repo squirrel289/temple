@@ -1,15 +1,16 @@
 ---
 title: "Align LSP feature span detection with trim-aware core scanning"
 id: 81
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: medium
 estimated_hours: 8
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 2.5
+completed_date: 2026-02-15
+related_commit:
+  - 40e4dbb  # refactor(lsp): align feature spans with core metadata
+test_results: "Local: .ci-venv/bin/python -m pytest temple-linter/tests/test_lsp_features.py"
 dependencies:
   - "[[79_audit_cross_layer_dry_and_grammar_anchoring.md]]"
   - "[[78_add_author_controlled_whitespace_trim_tokens.md]]"
@@ -20,6 +21,8 @@ related_spike:
 notes: |
   Finding: lsp_features relies on delimiter regexes that are not trim-marker
   aware and can diverge from grammar behavior.
+  Completed in commit 40e4dbb by replacing feature scanning with core
+  template metadata/unclosed-span utilities and adding trim-aware coverage.
 ---
 
 ## Goal
@@ -45,6 +48,6 @@ Make LSP feature span detection use shared core scanning/token utilities so comp
 
 ## Acceptance Criteria
 
-- [ ] LSP feature logic no longer depends on trim-unaware raw delimiter regexes.
-- [ ] Features behave consistently for `{%- ... -%}` and `{{~ ... ~}}`.
-- [ ] Existing LSP feature tests pass with new coverage added.
+- [x] LSP feature logic no longer depends on trim-unaware raw delimiter regexes.
+- [x] Features behave consistently for `{%- ... -%}` and `{{~ ... ~}}`.
+- [x] Existing LSP feature tests pass with new coverage added.

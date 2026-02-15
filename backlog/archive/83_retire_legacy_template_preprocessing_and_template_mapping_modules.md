@@ -1,15 +1,16 @@
 ---
 title: "Retire legacy template_preprocessing and template_mapping modules"
 id: 83
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: medium
 complexity: medium
 estimated_hours: 6
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 2
+completed_date: 2026-02-15
+related_commit:
+  - 001003c  # refactor(linter): retire legacy preprocessing and mapping modules
+test_results: "Local: .ci-venv/bin/python -m pytest temple-linter/tests/test_base_format_linter.py temple-linter/tests/test_integration.py"
 dependencies:
   - "[[79_audit_cross_layer_dry_and_grammar_anchoring.md]]"
 related_backlog:
@@ -19,6 +20,8 @@ related_spike:
 notes: |
   Finding: legacy preprocessing/mapping modules duplicate current behavior and
   are trim-semantic drift risk.
+  Completed in commit 001003c by removing legacy modules/tests and routing
+  remaining base cleaning through the services-based pipeline.
 ---
 
 ## Goal
@@ -44,6 +47,6 @@ Remove or clearly isolate and add deprecation warnings to legacy preprocessing/m
 
 ## Acceptance Criteria
 
-- [ ] No production path depends on legacy preprocessing/mapping modules.
-- [ ] Duplicate regex cleaning/mapping logic is removed or explicitly deprecated.
-- [ ] Tests validate consolidated pathway end-to-end.
+- [x] No production path depends on legacy preprocessing/mapping modules.
+- [x] Duplicate regex cleaning/mapping logic is removed or explicitly deprecated.
+- [x] Tests validate consolidated pathway end-to-end.
