@@ -28,7 +28,7 @@ The next implementation chain for base-language linting reliability/performance:
 - `archive/74_implement_base_lint_strategy_resolver_and_capability_registry.md` (completed, critical, depends on 73)
 - `archive/75_implement_collocated_mirror_ghost_files_and_diagnostic_remap.md` (completed, high, depends on 74)
 - `archive/76_generalize_focus_mode_and_diagnostic_hygiene_across_base_types.md` (completed, high, depends on 74/75)
-- `77_add_base_lint_queueing_adaptive_debounce_and_observability.md` (critical, depends on 74/75)
+- `archive/77_add_base_lint_queueing_adaptive_debounce_and_observability.md` (completed, critical, depends on 74/75)
 - `78_add_author_controlled_whitespace_trim_tokens.md` (high, depends on 76/77)
 
 ### Active Work Items (Production MVP)

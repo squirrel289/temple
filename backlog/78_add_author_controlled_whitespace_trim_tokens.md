@@ -12,7 +12,7 @@ related_commit: []
 test_results: null
 dependencies:
   - "[[archive/76_generalize_focus_mode_and_diagnostic_hygiene_across_base_types.md]]"
-  - "[[77_add_base_lint_queueing_adaptive_debounce_and_observability.md]]"
+  - "[[archive/77_add_base_lint_queueing_adaptive_debounce_and_observability.md]]"
 related_backlog:
   - "archive/26_control_flow_rendering.md"
   - "archive/65_complete_temple_native_language_core.md"
