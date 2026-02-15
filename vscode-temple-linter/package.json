@@ -177,9 +177,11 @@
     }
   },
   "scripts": {
+    "generate:defaults": "node ./scripts/generate-defaults.js",
+    "check:defaults": "node ./scripts/generate-defaults.js --check",
     "generate:syntaxes": "node ./scripts/generate-syntaxes.js",
     "vscode:prepublish": "npm run compile",
-    "compile": "npm run generate:syntaxes && tsc -p .",
+    "compile": "npm run generate:defaults && npm run generate:syntaxes && tsc -p .",
     "watch": "tsc -watch -p .",
     "lint": "eslint --ext .ts src",
     "package:check": "vsce ls",

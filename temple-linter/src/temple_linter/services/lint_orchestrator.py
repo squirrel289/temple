@@ -9,6 +9,7 @@ from typing import Any
 from lsprotocol.types import Diagnostic
 from pygls.lsp.client import LanguageClient
 
+from temple.defaults import DEFAULT_TEMPLE_EXTENSIONS
 from temple.diagnostics import DiagnosticCollector
 
 from ..base_format_linter import BaseFormatLinter
@@ -68,7 +69,7 @@ class LintOrchestrator:
             Combined list of template and base format diagnostics
         """
         if temple_extensions is None:
-            temple_extensions = [".tmpl", ".template"]
+            temple_extensions = list(DEFAULT_TEMPLE_EXTENSIONS)
 
         # 1. Template linting
         # Create a node collector to capture per-node diagnostics during parsing

@@ -4,6 +4,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { DEFAULT_TEMPLE_EXTENSIONS } from './defaults';
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -16,7 +17,7 @@ import {
 
 const VIRTUAL_SCHEME = 'temple-cleaned';
 const EXTENSION_NAME = 'Temple Language Server';
-const DEFAULT_TEMPLE_EXTENSIONS = ['.tmpl', '.template'];
+const TEMPLE_GET_DEFAULTS_METHOD = 'temple/getDefaults';
 const MIRROR_GHOST_DIRNAME = '.temple-base-lint';
 const cleanedContentMap = new Map<string, string>();
 const cleanedContentVersionMap = new Map<string, number>();
@@ -40,6 +41,10 @@ type CreateVirtualDocumentParams = {
 type PublishNodeDiagnosticsParams = {
   uri: string;
   diagnostics: LspDiagnostic[];
+};
+
+type TempleDefaultsResponse = {
+  templeExtensions?: string[];
 };
 
 type JsonObject = Record<string, unknown>;
@@ -132,6 +137,75 @@ function normalizeTempleExtension(extension: string): string {
     return '';
   }
   return trimmed.startsWith('.') ? trimmed : `.${trimmed}`;
+}
+
+function hasUserConfiguredTempleExtensions(
+  templeConfig: vscode.WorkspaceConfiguration
+): boolean {
+  const inspection = templeConfig.inspect<string[]>('fileExtensions');
+  return (
+    inspection?.workspaceFolderValue !== undefined ||
+    inspection?.workspaceValue !== undefined ||
+    inspection?.globalValue !== undefined
+  );
+}
+
+function normalizeTempleExtensionsList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return dedupe(
+    value
+      .filter((entry): entry is string => typeof entry === 'string')
+      .map((entry) => normalizeTempleExtension(entry))
+      .filter(Boolean)
+  );
+}
+
+function isTempleDefaultsResponse(value: unknown): value is TempleDefaultsResponse {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const maybe = value as { templeExtensions?: unknown };
+  return (
+    maybe.templeExtensions === undefined ||
+    (Array.isArray(maybe.templeExtensions) &&
+      maybe.templeExtensions.every((entry) => typeof entry === 'string'))
+  );
+}
+
+function sameStringArray(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  return left.every((value, index) => value === right[index]);
+}
+
+async function resolveServerDefaultTempleExtensions(
+  languageClient: LanguageClient,
+  fallbackExtensions: string[],
+  outputChannel: vscode.OutputChannel
+): Promise<string[]> {
+  try {
+    const response = await languageClient.sendRequest(TEMPLE_GET_DEFAULTS_METHOD);
+    if (!isTempleDefaultsResponse(response)) {
+      outputChannel.appendLine(
+        `[${EXTENSION_NAME}] '${TEMPLE_GET_DEFAULTS_METHOD}' returned invalid payload; using local defaults.`
+      );
+      return fallbackExtensions;
+    }
+
+    const normalized = normalizeTempleExtensionsList(response.templeExtensions);
+    if (normalized.length === 0) {
+      return fallbackExtensions;
+    }
+    return normalized;
+  } catch (error) {
+    outputChannel.appendLine(
+      `[${EXTENSION_NAME}] Failed to resolve defaults from language server: ${String(error)}`
+    );
+    return fallbackExtensions;
+  }
 }
 
 function buildDocumentSelector(
@@ -726,7 +800,6 @@ async function collectDiagnosticsForVirtualUri(
   await new Promise<void>((resolve) => {
     let settled = false;
     let settleTimer: NodeJS.Timeout | undefined;
-    let timeoutTimer: NodeJS.Timeout | undefined;
 
     const finish = () => {
       if (settled) {
@@ -736,9 +809,7 @@ async function collectDiagnosticsForVirtualUri(
       if (settleTimer) {
         clearTimeout(settleTimer);
       }
-      if (timeoutTimer) {
-        clearTimeout(timeoutTimer);
-      }
+      clearTimeout(timeoutTimer);
       diagnosticsSub.dispose();
       resolve();
     };
@@ -757,7 +828,7 @@ async function collectDiagnosticsForVirtualUri(
       settleTimer = setTimeout(finish, 25);
     });
 
-    timeoutTimer = setTimeout(finish, 350);
+    const timeoutTimer = setTimeout(finish, 350);
   });
 
   if ((cleanedContentVersionMap.get(uriKey) ?? 0) !== expectedVersion) {
@@ -963,6 +1034,8 @@ export async function activate(
   context.subscriptions.push(providerDisposable);
 
   const templeConfig = vscode.workspace.getConfiguration('temple');
+  const userConfiguredTempleExtensions =
+    hasUserConfiguredTempleExtensions(templeConfig);
   const templeExtensions = templeConfig.get<string[]>(
     'fileExtensions',
     DEFAULT_TEMPLE_EXTENSIONS
@@ -970,6 +1043,7 @@ export async function activate(
   const normalizedTempleExtensions = dedupe(
     templeExtensions.map((ext) => normalizeTempleExtension(ext)).filter(Boolean)
   );
+  let effectiveTempleExtensions = [...normalizedTempleExtensions];
   const semanticContext = normalizeSemanticContext(
     asJsonObject(templeConfig.get<unknown>('semanticContext'))
   );
@@ -1027,7 +1101,7 @@ export async function activate(
     ? loadSemanticSchema(semanticSchemaPath)
     : undefined;
 
-  const fileWatchers = normalizedTempleExtensions.map((extension) =>
+  const fileWatchers = effectiveTempleExtensions.map((extension) =>
     vscode.workspace.createFileSystemWatcher(`**/*${extension}`)
   );
   context.subscriptions.push(...fileWatchers);
@@ -1035,7 +1109,7 @@ export async function activate(
   for (const doc of vscode.workspace.textDocuments) {
     void ensurePreferredTemplateLanguage(
       doc,
-      normalizedTempleExtensions,
+      effectiveTempleExtensions,
       outputChannel
     );
   }
@@ -1044,11 +1118,11 @@ export async function activate(
     vscode.workspace.onDidOpenTextDocument((doc) => {
       void ensurePreferredTemplateLanguage(
         doc,
-        normalizedTempleExtensions,
+        effectiveTempleExtensions,
         outputChannel
       );
       if (
-        isTempleTemplateDocument(doc, normalizedTempleExtensions) &&
+        isTempleTemplateDocument(doc, effectiveTempleExtensions) &&
         doc.languageId !== 'templated-any'
       ) {
         outputChannel.appendLine(
@@ -1075,11 +1149,13 @@ export async function activate(
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: buildDocumentSelector(normalizedTempleExtensions),
+    documentSelector: buildDocumentSelector(effectiveTempleExtensions),
     synchronize: { fileEvents: fileWatchers },
     outputChannel,
     initializationOptions: {
-      templeExtensions: normalizedTempleExtensions,
+      ...(userConfiguredTempleExtensions
+        ? { templeExtensions: effectiveTempleExtensions }
+        : {}),
       semanticContext: semanticContext ?? null,
       semanticSchema,
       semanticSchemaPath,
@@ -1103,6 +1179,26 @@ export async function activate(
   try {
     await client.start();
     outputChannel.appendLine(`[${EXTENSION_NAME}] Language server started`);
+    if (!userConfiguredTempleExtensions) {
+      const serverDefaultTempleExtensions = await resolveServerDefaultTempleExtensions(
+        client,
+        effectiveTempleExtensions,
+        outputChannel
+      );
+      if (!sameStringArray(serverDefaultTempleExtensions, effectiveTempleExtensions)) {
+        effectiveTempleExtensions = serverDefaultTempleExtensions;
+        outputChannel.appendLine(
+          `[${EXTENSION_NAME}] Using temple extensions from language server defaults: ${effectiveTempleExtensions.join(', ')}`
+        );
+        for (const doc of vscode.workspace.textDocuments) {
+          void ensurePreferredTemplateLanguage(
+            doc,
+            effectiveTempleExtensions,
+            outputChannel
+          );
+        }
+      }
+    }
   } catch (error) {
     outputChannel.appendLine(
       `[${EXTENSION_NAME}] Failed to start language server: ${String(error)}`

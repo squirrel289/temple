@@ -42,6 +42,7 @@ from lsprotocol.types import (
 from pygls.lsp.server import LanguageServer
 
 from temple.compiler.schema import SchemaParser
+from temple.defaults import DEFAULT_TEMPLATE_DELIMITERS, DEFAULT_TEMPLE_EXTENSIONS
 
 from .lsp_features import (
     TemplateCompletionProvider,
@@ -59,7 +60,7 @@ class TempleLinterServer(LanguageServer):
     def __init__(self) -> None:
         super().__init__("temple-linter", "v1")
         self.logger = logging.getLogger(__name__)
-        self.temple_extensions = [".tmpl", ".template"]  # defaults
+        self.temple_extensions = list(DEFAULT_TEMPLE_EXTENSIONS)
         self.semantic_context: dict[str, Any] | None = None
         self.semantic_schema = None
         self.semantic_schema_raw: dict[str, Any] | None = None
@@ -75,6 +76,7 @@ class TempleLinterServer(LanguageServer):
 
 
 ls = TempleLinterServer()
+TEMPLE_GET_DEFAULTS_METHOD = "temple/getDefaults"
 
 
 @ls.feature(INITIALIZE)
@@ -126,9 +128,20 @@ def on_initialize(ls: TempleLinterServer, params: InitializeParams):
             definition_provider=True,
             references_provider=True,
             rename_provider=RenameOptions(prepare_provider=True),
-            experimental={"temple/baseLint": True},
+            experimental={"temple/baseLint": True, "temple/getDefaults": True},
         )
     )
+
+
+@ls.feature(TEMPLE_GET_DEFAULTS_METHOD)
+def get_defaults(_ls: TempleLinterServer, *_args):
+    return {
+        "templeExtensions": list(DEFAULT_TEMPLE_EXTENSIONS),
+        "templateDelimiters": {
+            token_type: [start, end]
+            for token_type, (start, end) in DEFAULT_TEMPLATE_DELIMITERS.items()
+        },
+    }
 
 
 @ls.feature(TEXT_DOCUMENT_DID_OPEN)

@@ -106,6 +106,8 @@ jobs:
           node-version: '20'
           working-directory: vscode-temple-linter
           cache-dependency-path: vscode-temple-linter/package-lock.json
+      - name: Validate generated defaults are in sync
+        run: ./scripts/pre-commit/validate-generated-defaults.sh
       - name: Lint JavaScript/TypeScript (ESLint)
         run: ./scripts/pre-commit/lint-js.sh
 

@@ -11,7 +11,7 @@ class _FakeRequest:
     def __init__(self, payload):
         self._payload = payload
 
-    def result(self):
+    def result(self, timeout=None):
         return self._payload
 
 

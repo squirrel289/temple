@@ -1,4 +1,5 @@
 # Temple package initialization
+from temple.defaults import DEFAULT_TEMPLATE_DELIMITERS, DEFAULT_TEMPLE_EXTENSIONS
 from temple.diagnostics import (
     Diagnostic,
     DiagnosticCollector,
@@ -40,4 +41,6 @@ __all__ = [
     "DiagnosticCollector",
     "Position",
     "SourceRange",
+    "DEFAULT_TEMPLATE_DELIMITERS",
+    "DEFAULT_TEMPLE_EXTENSIONS",
 ]
