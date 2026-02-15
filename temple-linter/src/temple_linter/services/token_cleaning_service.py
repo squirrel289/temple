@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import re
-
-from temple.template_tokenizer import Token, temple_tokenizer
+from temple.template_spans import TemplateLineMetadata, build_template_metadata
+from temple.template_tokenizer import Token
 from temple.whitespace_control import apply_left_trim, trim_leading_whitespace
 
-_INLINE_TEMPLATE_TOKEN_RE = re.compile(r"\{#.*?#\}|\{%.*?%\}|\{\{.*?\}\}")
-_ATX_MULTI_SPACE_RE = re.compile(r"^(#{1,6})\s{2,}")
+from .base_cleaning_contract import BaseCleaningContract
+from .base_cleaning_policies import apply_markdown_policy
 
 
 class TokenCleaningService:
@@ -25,6 +24,7 @@ class TokenCleaningService:
         self,
         text: str,
         format_hint: str | None = None,
+        delimiters: dict[str, tuple[str, str]] | None = None,
     ) -> tuple[str, list[Token]]:
         """
         Strip template tokens and return cleaned text with position tracking.
@@ -37,10 +37,25 @@ class TokenCleaningService:
             - cleaned_text: Content with all DSL tokens removed
             - text_tokens: List of text Token objects for position mapping
         """
+        contract = self.clean_for_base_lint(text, format_hint, delimiters)
+        return contract.cleaned_text, []
+
+    def clean_for_base_lint(
+        self,
+        text: str,
+        format_hint: str | None = None,
+        delimiters: dict[str, tuple[str, str]] | None = None,
+    ) -> BaseCleaningContract:
+        """Produce canonical base-cleaning contract for adapter-specific policies."""
+        token_spans, line_metadata = build_template_metadata(
+            text,
+            delimiters=delimiters,
+        )
+
         cleaned_chars: list[str] = []
         trim_next_text_left = False
-
-        for token in temple_tokenizer(text):
+        for token_span in token_spans:
+            token = token_span.token
             if token.type == "text":
                 text_value = token.value
                 if trim_next_text_left:
@@ -65,72 +80,27 @@ class TokenCleaningService:
             if token.trim_right:
                 trim_next_text_left = True
 
-        cleaned_text = self._normalize_template_only_lines(text, "".join(cleaned_chars))
+        cleaned_text = self._normalize_template_only_lines(
+            "".join(cleaned_chars),
+            line_metadata,
+        )
+        contract = BaseCleaningContract(
+            original_text=text,
+            cleaned_text=cleaned_text,
+            token_spans=tuple(token_spans),
+            line_metadata=tuple(line_metadata),
+        )
+
         normalized_hint = (format_hint or "").strip().lower()
         if normalized_hint in {"md", "markdown"}:
-            cleaned_text = self._apply_markdown_semantic_cleanup(text, cleaned_text)
-        return cleaned_text, []
+            contract = apply_markdown_policy(contract)
+        return contract
 
     @staticmethod
-    def _apply_markdown_semantic_cleanup(
-        original_text: str,
-        precleaned_text: str,
+    def _normalize_template_only_lines(
+        cleaned_text: str,
+        line_metadata: list[TemplateLineMetadata],
     ) -> str:
-        """Apply markdown-specific cleanup after generic token masking.
-
-        Rules:
-        - Keep generic template-only-line normalization as the base behavior.
-        - Replace expression tags with placeholder words on mixed-content lines.
-        - Remove statement/comment tags on mixed-content lines.
-        - Normalize heading spacing to avoid MD019 false positives.
-        """
-        original_lines = original_text.splitlines(keepends=True)
-        precleaned_lines = precleaned_text.splitlines(keepends=True)
-        if len(original_lines) != len(precleaned_lines):
-            return precleaned_text
-
-        output_lines: list[str] = []
-        for original_line, masked_line in zip(original_lines, precleaned_lines):
-            line_ending = ""
-            core = original_line
-            if core.endswith("\r\n"):
-                core = core[:-2]
-                line_ending = "\r\n"
-            elif core.endswith("\n"):
-                core = core[:-1]
-                line_ending = "\n"
-            elif core.endswith("\r"):
-                core = core[:-1]
-                line_ending = "\r"
-
-            had_template_tag = any(tag in core for tag in ("{{", "{%", "{#"))
-            if not had_template_tag:
-                output_lines.append(masked_line)
-                continue
-
-            if masked_line.strip() == "":
-                output_lines.append(masked_line)
-                continue
-
-            def _replace_tag(match: re.Match[str]) -> str:
-                token = match.group(0)
-                if token.startswith("{{"):
-                    return " lorem "
-                return ""
-
-            cleaned = _INLINE_TEMPLATE_TOKEN_RE.sub(_replace_tag, core)
-            cleaned = re.sub(r"[ \t]{2,}", " ", cleaned).rstrip()
-            cleaned = _ATX_MULTI_SPACE_RE.sub(r"\1 ", cleaned)
-
-            if cleaned.strip() == "":
-                output_lines.append(line_ending)
-            else:
-                output_lines.append(cleaned + line_ending)
-
-        return "".join(output_lines)
-
-    @staticmethod
-    def _normalize_template_only_lines(original_text: str, cleaned_text: str) -> str:
         """Convert template-only lines to truly blank lines for base linters.
 
         Masking keeps offsets useful for mixed-content lines, but markdown linters in
@@ -138,28 +108,15 @@ class TokenCleaningService:
         only template tags and whitespace, collapse content to just the original line
         ending so base linting sees an actual blank separator.
         """
-        original_lines = original_text.splitlines(keepends=True)
         cleaned_lines = cleaned_text.splitlines(keepends=True)
-        if len(original_lines) != len(cleaned_lines):
+        if len(line_metadata) != len(cleaned_lines):
             return cleaned_text
 
         normalized: list[str] = []
-        for original_line, cleaned_line in zip(original_lines, cleaned_lines):
-            contains_template_tag = any(tag in original_line for tag in ("{{", "{%", "{#"))
-            line_without_template = _INLINE_TEMPLATE_TOKEN_RE.sub("", original_line)
-            is_template_only = contains_template_tag and line_without_template.strip() == ""
-
-            if not is_template_only:
+        for meta, cleaned_line in zip(line_metadata, cleaned_lines):
+            if not meta.is_template_only:
                 normalized.append(cleaned_line)
                 continue
-
-            if original_line.endswith("\r\n"):
-                normalized.append("\r\n")
-            elif original_line.endswith("\n"):
-                normalized.append("\n")
-            elif original_line.endswith("\r"):
-                normalized.append("\r")
-            else:
-                normalized.append("")
+            normalized.append(meta.line_ending)
 
         return "".join(normalized)
