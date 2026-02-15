@@ -92,6 +92,27 @@ _EXPR_SCAN_RE = re.compile(
     rf"\{{\{{[{_TRIM_MARKER_CLASS}]?(.*?)[{_TRIM_MARKER_CLASS}]?\}}\}}",
     re.DOTALL,
 )
+_ELSE_IF_PREFIX_RE = re.compile(r"^(?:else\s+if|elif)\b(?P<condition>.*)$", re.IGNORECASE)
+
+
+def _extract_else_if_condition(tag_text: str) -> str:
+    """Extract else-if condition from compound ELSE_IF_TAG token text."""
+    text = tag_text.strip()
+    if text.startswith("{%"):
+        text = text[2:]
+    if text.endswith("%}"):
+        text = text[:-2]
+    text = text.strip()
+
+    if text and text[0] in TRIM_MARKERS:
+        text = text[1:].strip()
+    if text and text[-1] in TRIM_MARKERS:
+        text = text[:-1].strip()
+
+    match = _ELSE_IF_PREFIX_RE.match(text)
+    if match:
+        return match.group("condition").strip()
+    return ""
 
 
 def _token_range(tk: Token) -> SourceRange:
@@ -408,11 +429,7 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
 
     # else_if_chain: (ELSE_IF_TAG block)+
     def else_if_chain(self, items: Sequence[Any]):
-        """Parse else-if chain from compound ELSE_IF_TAG terminals.
-
-        ELSE_IF_TAG captures the entire {% else if CONDITION %} tag.
-        Extract condition using same logic as main condition rule would use.
-        """
+        """Parse else-if chain from compound ELSE_IF_TAG terminals."""
         parts: list[tuple[str, Block]] = []
 
         # Items alternate: ELSE_IF_TAG, block, ELSE_IF_TAG, block, ...
@@ -421,17 +438,12 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
             cond = ""
             body = Block([])
 
-            # Look for ELSE_IF_TAG token and extract condition
             if (
                 i < len(items)
                 and isinstance(items[i], Token)
                 and getattr(items[i], "type", "") == "ELSE_IF_TAG"
             ):
-                # Extract condition from '{% else if CONDITION %}'
-                # This extraction logic should match how 'condition' rule works
-                tag_text = str(items[i])
-                m = re.match(r"\{%\s*(?:else\s+if|elif)\s+(.+?)\s*%\}", tag_text)
-                cond = m.group(1).strip() if m else ""
+                cond = _extract_else_if_condition(str(items[i]))
 
             if i + 1 < len(items) and isinstance(items[i + 1], Block):
                 body = items[i + 1]
