@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 from urllib.parse import unquote, urlparse
 
 from lsprotocol.types import (
@@ -41,10 +42,12 @@ from temple.compiler.types import (
     TupleType,
     UnionType,
 )
+from temple.template_spans import (
+    build_template_metadata,
+    build_unclosed_span,
+)
 
-_EXPR_RE = re.compile(r"\{\{(?P<content>.*?)\}\}", re.DOTALL)
-_STMT_RE = re.compile(r"\{%(?P<content>.*?)%\}", re.DOTALL)
-_INCLUDE_RE = re.compile(r"\{%\s*include\s+['\"](?P<name>[^'\"]+)['\"]\s*%\}")
+_INCLUDE_CONTENT_RE = re.compile(r"^\s*include\s+['\"](?P<name>[^'\"]+)['\"]\s*$")
 _VAR_PATH_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*")
 
 
@@ -101,19 +104,28 @@ def _range_from_offsets(text: str, start: int, end: int) -> Range:
     )
 
 
-def _iter_spans(pattern: re.Pattern[str], text: str) -> list[_TemplateSpan]:
-    spans: list[_TemplateSpan] = []
-    for match in pattern.finditer(text):
-        spans.append(
+def _build_spans_by_type(text: str) -> dict[str, list[_TemplateSpan]]:
+    spans_by_type: dict[str, list[_TemplateSpan]] = {
+        "expression": [],
+        "statement": [],
+    }
+    token_spans, _ = build_template_metadata(text)
+    for token_span in token_spans:
+        token_type = token_span.token.type
+        if token_type not in spans_by_type:
+            continue
+        spans_by_type[token_type].append(
             _TemplateSpan(
-                start=match.start(),
-                end=match.end(),
-                content_start=match.start("content"),
-                content_end=match.end("content"),
-                content=match.group("content"),
+                start=token_span.start_offset,
+                end=token_span.end_offset,
+                content_start=token_span.content_start_offset,
+                content_end=token_span.content_end_offset,
+                content=text[
+                    token_span.content_start_offset : token_span.content_end_offset
+                ],
             )
         )
-    return spans
+    return spans_by_type
 
 
 def _find_span_at_offset(spans: list[_TemplateSpan], offset: int) -> _TemplateSpan | None:
@@ -121,6 +133,30 @@ def _find_span_at_offset(spans: list[_TemplateSpan], offset: int) -> _TemplateSp
         if span.content_start <= offset <= span.content_end:
             return span
     return None
+
+
+def _find_active_span_with_unclosed_support(
+    text: str,
+    offset: int,
+    token_type: str,
+    spans: list[_TemplateSpan],
+) -> _TemplateSpan | None:
+    """Find a closed or active-unclosed token span at the given offset."""
+    closed_span = _find_span_at_offset(spans, offset)
+    if closed_span is not None:
+        return closed_span
+
+    raw = build_unclosed_span(text, offset, token_type)
+    if raw is None:
+        return None
+    start, end, content_start, content_end = raw
+    return _TemplateSpan(
+        start=start,
+        end=end,
+        content_start=content_start,
+        content_end=content_end,
+        content=text[content_start:content_end],
+    )
 
 
 def _resolve_object_type(base_type: BaseType | None, segments: list[str]) -> BaseType | None:
@@ -193,9 +229,44 @@ def _resolve_schema_fragment(raw_schema: dict | None, path: str) -> dict | None:
     return current if isinstance(current, dict) else None
 
 
+def _resolve_context_value(context: Any, segments: list[str]) -> Any:
+    current = context
+    for segment in segments:
+        if isinstance(current, dict):
+            current = current.get(segment)
+            continue
+        if isinstance(current, list):
+            if not current:
+                return None
+            current = current[0]
+            if isinstance(current, dict):
+                current = current.get(segment)
+                continue
+            return None
+        return None
+    return current
+
+
+def _context_type_name(value: Any) -> str:
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if value is None:
+        return "null"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, dict):
+        return "object"
+    return type(value).__name__
+
+
 def _extract_variable_reference(text: str, position: Position) -> VariableReference | None:
     offset = _position_to_offset(text, position)
-    expr_span = _find_span_at_offset(_iter_spans(_EXPR_RE, text), offset)
+    spans_by_type = _build_spans_by_type(text)
+    expr_span = _find_span_at_offset(spans_by_type["expression"], offset)
     if expr_span is None:
         return None
 
@@ -213,11 +284,17 @@ def _extract_variable_reference(text: str, position: Position) -> VariableRefere
 
 def _extract_include_reference(text: str, position: Position) -> IncludeReference | None:
     offset = _position_to_offset(text, position)
-    for match in _INCLUDE_RE.finditer(text):
-        if match.start("name") <= offset <= match.end("name"):
+    spans_by_type = _build_spans_by_type(text)
+    for span in spans_by_type["statement"]:
+        match = _INCLUDE_CONTENT_RE.match(span.content)
+        if not match:
+            continue
+        name_start = span.content_start + match.start("name")
+        name_end = span.content_start + match.end("name")
+        if name_start <= offset <= name_end:
             return IncludeReference(
                 name=match.group("name"),
-                range=_range_from_offsets(text, match.start("name"), match.end("name")),
+                range=_range_from_offsets(text, name_start, name_end),
             )
     return None
 
@@ -247,12 +324,20 @@ class TemplateCompletionProvider:
         text: str,
         position: Position,
         schema: Schema | None = None,
+        semantic_context: dict[str, Any] | None = None,
     ) -> CompletionList:
         items: dict[str, CompletionItem] = {}
         offset = _position_to_offset(text, position)
+        spans_by_type = _build_spans_by_type(text)
 
-        expr_span = _find_span_at_offset(_iter_spans(_EXPR_RE, text), offset)
-        if expr_span is not None and schema is not None:
+        expr_span = _find_active_span_with_unclosed_support(
+            text,
+            offset,
+            "expression",
+            spans_by_type["expression"],
+        )
+
+        if expr_span is not None:
             expr_prefix = expr_span.content[: max(0, offset - expr_span.content_start)]
             token_match = re.search(r"([A-Za-z_][A-Za-z0-9_\.]*)$", expr_prefix)
             path_expr = token_match.group(1) if token_match else ""
@@ -261,17 +346,37 @@ class TemplateCompletionProvider:
             parent_segments = segments[:-1] if path_expr else []
             property_prefix = segments[-1] if segments else ""
 
-            parent_type = _resolve_object_type(schema.root_type, parent_segments)
-            if isinstance(parent_type, ObjectType):
-                for prop_name, prop_type in parent_type.properties.items():
-                    if prop_name.startswith(property_prefix):
-                        items[prop_name] = CompletionItem(
-                            label=prop_name,
-                            kind=CompletionItemKind.Property,
-                            detail=_type_name(prop_type),
-                        )
+            if schema is not None:
+                parent_type = _resolve_object_type(schema.root_type, parent_segments)
+                if isinstance(parent_type, ObjectType):
+                    for prop_name, prop_type in parent_type.properties.items():
+                        if prop_name.startswith(property_prefix):
+                            items[prop_name] = CompletionItem(
+                                label=prop_name,
+                                kind=CompletionItemKind.Property,
+                                detail=_type_name(prop_type),
+                            )
 
-        stmt_span = _find_span_at_offset(_iter_spans(_STMT_RE, text), offset)
+            if semantic_context is not None:
+                parent_value = _resolve_context_value(semantic_context, parent_segments)
+                if isinstance(parent_value, dict):
+                    for key, value in parent_value.items():
+                        if key.startswith(property_prefix):
+                            items.setdefault(
+                                key,
+                                CompletionItem(
+                                    label=key,
+                                    kind=CompletionItemKind.Property,
+                                    detail=_context_type_name(value),
+                                ),
+                            )
+
+        stmt_span = _find_active_span_with_unclosed_support(
+            text,
+            offset,
+            "statement",
+            spans_by_type["statement"],
+        )
         if stmt_span is not None:
             stmt_prefix = stmt_span.content[: max(0, offset - stmt_span.content_start)].strip()
             stmt_token_match = re.search(r"([A-Za-z_]*)$", stmt_prefix)
@@ -377,7 +482,8 @@ class TemplateReferenceProvider:
             return []
 
         results: list[Location] = []
-        for expr_span in _iter_spans(_EXPR_RE, text):
+        spans_by_type = _build_spans_by_type(text)
+        for expr_span in spans_by_type["expression"]:
             for match in _VAR_PATH_RE.finditer(expr_span.content):
                 if match.group(0) != target.path:
                     continue
