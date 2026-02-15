@@ -1,15 +1,16 @@
 ---
 title: "Centralize temple default delimiters and extensions across layers"
 id: 85
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: medium
 complexity: medium
 estimated_hours: 7
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 5
+completed_date: 2026-02-15
+related_commit:
+  - 02fe4d8  # feat(defaults): add generated defaults sync and drift checks
+test_results: "Local: .ci-venv/bin/python -m pytest temple-linter/tests/test_lsp_mvp_smoke.py && npm --prefix vscode-temple-linter run lint && npm --prefix vscode-temple-linter run compile && node vscode-temple-linter/scripts/generate-defaults.js --check"
 dependencies:
   - "[[79_audit_cross_layer_dry_and_grammar_anchoring.md]]"
 related_backlog:
@@ -19,6 +20,9 @@ related_spike:
 notes: |
   Finding: default delimiters and temple extension defaults are duplicated
   across core, linter, and VS Code extension layers.
+  Completed in commit 02fe4d8 by introducing shared defaults source + generated
+  Python/TypeScript defaults, LSP defaults endpoint/fallback, and drift checks
+  in pre-commit and CI.
 ---
 
 ## Goal
@@ -44,6 +48,6 @@ Multiple default declarations increase drift risk and complicate maintenance whe
 
 ## Acceptance Criteria
 
-- [ ] Default delimiters are not hard-coded in multiple runtime modules.
-- [ ] Temple extension defaults are centrally defined and consumed consistently.
-- [ ] Override behavior remains supported and test-covered.
+- [x] Default delimiters are not hard-coded in multiple runtime modules.
+- [x] Temple extension defaults are centrally defined and consumed consistently.
+- [x] Override behavior remains supported and test-covered.

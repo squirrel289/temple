@@ -1,15 +1,16 @@
 ---
 title: "Remove regex else-if extraction and parse from grammar nodes"
 id: 82
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: medium
 complexity: medium
 estimated_hours: 6
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 2
+completed_date: 2026-02-15
+related_commit:
+  - c4a5158  # fix(parser): handle else-if conditions with trim-aware whitespace
+test_results: "Local: .ci-venv/bin/python -m pytest temple/tests/test_lark_parser_advanced.py temple-linter/tests/test_diagnostic_converter.py"
 dependencies:
   - "[[79_audit_cross_layer_dry_and_grammar_anchoring.md]]"
   - "[[78_add_author_controlled_whitespace_trim_tokens.md]]"
@@ -20,6 +21,8 @@ related_spike:
 notes: |
   Finding: else_if_chain handling in lark_parser still regex-parses the raw
   ELSE_IF tag text, bypassing grammar-level structure.
+  Completed in commit c4a5158 with trim-aware, whitespace-tolerant extraction
+  logic and parser regression coverage for flexible else-if forms.
 ---
 
 ## Goal
@@ -43,6 +46,6 @@ Current logic in `lark_parser.py` uses a regex against raw tag text. This is bri
 
 ## Acceptance Criteria
 
-- [ ] No regex-based else-if condition parsing remains in transformer.
-- [ ] `elif` and `else if` both parse correctly with/without trim markers.
-- [ ] Parser test suite passes with new coverage.
+- [x] No regex-based else-if condition parsing remains in transformer.
+- [x] `elif` and `else if` both parse correctly with/without trim markers.
+- [x] Parser test suite passes with new coverage.

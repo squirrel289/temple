@@ -1,15 +1,16 @@
 ---
 title: "Define base cleaning contract and markdown policy adapter"
 id: 84
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: high
 estimated_hours: 10
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 3
+completed_date: 2026-02-15
+related_commit:
+  - 7ff3552  # refactor(linter): add core span metadata cleaning contract
+test_results: "Local: .ci-venv/bin/python -m pytest temple/tests/test_template_spans.py temple-linter/tests/test_integration.py temple-linter/tests/test_base_format_linter.py"
 dependencies:
   - "[[79_audit_cross_layer_dry_and_grammar_anchoring.md]]"
   - "[[80_replace_linter_regex_line_parsing_with_core_token_span_metadata.md]]"
@@ -20,6 +21,8 @@ related_spike:
 notes: |
   Finding: markdown-specific cleanup is valid adapter policy, but it should run
   on a well-defined core cleaning contract rather than ad hoc line regex passes.
+  Completed in commit 7ff3552 by adding BaseCleaningContract and moving
+  markdown-specific behavior to isolated adapter policy code.
 ---
 
 ## Goal
@@ -45,6 +48,6 @@ Temple should provide consistent template semantics; language-specific lint comp
 
 ## Acceptance Criteria
 
-- [ ] Core cleaning behavior is language-agnostic and contract-driven.
-- [ ] Markdown-specific behavior is isolated behind an adapter policy boundary.
-- [ ] Contract + adapter tests pass and are documented for future base types.
+- [x] Core cleaning behavior is language-agnostic and contract-driven.
+- [x] Markdown-specific behavior is isolated behind an adapter policy boundary.
+- [x] Contract + adapter tests pass and are documented for future base types.

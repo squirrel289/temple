@@ -1,15 +1,16 @@
 ---
 title: "Replace linter regex line parsing with core token-span metadata"
 id: 80
-status: not_started
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: high
 estimated_hours: 10
-actual_hours: null
-completed_date: null
-related_commit: []
-test_results: null
+actual_hours: 4
+completed_date: 2026-02-15
+related_commit:
+  - 7ff3552  # refactor(linter): add core span metadata cleaning contract
+test_results: "Local: .ci-venv/bin/python -m pytest temple/tests/test_template_spans.py temple-linter/tests/test_integration.py temple-linter/tests/test_base_format_linter.py"
 dependencies:
   - "[[79_audit_cross_layer_dry_and_grammar_anchoring.md]]"
   - "[[78_add_author_controlled_whitespace_trim_tokens.md]]"
@@ -20,6 +21,8 @@ related_spike:
 notes: |
   Finding: token_cleaning_service still uses local inline-template regex to
   classify template-only/mixed lines and perform replacements.
+  Completed in commit 7ff3552 by moving line classification/structure decisions
+  to core span metadata and removing linter-local structural regex parsing.
 ---
 
 ## Goal
@@ -45,6 +48,6 @@ Eliminate linter-local template-structure regex parsing by using core tokenizer-
 
 ## Acceptance Criteria
 
-- [ ] `TokenCleaningService` no longer uses regex to detect template tags for structure decisions.
-- [ ] Trim-marker behavior remains correct and test-covered.
-- [ ] Existing cleaning-focused integration tests pass.
+- [x] `TokenCleaningService` no longer uses regex to detect template tags for structure decisions.
+- [x] Trim-marker behavior remains correct and test-covered.
+- [x] Existing cleaning-focused integration tests pass.
