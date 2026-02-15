@@ -1,15 +1,15 @@
 ---
 title: "Add author-controlled whitespace trim tokens across linter and renderer"
 id: 78
-status: not_started
+status: in_progress
 state_reason: null
 priority: high
 complexity: high
 estimated_hours: 20
-actual_hours: null
+actual_hours: 2.5
 completed_date: null
 related_commit: []
-test_results: null
+test_results: "Local: .ci-venv/bin/pytest temple/tests/test_mvp_language_core.py temple/tests/test_tokenizer.py temple/tests/test_template_renderer.py temple-linter/tests/test_integration.py (49 passed)"
 dependencies:
   - "[[archive/76_generalize_focus_mode_and_diagnostic_hygiene_across_base_types.md]]"
   - "[[archive/77_add_base_lint_queueing_adaptive_debounce_and_observability.md]]"
@@ -21,6 +21,11 @@ notes: |
   Introduce reusable whitespace-control semantics so template authors can
   intentionally trim surrounding whitespace instead of relying on
   markdown-specific cleaning heuristics.
+  Started implementation on 2026-02-14 after completion of archived item 77.
+  Initial slice: add trim marker semantics to tokenizer, linter cleaning, and passthrough renderer.
+  Follow-up refactor anchored trim marker set in shared core utility and
+  removed duplicated leading/trailing whitespace regexes from renderer and linter cleaner.
+  Added tilde (`~`) parity tests for tokenizer, renderer, and lint-cleaning integration.
 ---
 
 ## Goal

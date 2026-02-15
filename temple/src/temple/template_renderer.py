@@ -8,8 +8,8 @@ Provides:
 - Placeholder handling for expressions/comments
 """
 
-from typing import List, Tuple, Optional
 from temple.template_tokenizer import Token, temple_tokenizer
+from temple.whitespace_control import apply_left_trim, trim_leading_whitespace
 
 
 class RenderError(Exception):
@@ -25,9 +25,9 @@ class BlockValidator:
     BLOCK_OPENS = {"if", "for", "function"}
 
     def __init__(self):
-        self.stack: List[Tuple[str, int, int]] = []  # (type, line, col)
+        self.stack: list[tuple[str, int, int]] = []  # (type, line, col)
 
-    def validate(self, tokens: List[Token]) -> List[str]:
+    def validate(self, tokens: list[Token]) -> list[str]:
         """
         Validate block balance. Return list of error messages.
 
@@ -78,9 +78,9 @@ class BlockValidator:
 
 def render_passthrough(
     text: str,
-    delimiters: Optional[dict] = None,
+    delimiters: dict | None = None,
     validate_blocks: bool = True,
-) -> Tuple[str, List[str]]:
+) -> tuple[str, list[str]]:
     """
     Render template by concatenating text tokens.
 
@@ -105,11 +105,23 @@ def render_passthrough(
         validator = BlockValidator()
         errors = validator.validate(tokens)
 
-    # Concatenate text tokens only (passthrough)
+    # Concatenate text tokens only (passthrough), honoring trim markers.
     output_parts = []
+    trim_next_text_left = False
     for token in tokens:
+        if token.type in {"statement", "expression", "comment"}:
+            if token.trim_left:
+                apply_left_trim(output_parts)
+            if token.trim_right:
+                trim_next_text_left = True
+            continue
+
         if token.type == "text":
-            output_parts.append(token.value)
+            text_value = token.value
+            if trim_next_text_left:
+                text_value = trim_leading_whitespace(text_value)
+                trim_next_text_left = False
+            output_parts.append(text_value)
 
     output = "".join(output_parts)
     return output, errors
@@ -117,9 +129,9 @@ def render_passthrough(
 
 def render(
     text: str,
-    data: Optional[dict] = None,
-    delimiters: Optional[dict] = None,
-) -> Tuple[str, List[str]]:
+    data: dict | None = None,
+    delimiters: dict | None = None,
+) -> tuple[str, list[str]]:
     """
     Render template with data.
 

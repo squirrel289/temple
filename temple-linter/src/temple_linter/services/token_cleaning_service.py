@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from temple.template_tokenizer import Token, temple_tokenizer
+from temple.whitespace_control import apply_left_trim, trim_leading_whitespace
 
 _INLINE_TEMPLATE_TOKEN_RE = re.compile(r"\{#.*?#\}|\{%.*?%\}|\{\{.*?\}\}")
 _ATX_MULTI_SPACE_RE = re.compile(r"^(#{1,6})\s{2,}")
@@ -37,17 +38,32 @@ class TokenCleaningService:
             - text_tokens: List of text Token objects for position mapping
         """
         cleaned_chars: list[str] = []
+        trim_next_text_left = False
 
         for token in temple_tokenizer(text):
             if token.type == "text":
-                cleaned_chars.append(token.value)
+                text_value = token.value
+                if trim_next_text_left:
+                    text_value = trim_leading_whitespace(text_value)
+                    trim_next_text_left = False
+                cleaned_chars.append(text_value)
                 continue
+
+            if token.trim_left:
+                apply_left_trim(cleaned_chars)
 
             # Keep offsets stable by masking template DSL lexemes with spaces while
             # preserving line breaks. This allows native linters to report positions
             # that map directly to the original template.
-            masked = "".join(ch if ch in ("\n", "\r") else " " for ch in token.raw_token)
+            if token.trim_left or token.trim_right:
+                masked = ""
+            else:
+                masked = "".join(
+                    ch if ch in ("\n", "\r") else " " for ch in token.raw_token
+                )
             cleaned_chars.append(masked)
+            if token.trim_right:
+                trim_next_text_left = True
 
         cleaned_text = self._normalize_template_only_lines(text, "".join(cleaned_chars))
         normalized_hint = (format_hint or "").strip().lower()

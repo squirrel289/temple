@@ -85,6 +85,13 @@ from temple.typed_ast import (
     Set,
     Text,
 )
+from temple.whitespace_control import TRIM_MARKERS
+
+_TRIM_MARKER_CLASS = re.escape("".join(sorted(TRIM_MARKERS)))
+_EXPR_SCAN_RE = re.compile(
+    rf"\{{\{{[{_TRIM_MARKER_CLASS}]?(.*?)[{_TRIM_MARKER_CLASS}]?\}}\}}",
+    re.DOTALL,
+)
 
 
 def _token_range(tk: Token) -> SourceRange:
@@ -212,8 +219,7 @@ def parse_with_diagnostics(
     ast = None
 
     # First, scan for expression syntax errors directly from text
-    expr_pattern = r"\{\{(.*?)\}\}"
-    for match in re.finditer(expr_pattern, text, re.DOTALL):
+    for match in _EXPR_SCAN_RE.finditer(text):
         expr_text = match.group(1).strip()
         is_valid, error_msg = _validate_expression_syntax(expr_text)
         if not is_valid:
