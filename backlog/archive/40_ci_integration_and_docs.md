@@ -3,13 +3,13 @@ title: CI Jobs and Documentation Build
 id: 40
 status: completed
 related_commits:
-  - "a4f6cda"  # Consolidated CI fixes (machine config, path handling)
-  - "506f463"  # Benchmarks integration
-  - "77d875c"  # ASV publish workflow
-  - "c4e8f2a"  # Extend docs.yml & create CONTRIBUTING.md
-  - "0a91167"  # Add pytest.mark.skipif for Python 3.10/3.11 tomllib compatibility
-  - "1008bbc"  # chore(ci): update workflows and contributing with shared CI scripts
-  - "89c5cd1"  # ci: make CI scripts opt-in for dependency installs; installer calls scripts to populate .hooks-venv
+  - 77d875c  # test: add markdown integration pipeline
+  - 506f463  # test: add integration coverage for json/html/yaml
+  - a4f6cda  # fix(ci): configure ASV workflows for monorepo structure
+  - 0a91167  # feat: extend docs.yml with temple core docs & linkcheck, add CONTRIBUTING.md, complete backlog item 40
+  - 89c5cd1  # ci: make CI scripts opt-in for dependency installs; installer calls scripts to populate .hooks-venv
+  - 1008bbc  # chore(ci): update workflows and contributing with shared CI scripts (backlog/40_ci_integration_and_docs.md, backlog/52_parity_tests_and_ci.md)
+  - c4e8f2a  # MISSING-COMMIT: Extend docs.yml & create CONTRIBUTING.md
 dependencies:
   - "[[38_integration_and_e2e_tests.md]]"
   - "[[39_performance_benchmarks.md]]"

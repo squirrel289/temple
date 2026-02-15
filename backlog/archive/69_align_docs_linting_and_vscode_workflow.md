@@ -9,7 +9,7 @@ estimated_hours: 8
 actual_hours: 5
 completed_date: 2026-02-13
 related_commit:
-  - 88f0305
+  - 88f0305  # docs(workflow): align setup and vscode dev tooling
 test_results: "Docs/workflow validation: vscode-temple-linter compile+lint pass; .vscode JSON files validate; docs HTML build passes (network-dependent intersphinx warnings only)."
 dependencies:
   - "[[68_repair_vscode_extension_integration.md]]"

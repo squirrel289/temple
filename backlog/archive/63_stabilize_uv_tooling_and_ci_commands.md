@@ -9,7 +9,7 @@ estimated_hours: 8
 actual_hours: 3
 completed_date: 2026-02-13
 related_commit:
-  - d61288c
+  - d61288c  # ci(tooling): stabilize hook and workflow command execution
 test_results: "Local checks: lint-yaml and lint-shell pass; no active `uv pip run` usage; docs linkcheck invocation works but requires networked DNS to fully pass."
 dependencies: []
 related_backlog:

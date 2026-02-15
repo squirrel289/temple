@@ -4,8 +4,8 @@ id: 57
 status: completed
 state_reason: success
 related_commit:
-  - 8bb34ef  # feat(vscode): harden LSP init contract and packaging checks
   - 3f17a66  # ci(workflows): add vscode package validation to static analysis
+  - 8bb34ef  # feat(vscode): harden LSP init contract and packaging checks
   - 35a540d  # chore(vscode): add extension publisher metadata
 dependencies:
   - "[[45_implement_lsp_language_features.md]]"

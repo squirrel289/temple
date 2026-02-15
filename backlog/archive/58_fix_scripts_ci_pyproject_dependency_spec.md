@@ -3,7 +3,7 @@ title: Fix scripts/ci pyproject Dependency Spec
 id: 58
 status: completed
 related_commit:
-  - 005276a
+  - 005276a  # MISSING-COMMIT
 dependencies:
   - "[[57_fix_ci_workflow_wiring.md]]"
 estimated_hours: 2

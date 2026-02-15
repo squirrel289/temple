@@ -12,7 +12,7 @@ related_backlog:
 related_spike: 
   - archive/30_typed_dsl_prototype.md (reference implementation)
 related_commit:
-  - 0ccdf09  # feat(compiler): implement parser & AST construction with position tracking
+  - 0ccdf09  # feat(compiler): implement typed DSL parser with AST and position tracking
   - 6c5c7f8  # docs(compiler): add progress summary and export walk_ast utility
 ---
 

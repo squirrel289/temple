@@ -9,7 +9,7 @@ estimated_hours: 3
 actual_hours: 1
 completed_date: 2026-02-13
 related_commit:
-  - bd92dfe
+  - bd92dfe  # fix(ci): set working-directory for ASV commands in benchmarks workflow
 test_results: |
   YAML validation: .github/workflows/benchmarks.yml passes yamllint
   Workflow structure verification: all references and paths are consistent

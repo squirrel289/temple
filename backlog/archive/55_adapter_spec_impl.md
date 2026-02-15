@@ -4,7 +4,7 @@ id: 55
 status: completed
 state_reason: success
 related_commit:
-  - 6d8c044  # added ADAPTER_SPEC.md and ADR-003
+  - 6d8c044  # docs(adr): clarify market role and adapter architecture (ADR-003); add adapter spec; archive backlog/48_jinja_integration.md
   - 5d612db  # feat(sdk): add adapter interface contracts and tests
 test_results: "2026-02-13: uv run --with pytest --with pytest-benchmark --with-editable ./temple python -m pytest temple/tests/test_adapter_sdk.py -q (4 passed)."
 dependencies:

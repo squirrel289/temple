@@ -12,11 +12,11 @@ related_backlog:
 related_spike:
   - archive/30_typed_dsl_prototype.md (reference implementation)
 related_commit:
-  - e14cfc8  # feat(compiler): implement type system, schema validation, and type checker
-  - 06366df  # test: reorganize compiler tests (ADR-002 Phase 3 - type system tests preserved)
-  - 8a7ab8f  # feat(typed-ast): canonicalize AST attrs; update type checker and serializers; update tests
+  - e14cfc8  # feat(compiler): implement type system, schema validation, and type checker (item 35)
+  - 06366df  # test: reorganize compiler tests into functional groupings (ADR-002 Phase 3)
+  - 8a7ab8f  # feat(typed-ast): canonicalize AST attrs; update type checker and serializers; update tests (backlog/35_typed_dsl_type_system.md, backlog/37_typed_dsl_serializers.md)
   - c96532b  # refactor(ast): migrate imports to temple.typed_ast; deprecate legacy ast_nodes shim (backlog #35)
-  - 207d23e  # docs(serializers): update example imports to temple.typed_ast
+  - 207d23e  # docs(serializers): update example imports to temple.typed_ast (backlog #35)
 completed_date: 2026-01-09
 ---
 

@@ -3,7 +3,7 @@ title: Canonical Examples & Developer Docs
 id: 41
 status: completed
 related_commits: 
-  - '11ee6f2' # docs: add sample script and restructure examples for clarity and contributor experience
+  - 11ee6f2  # MISSING-COMMIT:   - '11ee6f2' # docs: add sample script and restructure examples for clarity and contributor experience
 estimated_hours: 8
 priority: medium
 ---
