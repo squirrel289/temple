@@ -192,7 +192,7 @@ jobs:
     name: Propose baseline update
     needs: detect-secrets
     runs-on: ubuntu-latest
-    if: failure()
+    if: ${{ needs.detect-secrets.result == 'failure' }}
     steps:
       - name: Skip when automation token is unavailable
         if: ${{ secrets.DETECT_SECRETS_BOT_TOKEN == '' }}
