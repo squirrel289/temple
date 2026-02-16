@@ -8,7 +8,6 @@ version = "0.1.0"
 description = "CI environment for Temple monorepo (core, linter, docs, tests)"
 requires-python = ">=3.10"
 dependencies = [
-    "temple @ file:../../temple",
     "detect-secrets",
     "PyYAML",
     "python-jose",

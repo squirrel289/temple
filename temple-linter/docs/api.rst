@@ -49,10 +49,10 @@ Template Tokenizer
    :undoc-members:
    :show-inheritance:
 
-Template Preprocessing
-~~~~~~~~~~~~~~~~~~~~~~
+Projection Snapshot
+~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: temple_linter.template_preprocessing
+.. automodule:: temple_linter.services.projection_snapshot
    :members:
    :undoc-members:
    :show-inheritance:
@@ -76,18 +76,18 @@ LSP Server
 Supporting Modules
 ------------------
 
-Diagnostics
-~~~~~~~~~~~
+Diagnostic Converter
+~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: temple_linter.diagnostics
+.. automodule:: temple_linter.diagnostic_converter
    :members:
    :undoc-members:
    :show-inheritance:
 
-Template Mapping
-~~~~~~~~~~~~~~~~
+Base Cleaning Contract
+~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: temple_linter.template_mapping
+.. automodule:: temple_linter.services.base_cleaning_contract
    :members:
    :undoc-members:
    :show-inheritance:
