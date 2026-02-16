@@ -22,7 +22,7 @@ jobs:
           working-directory: scripts/ci
           extras: "[test]"
       - name: Install local temple package
-        run: uv pip install ./temple[test]
+        run: uv pip install --system ./temple[test]
       - name: Run root test suite
         run: python -m pytest tests -q
 
@@ -56,7 +56,7 @@ jobs:
           working-directory: temple
           extras: "[test]"
       - name: Install parity dependencies
-        run: uv pip install "jinja2>=3.1"
+        run: uv pip install --system "jinja2>=3.1"
       - name: Run native-vs-adapter parity suite
         run: python -m pytest temple/tests/parity/test_native_vs_jinja2_parity.py -q
 
@@ -72,7 +72,7 @@ jobs:
           working-directory: temple
           extras: "[test]"
       - name: Install temple-linter test dependencies
-        run: uv pip install ./temple-linter[test]
+        run: uv pip install --system ./temple-linter[test]
       - name: Run temple-linter tests
         run: python -m pytest temple-linter/tests -q
       - name: Enforce temple-linter E2E/performance thresholds

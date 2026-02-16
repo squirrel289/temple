@@ -32,7 +32,7 @@ runs:
       shell: bash
     - name: Install dependencies (uv)
       working-directory: ${{ inputs.working-directory }}
-      run: uv pip install .${{ inputs.extras }}
+      run: uv pip install --system .${{ inputs.extras }}
       shell: bash
     - name: Cache uv wheels
       uses: actions/cache@v4
