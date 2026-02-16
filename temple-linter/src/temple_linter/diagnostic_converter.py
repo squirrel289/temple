@@ -31,11 +31,12 @@ _TOKEN_LABELS = {
     "_STMT_CLOSE": "`%}`",
     "_COMMENT_CLOSE": "`#}`",
 }
+EOF_TOKEN_VARIANTS = {"''", '""', "", "<EOF>", "$END"}
 
 
 def _humanize_token_name(token: str) -> str:
     stripped = token.replace("\r", "").replace("\n", "").strip()
-    if stripped in {"''", '""', "", "<EOF>", "$END"}:
+    if stripped in EOF_TOKEN_VARIANTS:
         return "end of template"
     known = _TOKEN_LABELS.get(stripped)
     if known is not None:

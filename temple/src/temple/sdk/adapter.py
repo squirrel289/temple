@@ -78,7 +78,7 @@ class AdapterBase(ABC):
     def list_used_filters(self, ir: IRBlock) -> list[str]:
         seen: set[str] = set()
         ordered: list[str] = []
-        for node in iter_ir_nodes(ir):
+        for node in collect_ir_nodes(ir):
             if isinstance(node, IRExpression):
                 for filter_name in _FILTER_NAME_RE.findall(node.expr):
                     if filter_name not in seen:
@@ -87,7 +87,7 @@ class AdapterBase(ABC):
         return ordered
 
 
-def iter_ir_nodes(block: IRBlock) -> tuple[IRNode, ...]:
+def collect_ir_nodes(block: IRBlock) -> tuple[IRNode, ...]:
     """Walk IR depth-first and return all nodes in visit order."""
     out: list[IRNode] = []
 
@@ -115,6 +115,11 @@ def iter_ir_nodes(block: IRBlock) -> tuple[IRNode, ...]:
     return tuple(out)
 
 
+def iter_ir_nodes(block: IRBlock) -> tuple[IRNode, ...]:
+    """Backward-compatible alias for collect_ir_nodes."""
+    return collect_ir_nodes(block)
+
+
 __all__ = [
     "AdapterBase",
     "AdapterDiagnostic",
@@ -124,5 +129,6 @@ __all__ = [
     "IRNode",
     "IRStatement",
     "IRText",
+    "collect_ir_nodes",
     "iter_ir_nodes",
 ]
