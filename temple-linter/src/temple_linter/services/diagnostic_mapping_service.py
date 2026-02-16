@@ -2,11 +2,16 @@
 DiagnosticMappingService - Maps diagnostics from cleaned content to original positions
 """
 
-import logging
+from __future__ import annotations
+
 import copy
-from typing import List, Optional, Tuple
+import logging
+
 from lsprotocol.types import Diagnostic, Position, Range
+
 from temple.template_tokenizer import Token
+
+from .projection_snapshot import ProjectionSnapshot
 
 
 class DiagnosticMappingService:
@@ -23,52 +28,84 @@ class DiagnosticMappingService:
         self.logger = logger or logging.getLogger(__name__)
 
     def map_diagnostics(
-        self, diagnostics: List[Diagnostic], text_tokens: List[Token]
-    ) -> List[Diagnostic]:
+        self,
+        diagnostics: list[Diagnostic],
+        mapping: ProjectionSnapshot | list[Token],
+    ) -> list[Diagnostic]:
         """
         Map diagnostics from cleaned content to original template positions.
 
         Args:
             diagnostics: Diagnostics with positions in cleaned content
-            text_tokens: Text tokens tracking original positions
+            mapping: Projection snapshot (preferred) or legacy text token list
 
         Returns:
             Diagnostics with positions mapped to original template
         """
-        mapped_diagnostics: List[Diagnostic] = []
+        if isinstance(mapping, ProjectionSnapshot):
+            return self._map_diagnostics_with_projection(diagnostics, mapping)
 
+        mapped_diagnostics: list[Diagnostic] = []
         for diag in diagnostics:
-            mapped_diag = self._map_diagnostic(diag, text_tokens)
+            mapped_diag = self._map_diagnostic_legacy(diag, mapping)
             if mapped_diag:
                 mapped_diagnostics.append(mapped_diag)
-
         return mapped_diagnostics
 
-    def _map_diagnostic(
-        self, diagnostic: Diagnostic, text_tokens: List[Token]
-    ) -> Optional[Diagnostic]:
-        """Map a single diagnostic to original positions."""
+    def _map_diagnostics_with_projection(
+        self,
+        diagnostics: list[Diagnostic],
+        projection: ProjectionSnapshot,
+    ) -> list[Diagnostic]:
+        mapped_diagnostics: list[Diagnostic] = []
+        for diagnostic in diagnostics:
+            try:
+                diag = copy.deepcopy(diagnostic)
+                start_line, start_char = projection.map_cleaned_position_to_source(
+                    int(diag.range.start.line),
+                    int(diag.range.start.character),
+                )
+                end_line, end_char = projection.map_cleaned_position_to_source(
+                    int(diag.range.end.line),
+                    int(diag.range.end.character),
+                )
+                diag.range = Range(
+                    start=Position(line=start_line, character=start_char),
+                    end=Position(line=end_line, character=end_char),
+                )
+                mapped_diagnostics.append(diag)
+            except Exception as exc:
+                self.logger.error(
+                    "Failed to map projection diagnostic: %s; error: %s",
+                    diagnostic,
+                    exc,
+                )
+        return mapped_diagnostics
+
+    def _map_diagnostic_legacy(
+        self,
+        diagnostic: Diagnostic,
+        text_tokens: list[Token],
+    ) -> Diagnostic | None:
+        """Legacy token-based mapping fallback."""
         try:
             diag = copy.deepcopy(diagnostic)
             start = diag.range.start
             end = diag.range.end
 
-            orig_start = self._map_position(start, text_tokens)
-            orig_end = self._map_position(end, text_tokens)
+            orig_start = self._map_position_legacy(start, text_tokens)
+            orig_end = self._map_position_legacy(end, text_tokens)
 
             diag.range = Range(start=orig_start, end=orig_end)
             return diag
-
-        except Exception as e:
-            self.logger.error(f"Failed to map diagnostic: {diagnostic}, error: {e}")
+        except Exception as exc:
+            self.logger.error("Failed to map diagnostic: %s, error: %s", diagnostic, exc)
             return None
 
-    def _map_position(self, pos: Position, text_tokens: List[Token]) -> Position:
-        """Map a position from cleaned content to original template."""
-        # Convert (line, character) to offset in cleaned text
-        cleaned_offset = self._position_to_offset(pos, text_tokens)
+    def _map_position_legacy(self, pos: Position, text_tokens: list[Token]) -> Position:
+        """Map a position from cleaned content to original template (legacy path)."""
+        cleaned_offset = self._position_to_offset_legacy(pos, text_tokens)
 
-        # Find the token containing this offset
         offset = 0
         for token in text_tokens:
             token_len = len(token.value)
@@ -80,48 +117,32 @@ class DiagnosticMappingService:
                 return Position(line=orig_line, character=orig_col)
             offset += token_len
 
-        # Fallback: return original position
         return pos
 
-    def _position_to_offset(self, pos: Position, text_tokens: List[Token]) -> int:
-        """Convert (line, character) position to flat offset in cleaned text."""
+    @staticmethod
+    def _position_to_offset_legacy(pos: Position, text_tokens: list[Token]) -> int:
         cleaned_text = "".join(token.value for token in text_tokens)
         lines = cleaned_text.splitlines(keepends=True)
-
-        # Sum lengths of all lines before target line
         offset = sum(len(lines[i]) for i in range(min(pos.line, len(lines))))
-
-        # Add character offset within the target line
         offset += pos.character
-
         return offset
 
+    @staticmethod
     def _advance_by_offset(
-        self, start: Tuple[int, int], value: str, offset: int
-    ) -> Tuple[int, int]:
-        """Advance (line, col) by offset chars in value."""
+        start: tuple[int, int],
+        value: str,
+        offset: int,
+    ) -> tuple[int, int]:
         line, col = start
-
-        # Get the substring up to the offset
         substr = value[:offset]
 
-        # Split into lines, keeping line endings
         lines = substr.splitlines(keepends=True)
         if not lines:
             return (line, col)
-
         if len(lines) == 1:
-            # No newlines encountered
             return (line, col + len(lines[0]))
 
-        # Multiple lines: advance line by number of newlines
         line += len(lines) - 1
         last_line = lines[-1]
-
-        # If last_line ends with a newline, col should be 0
-        if last_line.endswith("\n") or last_line.endswith("\r"):
-            col = 0
-        else:
-            col = len(last_line)
-
+        col = 0 if last_line.endswith("\n") or last_line.endswith("\r") else len(last_line)
         return (line, col)

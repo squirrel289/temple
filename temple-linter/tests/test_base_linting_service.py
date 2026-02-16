@@ -160,3 +160,25 @@ def test_request_base_diagnostics_handles_timeout_gracefully():
     )
 
     assert diagnostics == []
+
+
+def test_timeout_budget_scales_by_format_and_size():
+    svc = BaseLintingService()
+
+    markdown_large = svc._resolve_timeout_seconds(
+        cleaned_text="x" * 16000,
+        detected_format="markdown",
+    )
+    json_small = svc._resolve_timeout_seconds(
+        cleaned_text="{}",
+        detected_format="json",
+    )
+    unknown_small = svc._resolve_timeout_seconds(
+        cleaned_text="{}",
+        detected_format=None,
+    )
+
+    assert markdown_large > json_small
+    assert json_small > unknown_small
+    assert 0.35 <= unknown_small <= 2.5
+    assert 0.35 <= markdown_large <= 2.5

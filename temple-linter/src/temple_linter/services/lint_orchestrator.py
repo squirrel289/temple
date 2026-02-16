@@ -86,10 +86,11 @@ class LintOrchestrator:
         detected_format = self.format_linter.detect_base_format(filename, text)
 
         # 3. Token cleaning
-        cleaned_text, text_tokens = self.token_cleaning_service.clean_text_and_tokens(
+        projection = self.token_cleaning_service.project_for_base_lint(
             text,
             format_hint=detected_format,
         )
+        cleaned_text = projection.cleaned_text
 
         # 4. Base linting
         # Skip base-format lint when template syntax already has hard errors to keep
@@ -113,7 +114,7 @@ class LintOrchestrator:
 
         # 5. Diagnostic mapping
         mapped_base_diagnostics = self.diagnostic_mapping_service.map_diagnostics(
-            base_diagnostics, text_tokens
+            base_diagnostics, projection
         )
         mapped_base_diagnostics = self._mark_base_diagnostics(mapped_base_diagnostics)
 

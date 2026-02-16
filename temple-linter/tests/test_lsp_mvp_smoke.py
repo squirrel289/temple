@@ -10,7 +10,10 @@ from lsprotocol.types import (
     CompletionParams,
     DefinitionParams,
     DidChangeTextDocumentParams,
+    DidChangeWatchedFilesParams,
     DidOpenTextDocumentParams,
+    FileChangeType,
+    FileEvent,
     HoverParams,
     InitializeParams,
     Position,
@@ -66,8 +69,7 @@ def test_lsp_server_exposes_runtime_defaults() -> None:
 
     assert defaults["templeExtensions"] == list(DEFAULT_TEMPLE_EXTENSIONS)
     assert defaults["templateDelimiters"] == {
-        token_type: [start, end]
-        for token_type, (start, end) in DEFAULT_TEMPLATE_DELIMITERS.items()
+        token_type: [start, end] for token_type, (start, end) in DEFAULT_TEMPLATE_DELIMITERS.items()
     }
 
 
@@ -97,15 +99,13 @@ def test_lsp_server_initialize_and_did_open_with_semantic_settings() -> None:
         published["params"] = params
 
     server.text_document_publish_diagnostics = _capture  # type: ignore[method-assign]
-    server.orchestrator.base_linting_service.request_base_diagnostics = (
-        lambda *_args, **_kwargs: []
-    )
+    server.orchestrator.base_linting_service.request_base_diagnostics = lambda *_args, **_kwargs: []
     lsp_server.did_open(
         server,
         DidOpenTextDocumentParams(
             text_document=TextDocumentItem(
                 uri="file:///tmp/template.tmpl",
-                language_id="templated-any",
+                language_id="templ-any",
                 version=1,
                 text="{{ user.id }}",
             )
@@ -145,15 +145,13 @@ def test_lsp_server_empty_semantic_context_does_not_emit_undefined_variable() ->
         published["params"] = params
 
     server.text_document_publish_diagnostics = _capture  # type: ignore[method-assign]
-    server.orchestrator.base_linting_service.request_base_diagnostics = (
-        lambda *_args, **_kwargs: []
-    )
+    server.orchestrator.base_linting_service.request_base_diagnostics = lambda *_args, **_kwargs: []
     lsp_server.did_open(
         server,
         DidOpenTextDocumentParams(
             text_document=TextDocumentItem(
                 uri="file:///tmp/template.tmpl",
-                language_id="templated-any",
+                language_id="templ-any",
                 version=1,
                 text="{{ user.name }}",
             )
@@ -180,16 +178,14 @@ def test_lsp_server_did_open_publishes_syntax_diagnostics() -> None:
         published["params"] = params
 
     server.text_document_publish_diagnostics = _capture  # type: ignore[method-assign]
-    server.orchestrator.base_linting_service.request_base_diagnostics = (
-        lambda *_args, **_kwargs: []
-    )
+    server.orchestrator.base_linting_service.request_base_diagnostics = lambda *_args, **_kwargs: []
 
     lsp_server.did_open(
         server,
         DidOpenTextDocumentParams(
             text_document=TextDocumentItem(
                 uri="file:///tmp/template.tmpl",
-                language_id="templated-any",
+                language_id="templ-any",
                 version=1,
                 text="{{ user. }}",
             )
@@ -225,9 +221,7 @@ def test_lsp_server_did_change_publishes_syntax_diagnostics(tmp_path: Path) -> N
         published["params"] = params
 
     server.text_document_publish_diagnostics = _capture  # type: ignore[method-assign]
-    server.orchestrator.base_linting_service.request_base_diagnostics = (
-        lambda *_args, **_kwargs: []
-    )
+    server.orchestrator.base_linting_service.request_base_diagnostics = lambda *_args, **_kwargs: []
 
     lsp_server.did_change(
         server,
@@ -405,3 +399,37 @@ def test_lsp_server_loads_semantic_schema_from_path(tmp_path: Path) -> None:
     assert server.semantic_schema is not None
     assert server.semantic_schema_raw is not None
     assert "user" in server.semantic_schema_raw.get("properties", {})
+
+
+def test_lsp_server_handles_did_change_watched_files_notification() -> None:
+    server = TempleLinterServer()
+    params = DidChangeWatchedFilesParams(
+        changes=[
+            FileEvent(
+                uri="file:///tmp/example.md.tmpl",
+                type=FileChangeType.Created,
+            )
+        ]
+    )
+
+    assert lsp_server.did_change_watched_files(server, params) is None
+
+
+def test_lsp_server_returns_base_projection_snapshot() -> None:
+    server = TempleLinterServer()
+    result = lsp_server.get_base_projection(
+        server,
+        {
+            "content": "# {{ user.name }}\n",
+            "detectedFormat": "markdown",
+        },
+    )
+
+    assert isinstance(result, dict)
+    assert "lorem" in result["cleanedText"]
+    assert len(result["cleanedToSourceOffsets"]) == len(result["cleanedText"])
+    assert len(result["sourceToCleanedOffsets"]) == len("# {{ user.name }}\n") + 1
+    assert any(
+        span.get("tokenType") == "expression"
+        for span in result.get("templateTokenSpans", [])
+    )

@@ -18,11 +18,14 @@ import {
 const VIRTUAL_SCHEME = 'temple-cleaned';
 const EXTENSION_NAME = 'Temple Language Server';
 const TEMPLE_GET_DEFAULTS_METHOD = 'temple/getDefaults';
+const TEMPLE_GET_BASE_PROJECTION_METHOD = 'temple/getBaseProjection';
 const MIRROR_GHOST_DIRNAME = '.temple-base-lint';
 const cleanedContentMap = new Map<string, string>();
 const cleanedContentVersionMap = new Map<string, number>();
 const tempBaseLintFileMap = new Map<string, string>();
 const tempBaseLintDirectories = new Set<string>();
+const shadowDocHandles = new Map<string, ShadowDocHandle>();
+const sourceToBaseUriMap = new Map<string, string>();
 let baseLintStorageRoot: string | undefined;
 
 let client: LanguageClient | undefined;
@@ -47,11 +50,36 @@ type TempleDefaultsResponse = {
   templeExtensions?: string[];
 };
 
+type TemplateTokenSpanPayload = {
+  startOffset: number;
+  endOffset: number;
+  tokenType: string;
+};
+
+type BaseProjectionResponse = {
+  cleanedText: string;
+  cleanedToSourceOffsets: number[];
+  sourceToCleanedOffsets: number[];
+  templateTokenSpans: TemplateTokenSpanPayload[];
+};
+
+type ProjectionSnapshot = {
+  sourceText: string;
+  targetText: string;
+  cleanedToSourceOffsets: number[];
+  sourceToCleanedOffsets: number[];
+  sourceLineStarts: number[];
+  targetLineStarts: number[];
+  unsafeSourceOffsetRanges: Array<{ start: number; end: number }>;
+};
+
 type JsonObject = Record<string, unknown>;
 type BaseLintFocusMode = 'all' | 'activeTemplate';
 type BaseLintStrategyMode = 'auto' | 'embedded' | 'vscode';
 type BaseLintTransportStrategy = 'embedded' | 'virtual' | 'mirror-file';
 type BaseLintLogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';
+type BaseLspBridgeMode = 'off' | 'full';
+type BaseLspParityBaseline = 'official-defaults';
 
 type BaseLintCapabilities = {
   hasEmbeddedAdapter: boolean;
@@ -70,6 +98,17 @@ type ResolveBaseLintStrategyParams = {
   capabilities: BaseLintCapabilities;
 };
 
+type ShadowDocHandle = {
+  sourceUri: vscode.Uri;
+  baseUri: vscode.Uri;
+  targetUri: vscode.Uri;
+  strategy: BaseLintTransportStrategy;
+  detectedFormat: string;
+  version: number;
+  updatedAt: number;
+  projection?: ProjectionSnapshot;
+};
+
 const LOG_LEVEL_ORDER: Record<BaseLintLogLevel, number> = {
   error: 0,
   warn: 1,
@@ -77,17 +116,30 @@ const LOG_LEVEL_ORDER: Record<BaseLintLogLevel, number> = {
   debug: 3,
   trace: 4,
 };
+const bridgeDowngradeLogSet = new Set<string>();
 
-const FORMATS_WITHOUT_RELIABLE_VIRTUAL_LINT = new Set(['md', 'markdown']);
+const FORMATS_WITHOUT_RELIABLE_VIRTUAL_LINT = new Set<string>();
+const TEMPLATED_LANGUAGE_IDS = new Set([
+  'templ-any',
+  'templ-markdown',
+  'templ-json',
+  'templ-yaml',
+  'templ-html',
+  'templ-xml',
+  'templ-toml',
+]);
+const BASE_LSP_PARITY_LANGUAGE_IDS = [
+  'templ-markdown',
+  'templ-json',
+  'templ-yaml',
+  'templ-html',
+  'templ-xml',
+  'templ-toml',
+] as const;
 
 interface BaseLintCapabilityRegistry {
   capabilitiesForFormat(format: string): BaseLintCapabilities;
 }
-
-type LanguageSuffixAssociation = {
-  suffix: string;
-  languageId: string;
-};
 
 class DefaultBaseLintCapabilityRegistry implements BaseLintCapabilityRegistry {
   private readonly embeddedFormatSet: Set<string>;
@@ -108,8 +160,6 @@ class DefaultBaseLintCapabilityRegistry implements BaseLintCapabilityRegistry {
     };
   }
 }
-
-let cachedLanguageSuffixAssociations: LanguageSuffixAssociation[] | undefined;
 
 function fileExists(filePath: string): boolean {
   try {
@@ -187,7 +237,7 @@ async function resolveServerDefaultTempleExtensions(
   outputChannel: vscode.OutputChannel
 ): Promise<string[]> {
   try {
-    const response = await languageClient.sendRequest(TEMPLE_GET_DEFAULTS_METHOD);
+    const response = await languageClient.sendRequest(TEMPLE_GET_DEFAULTS_METHOD, {});
     if (!isTempleDefaultsResponse(response)) {
       outputChannel.appendLine(
         `[${EXTENSION_NAME}] '${TEMPLE_GET_DEFAULTS_METHOD}' returned invalid payload; using local defaults.`
@@ -212,7 +262,13 @@ function buildDocumentSelector(
   templeExtensions: string[]
 ): Array<{ scheme: 'file'; language?: string; pattern?: string }> {
   const selector: Array<{ scheme: 'file'; language?: string; pattern?: string }> = [
-    { scheme: 'file', language: 'templated-any' },
+    { scheme: 'file', language: 'templ-any' },
+    { scheme: 'file', language: 'templ-markdown' },
+    { scheme: 'file', language: 'templ-json' },
+    { scheme: 'file', language: 'templ-yaml' },
+    { scheme: 'file', language: 'templ-html' },
+    { scheme: 'file', language: 'templ-xml' },
+    { scheme: 'file', language: 'templ-toml' },
   ];
 
   for (const extension of templeExtensions) {
@@ -227,20 +283,6 @@ function buildDocumentSelector(
   }
 
   return selector;
-}
-
-function isTempleTemplateDocument(
-  doc: vscode.TextDocument,
-  templeExtensions: string[]
-): boolean {
-  const lowerPath = doc.uri.fsPath.toLowerCase();
-  for (const extension of templeExtensions) {
-    const normalized = normalizeTempleExtension(extension).toLowerCase();
-    if (normalized && lowerPath.endsWith(normalized)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function escapeRegExp(value: string): string {
@@ -541,6 +583,351 @@ function isPublishNodeDiagnosticsParams(
   );
 }
 
+function isTemplateTokenSpanPayload(value: unknown): value is TemplateTokenSpanPayload {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const maybe = value as Partial<TemplateTokenSpanPayload>;
+  return (
+    typeof maybe.startOffset === 'number' &&
+    Number.isFinite(maybe.startOffset) &&
+    typeof maybe.endOffset === 'number' &&
+    Number.isFinite(maybe.endOffset) &&
+    typeof maybe.tokenType === 'string'
+  );
+}
+
+function isBaseProjectionResponse(value: unknown): value is BaseProjectionResponse {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const maybe = value as Partial<BaseProjectionResponse>;
+  return (
+    typeof maybe.cleanedText === 'string' &&
+    Array.isArray(maybe.cleanedToSourceOffsets) &&
+    Array.isArray(maybe.sourceToCleanedOffsets) &&
+    Array.isArray(maybe.templateTokenSpans) &&
+    maybe.cleanedToSourceOffsets.every((entry) => typeof entry === 'number') &&
+    maybe.sourceToCleanedOffsets.every((entry) => typeof entry === 'number') &&
+    maybe.templateTokenSpans.every(isTemplateTokenSpanPayload)
+  );
+}
+
+function lineStartsForText(text: string): number[] {
+  const starts = [0];
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] === '\n') {
+      starts.push(index + 1);
+    }
+  }
+  return starts;
+}
+
+function offsetForPosition(
+  lineStarts: number[],
+  position: vscode.Position,
+  textLength: number
+): number {
+  if (position.line <= 0) {
+    return Math.min(Math.max(position.character, 0), textLength);
+  }
+  if (position.line >= lineStarts.length) {
+    return textLength;
+  }
+  return Math.min(
+    Math.max(lineStarts[position.line] + Math.max(position.character, 0), 0),
+    textLength
+  );
+}
+
+function positionForOffset(lineStarts: number[], offset: number): vscode.Position {
+  const clamped = Math.max(offset, 0);
+  let line = 0;
+  while (line + 1 < lineStarts.length && lineStarts[line + 1] <= clamped) {
+    line += 1;
+  }
+  return new vscode.Position(line, clamped - lineStarts[line]);
+}
+
+function sanitizeOffsets(
+  rawOffsets: number[],
+  expectedLength: number,
+  maxValue: number
+): number[] {
+  const sanitized: number[] = [];
+  for (let index = 0; index < expectedLength; index += 1) {
+    const current = rawOffsets[index] ?? rawOffsets[rawOffsets.length - 1] ?? 0;
+    const normalized = Math.min(Math.max(Math.floor(current), 0), maxValue);
+    sanitized.push(normalized);
+  }
+  return sanitized;
+}
+
+function invertOffsets(
+  targetToSourceOffsets: number[],
+  sourceLength: number,
+  targetLength: number
+): number[] {
+  const sourceToTarget = new Array<number>(sourceLength + 1).fill(0);
+  for (let targetOffset = 0; targetOffset < targetToSourceOffsets.length; targetOffset += 1) {
+    const sourceOffset = targetToSourceOffsets[targetOffset];
+    if (sourceOffset < 0 || sourceOffset > sourceLength) {
+      continue;
+    }
+    if (sourceToTarget[sourceOffset] === 0 || targetOffset < sourceToTarget[sourceOffset]) {
+      sourceToTarget[sourceOffset] = targetOffset;
+    }
+  }
+  let previous = 0;
+  for (let index = 0; index < sourceToTarget.length; index += 1) {
+    if (sourceToTarget[index] === 0 && index !== 0) {
+      sourceToTarget[index] = previous;
+      continue;
+    }
+    previous = sourceToTarget[index];
+  }
+  sourceToTarget[sourceLength] = targetLength;
+  return sourceToTarget;
+}
+
+function buildProjectionSnapshot(
+  sourceText: string,
+  projection: BaseProjectionResponse
+): ProjectionSnapshot {
+  const targetText = projection.cleanedText;
+  const cleanedToSourceOffsets = sanitizeOffsets(
+    projection.cleanedToSourceOffsets,
+    targetText.length,
+    sourceText.length
+  );
+  const sourceToCleanedOffsets = sanitizeOffsets(
+    projection.sourceToCleanedOffsets,
+    sourceText.length + 1,
+    targetText.length
+  );
+  const unsafeSourceOffsetRanges = projection.templateTokenSpans
+    .filter((span) => span.tokenType !== 'text')
+    .map((span) => ({
+      start: Math.min(Math.max(Math.floor(span.startOffset), 0), sourceText.length),
+      end: Math.min(Math.max(Math.floor(span.endOffset), 0), sourceText.length),
+    }))
+    .filter((span) => span.end > span.start);
+
+  return {
+    sourceText,
+    targetText,
+    cleanedToSourceOffsets,
+    sourceToCleanedOffsets:
+      sourceToCleanedOffsets.length === sourceText.length + 1
+        ? sourceToCleanedOffsets
+        : invertOffsets(cleanedToSourceOffsets, sourceText.length, targetText.length),
+    sourceLineStarts: lineStartsForText(sourceText),
+    targetLineStarts: lineStartsForText(targetText),
+    unsafeSourceOffsetRanges,
+  };
+}
+
+function identityProjection(sourceText: string): ProjectionSnapshot {
+  const offsets = Array.from({ length: sourceText.length }, (_, index) => index);
+  const sourceToTarget = Array.from(
+    { length: sourceText.length + 1 },
+    (_, index) => index
+  );
+  return {
+    sourceText,
+    targetText: sourceText,
+    cleanedToSourceOffsets: offsets,
+    sourceToCleanedOffsets: sourceToTarget,
+    sourceLineStarts: lineStartsForText(sourceText),
+    targetLineStarts: lineStartsForText(sourceText),
+    unsafeSourceOffsetRanges: [],
+  };
+}
+
+function mapSourcePositionToTarget(
+  position: vscode.Position,
+  projection: ProjectionSnapshot | undefined
+): vscode.Position {
+  if (!projection) {
+    return position;
+  }
+  const sourceOffset = offsetForPosition(
+    projection.sourceLineStarts,
+    position,
+    projection.sourceText.length
+  );
+  const targetOffset =
+    sourceOffset >= projection.sourceToCleanedOffsets.length
+      ? projection.targetText.length
+      : projection.sourceToCleanedOffsets[sourceOffset];
+  return positionForOffset(projection.targetLineStarts, targetOffset);
+}
+
+function mapTargetPositionToSource(
+  position: vscode.Position,
+  projection: ProjectionSnapshot | undefined
+): vscode.Position {
+  if (!projection) {
+    return position;
+  }
+  const targetOffset = offsetForPosition(
+    projection.targetLineStarts,
+    position,
+    projection.targetText.length
+  );
+  const sourceOffset =
+    targetOffset >= projection.cleanedToSourceOffsets.length
+      ? projection.sourceText.length
+      : projection.cleanedToSourceOffsets[targetOffset];
+  return positionForOffset(projection.sourceLineStarts, sourceOffset);
+}
+
+function mapSourceRangeToTarget(
+  range: vscode.Range,
+  projection: ProjectionSnapshot | undefined
+): vscode.Range {
+  if (!projection) {
+    return range;
+  }
+  return new vscode.Range(
+    mapSourcePositionToTarget(range.start, projection),
+    mapSourcePositionToTarget(range.end, projection)
+  );
+}
+
+function mapTargetRangeToSource(
+  range: vscode.Range,
+  projection: ProjectionSnapshot | undefined
+): vscode.Range {
+  if (!projection) {
+    return range;
+  }
+  return new vscode.Range(
+    mapTargetPositionToSource(range.start, projection),
+    mapTargetPositionToSource(range.end, projection)
+  );
+}
+
+function overlapsUnsafeSourceRange(
+  range: vscode.Range,
+  projection: ProjectionSnapshot | undefined
+): boolean {
+  if (!projection || projection.unsafeSourceOffsetRanges.length === 0) {
+    return false;
+  }
+  const startOffset = offsetForPosition(
+    projection.sourceLineStarts,
+    range.start,
+    projection.sourceText.length
+  );
+  const endOffset = offsetForPosition(
+    projection.sourceLineStarts,
+    range.end,
+    projection.sourceText.length
+  );
+  const normalizedStart = Math.min(startOffset, endOffset);
+  const normalizedEnd = Math.max(startOffset, endOffset);
+  for (const unsafeRange of projection.unsafeSourceOffsetRanges) {
+    if (normalizedStart === normalizedEnd) {
+      if (normalizedStart >= unsafeRange.start && normalizedStart < unsafeRange.end) {
+        return true;
+      }
+      continue;
+    }
+    if (normalizedStart < unsafeRange.end && normalizedEnd > unsafeRange.start) {
+      return true;
+    }
+  }
+  return false;
+}
+
+type DecodedSemanticToken = {
+  line: number;
+  startChar: number;
+  length: number;
+  tokenType: number;
+  tokenModifiers: number;
+};
+
+function decodeSemanticTokens(data: ArrayLike<number>): DecodedSemanticToken[] {
+  const tokens: DecodedSemanticToken[] = [];
+  let line = 0;
+  let startChar = 0;
+  for (let index = 0; index + 4 < data.length; index += 5) {
+    const deltaLine = data[index];
+    const deltaStart = data[index + 1];
+    line += deltaLine;
+    startChar = deltaLine === 0 ? startChar + deltaStart : deltaStart;
+    tokens.push({
+      line,
+      startChar,
+      length: data[index + 2],
+      tokenType: data[index + 3],
+      tokenModifiers: data[index + 4],
+    });
+  }
+  return tokens;
+}
+
+function encodeSemanticTokens(tokens: DecodedSemanticToken[]): Uint32Array {
+  const ordered = [...tokens].sort((left, right) => {
+    if (left.line !== right.line) {
+      return left.line - right.line;
+    }
+    return left.startChar - right.startChar;
+  });
+  const encoded: number[] = [];
+  let previousLine = 0;
+  let previousStartChar = 0;
+  for (const token of ordered) {
+    const deltaLine = token.line - previousLine;
+    const deltaStart =
+      deltaLine === 0 ? token.startChar - previousStartChar : token.startChar;
+    encoded.push(
+      Math.max(deltaLine, 0),
+      Math.max(deltaStart, 0),
+      Math.max(token.length, 0),
+      Math.max(token.tokenType, 0),
+      Math.max(token.tokenModifiers, 0)
+    );
+    previousLine = token.line;
+    previousStartChar = token.startChar;
+  }
+  return new Uint32Array(encoded);
+}
+
+function remapSemanticTokensToSource(
+  tokens: vscode.SemanticTokens | undefined,
+  projection: ProjectionSnapshot | undefined
+): vscode.SemanticTokens | undefined {
+  if (!tokens || !projection) {
+    return tokens;
+  }
+  const decoded = decodeSemanticTokens(tokens.data);
+  const remapped: DecodedSemanticToken[] = [];
+  for (const token of decoded) {
+    const targetStart = new vscode.Position(token.line, token.startChar);
+    const targetEnd = new vscode.Position(token.line, token.startChar + token.length);
+    const sourceStart = mapTargetPositionToSource(targetStart, projection);
+    const sourceEnd = mapTargetPositionToSource(targetEnd, projection);
+    if (sourceStart.line !== sourceEnd.line) {
+      continue;
+    }
+    const length = Math.max(sourceEnd.character - sourceStart.character, 0);
+    if (length === 0) {
+      continue;
+    }
+    remapped.push({
+      line: sourceStart.line,
+      startChar: sourceStart.character,
+      length,
+      tokenType: token.tokenType,
+      tokenModifiers: token.tokenModifiers,
+    });
+  }
+  return new vscode.SemanticTokens(encodeSemanticTokens(remapped), tokens.resultId);
+}
+
 function asJsonObject(value: unknown): JsonObject | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return undefined;
@@ -555,120 +942,6 @@ function normalizeSemanticContext(
     return undefined;
   }
   return Object.keys(value).length > 0 ? value : undefined;
-}
-
-function stripTempleSuffixFromPath(
-  fsPath: string,
-  templeExtensions: string[]
-): string {
-  const lowerPath = fsPath.toLowerCase();
-  for (const extension of templeExtensions) {
-    const normalized = normalizeTempleExtension(extension).toLowerCase();
-    if (!normalized) {
-      continue;
-    }
-    if (lowerPath.endsWith(normalized)) {
-      return fsPath.slice(0, fsPath.length - normalized.length);
-    }
-  }
-  return fsPath;
-}
-
-function getLanguageSuffixAssociations(): LanguageSuffixAssociation[] {
-  if (cachedLanguageSuffixAssociations) {
-    return cachedLanguageSuffixAssociations;
-  }
-
-  const associations: LanguageSuffixAssociation[] = [];
-  const seen = new Set<string>();
-
-  for (const extension of vscode.extensions.all) {
-    const packageJson = extension.packageJSON as
-      | {
-          contributes?: {
-            languages?: Array<{
-              id?: unknown;
-              extensions?: unknown;
-            }>;
-          };
-        }
-      | undefined;
-    const contributedLanguages = packageJson?.contributes?.languages ?? [];
-    for (const language of contributedLanguages) {
-      if (typeof language.id !== 'string') {
-        continue;
-      }
-      const languageId = language.id;
-      if (!Array.isArray(language.extensions)) {
-        continue;
-      }
-      for (const ext of language.extensions) {
-        if (typeof ext !== 'string') {
-          continue;
-        }
-        const suffix = ext.trim().toLowerCase();
-        if (!suffix.startsWith('.')) {
-          continue;
-        }
-        const key = `${languageId}::${suffix}`;
-        if (seen.has(key)) {
-          continue;
-        }
-        seen.add(key);
-        associations.push({ suffix, languageId });
-      }
-    }
-  }
-
-  associations.sort((a, b) => b.suffix.length - a.suffix.length);
-  cachedLanguageSuffixAssociations = associations;
-  return associations;
-}
-
-function preferredBaseLanguageIdForTemplatePath(
-  fsPath: string,
-  templeExtensions: string[]
-): string | undefined {
-  const strippedPath = stripTempleSuffixFromPath(fsPath, templeExtensions);
-  const lowerPath = strippedPath.toLowerCase();
-  for (const association of getLanguageSuffixAssociations()) {
-    if (lowerPath.endsWith(association.suffix)) {
-      return association.languageId;
-    }
-  }
-  return undefined;
-}
-
-async function ensurePreferredTemplateLanguage(
-  doc: vscode.TextDocument,
-  templeExtensions: string[],
-  outputChannel: vscode.OutputChannel
-): Promise<void> {
-  if (doc.uri.scheme !== 'file') {
-    return;
-  }
-  if (!isTempleTemplateDocument(doc, templeExtensions)) {
-    return;
-  }
-
-  const preferredLanguage = preferredBaseLanguageIdForTemplatePath(
-    doc.uri.fsPath,
-    templeExtensions
-  );
-  if (!preferredLanguage || doc.languageId === preferredLanguage) {
-    return;
-  }
-
-  try {
-    await vscode.languages.setTextDocumentLanguage(doc, preferredLanguage);
-    outputChannel.appendLine(
-      `[${EXTENSION_NAME}] Re-associated '${doc.uri.fsPath}' to '${preferredLanguage}' for base-language highlighting.`
-    );
-  } catch (error) {
-    outputChannel.appendLine(
-      `[${EXTENSION_NAME}] Failed to re-associate '${doc.uri.fsPath}' to '${preferredLanguage}': ${String(error)}`
-    );
-  }
 }
 
 function resolveWorkspacePath(rawPath: string): string {
@@ -851,6 +1124,24 @@ function normalizeBaseLintStrategyMode(
   return 'auto';
 }
 
+function normalizeBaseLspBridgeMode(
+  mode: string | undefined
+): BaseLspBridgeMode {
+  if (mode === 'off' || mode === 'full') {
+    return mode;
+  }
+  return 'full';
+}
+
+function normalizeBaseLspParityBaseline(
+  value: string | undefined
+): BaseLspParityBaseline {
+  if (value === 'official-defaults') {
+    return value;
+  }
+  return 'official-defaults';
+}
+
 function normalizeBaseLintLogLevel(
   level: string | undefined
 ): BaseLintLogLevel {
@@ -871,6 +1162,54 @@ function shouldLogBaseLint(
   messageLevel: BaseLintLogLevel
 ): boolean {
   return LOG_LEVEL_ORDER[messageLevel] <= LOG_LEVEL_ORDER[configuredLevel];
+}
+
+function logBridgeDowngradeOnce(
+  capability: string,
+  detail: string,
+  outputChannel: vscode.OutputChannel
+): void {
+  const key = `${capability}:${detail}`;
+  if (bridgeDowngradeLogSet.has(key)) {
+    return;
+  }
+  bridgeDowngradeLogSet.add(key);
+  outputChannel.appendLine(
+    `[${EXTENSION_NAME}] Base-LSP bridge downgrade (${capability}): ${detail}`
+  );
+}
+
+async function requestProjectionSnapshot(
+  sourceDocument: vscode.TextDocument,
+  detectedFormat: string,
+  outputChannel: vscode.OutputChannel
+): Promise<ProjectionSnapshot> {
+  if (!client) {
+    return identityProjection(sourceDocument.getText());
+  }
+  try {
+    const response = await client.sendRequest(TEMPLE_GET_BASE_PROJECTION_METHOD, {
+      uri: sourceDocument.uri.toString(),
+      content: sourceDocument.getText(),
+      detectedFormat,
+    });
+    if (!isBaseProjectionResponse(response)) {
+      logBridgeDowngradeOnce(
+        'projection',
+        'invalid projection payload; using identity mapping',
+        outputChannel
+      );
+      return identityProjection(sourceDocument.getText());
+    }
+    return buildProjectionSnapshot(sourceDocument.getText(), response);
+  } catch (error) {
+    logBridgeDowngradeOnce(
+      'projection',
+      `projection request failed (${String(error)}); using identity mapping`,
+      outputChannel
+    );
+    return identityProjection(sourceDocument.getText());
+  }
 }
 
 export function resolveBaseLintStrategy(
@@ -930,6 +1269,58 @@ function extensionForDetectedFormat(format: string): string {
   }
 }
 
+function languageIdToDetectedFormat(languageId: string): string {
+  switch (languageId) {
+    case 'templ-markdown':
+      return 'markdown';
+    case 'templ-json':
+      return 'json';
+    case 'templ-yaml':
+      return 'yaml';
+    case 'templ-html':
+      return 'html';
+    case 'templ-xml':
+      return 'xml';
+    case 'templ-toml':
+      return 'toml';
+    default:
+      return '';
+  }
+}
+
+function isTemplatedLanguageId(languageId: string): boolean {
+  return TEMPLATED_LANGUAGE_IDS.has(languageId);
+}
+
+function stripTempleSuffixFromFsPath(
+  fsPath: string,
+  templeExtensions: string[]
+): string {
+  const normalizedPath = fsPath.toLowerCase();
+  for (const extension of templeExtensions) {
+    const normalizedExtension = normalizeTempleExtension(extension).toLowerCase();
+    if (!normalizedExtension) {
+      continue;
+    }
+    if (normalizedPath.endsWith(normalizedExtension)) {
+      return fsPath.slice(0, fsPath.length - normalizedExtension.length);
+    }
+  }
+  return fsPath;
+}
+
+function baseUriFromTemplateUri(
+  sourceUri: vscode.Uri,
+  templeExtensions: string[]
+): vscode.Uri {
+  if (sourceUri.scheme !== 'file') {
+    return sourceUri;
+  }
+  return vscode.Uri.file(
+    stripTempleSuffixFromFsPath(sourceUri.fsPath, templeExtensions)
+  );
+}
+
 function stableTempPathFor(originalUri: vscode.Uri, fileExtension: string): string {
   const hash = crypto
     .createHash('sha1')
@@ -952,21 +1343,7 @@ function resolveMirrorFileTargetUri(
   }
 
   const ext = extensionForDetectedFormat(detectedFormat);
-  const hash = crypto
-    .createHash('sha1')
-    .update(originalUri.toString())
-    .digest('hex')
-    .slice(0, 16);
-  let mirrorPath: string;
-  if (originalUri.scheme === 'file') {
-    const sourceDir = path.dirname(originalUri.fsPath);
-    const mirrorDir = path.join(sourceDir, MIRROR_GHOST_DIRNAME);
-    fs.mkdirSync(mirrorDir, { recursive: true });
-    tempBaseLintDirectories.add(mirrorDir);
-    mirrorPath = path.join(mirrorDir, `${hash}${ext}`);
-  } else {
-    mirrorPath = stableTempPathFor(originalUri, ext);
-  }
+  const mirrorPath = stableTempPathFor(originalUri, ext);
 
   tempBaseLintFileMap.set(originalUri.toString(), mirrorPath);
   return vscode.Uri.file(mirrorPath);
@@ -1009,7 +1386,677 @@ function resetBaseLintSessionCaches(): void {
   cleanedContentVersionMap.clear();
   tempBaseLintFileMap.clear();
   tempBaseLintDirectories.clear();
-  cachedLanguageSuffixAssociations = undefined;
+  shadowDocHandles.clear();
+  sourceToBaseUriMap.clear();
+}
+
+function cleanupShadowHandle(baseUriKey: string): void {
+  const existing = shadowDocHandles.get(baseUriKey);
+  if (!existing) {
+    return;
+  }
+  if (existing.strategy === 'mirror-file') {
+    cleanupMirrorFileTargetUri(existing.targetUri);
+    cleanupMirrorDirectories();
+  } else {
+    cleanedContentMap.delete(existing.targetUri.toString());
+  }
+  cleanedContentVersionMap.delete(existing.targetUri.toString());
+  shadowDocHandles.delete(baseUriKey);
+}
+
+function cleanupShadowHandlesForSourceUri(
+  sourceUri: vscode.Uri,
+  templeExtensions: string[]
+): void {
+  const sourceKey = sourceUri.toString();
+  const baseUriKey =
+    sourceToBaseUriMap.get(sourceKey) ??
+    baseUriFromTemplateUri(sourceUri, templeExtensions).toString();
+  sourceToBaseUriMap.delete(sourceKey);
+
+  const stillOpen = vscode.workspace.textDocuments.some((doc) => {
+    if (doc.uri.toString() === sourceKey) {
+      return false;
+    }
+    if (!isTemplatedLanguageId(doc.languageId)) {
+      return false;
+    }
+    const candidateBase = baseUriFromTemplateUri(doc.uri, templeExtensions).toString();
+    return candidateBase === baseUriKey;
+  });
+  if (!stillOpen) {
+    cleanupShadowHandle(baseUriKey);
+  }
+}
+
+function remapLocationLikeToSource(
+  value: vscode.Location | vscode.LocationLink,
+  shadow: ShadowDocHandle,
+  sourceUri: vscode.Uri
+): vscode.Location | vscode.LocationLink {
+  if (value instanceof vscode.Location) {
+    if (value.uri.toString() !== shadow.targetUri.toString()) {
+      return value;
+    }
+    return new vscode.Location(
+      sourceUri,
+      mapTargetRangeToSource(value.range, shadow.projection)
+    );
+  }
+
+  if (value.targetUri.toString() !== shadow.targetUri.toString()) {
+    return value;
+  }
+  return {
+    ...value,
+    targetUri: sourceUri,
+    targetRange: mapTargetRangeToSource(value.targetRange, shadow.projection),
+    targetSelectionRange: value.targetSelectionRange
+      ? mapTargetRangeToSource(value.targetSelectionRange, shadow.projection)
+      : value.targetSelectionRange,
+  };
+}
+
+function remapTextEditsToSource(
+  edits: readonly vscode.TextEdit[] | undefined,
+  shadow: ShadowDocHandle
+): { edits: vscode.TextEdit[]; blocked: boolean } {
+  if (!edits) {
+    return { edits: [], blocked: false };
+  }
+  let blocked = false;
+  const remapped: vscode.TextEdit[] = [];
+  for (const edit of edits) {
+    const mappedRange = mapTargetRangeToSource(edit.range, shadow.projection);
+    if (overlapsUnsafeSourceRange(mappedRange, shadow.projection)) {
+      blocked = true;
+      continue;
+    }
+    remapped.push(new vscode.TextEdit(mappedRange, edit.newText));
+  }
+  return { edits: remapped, blocked };
+}
+
+function remapWorkspaceEditToSource(
+  edit: vscode.WorkspaceEdit,
+  shadow: ShadowDocHandle,
+  sourceUri: vscode.Uri
+): { edit: vscode.WorkspaceEdit; blocked: boolean } {
+  const remapped = new vscode.WorkspaceEdit();
+  let blocked = false;
+  for (const [uri, edits] of edit.entries()) {
+    if (uri.toString() === shadow.targetUri.toString()) {
+      const mapped = remapTextEditsToSource(edits, shadow);
+      blocked = blocked || mapped.blocked;
+      remapped.set(sourceUri, mapped.edits);
+      continue;
+    }
+    remapped.set(uri, edits ? [...edits] : []);
+  }
+  return { edit: remapped, blocked };
+}
+
+function remapSymbolLikeToSource(
+  symbol: vscode.DocumentSymbol | vscode.SymbolInformation,
+  shadow: ShadowDocHandle,
+  sourceUri: vscode.Uri
+): vscode.DocumentSymbol | vscode.SymbolInformation {
+  if (symbol instanceof vscode.SymbolInformation) {
+    if (symbol.location.uri.toString() !== shadow.targetUri.toString()) {
+      return symbol;
+    }
+    return new vscode.SymbolInformation(
+      symbol.name,
+      symbol.kind,
+      symbol.containerName,
+      new vscode.Location(
+        sourceUri,
+        mapTargetRangeToSource(symbol.location.range, shadow.projection)
+      )
+    );
+  }
+
+  const mapped = new vscode.DocumentSymbol(
+    symbol.name,
+    symbol.detail,
+    symbol.kind,
+    mapTargetRangeToSource(symbol.range, shadow.projection),
+    mapTargetRangeToSource(symbol.selectionRange, shadow.projection)
+  );
+  mapped.children = symbol.children.map((child) =>
+    remapSymbolLikeToSource(child, shadow, sourceUri)
+  ) as vscode.DocumentSymbol[];
+  mapped.tags = symbol.tags;
+  return mapped;
+}
+
+async function ensureShadowDocumentForSource(
+  sourceDocument: vscode.TextDocument,
+  options: {
+    strategyMode: BaseLintStrategyMode;
+    capabilityRegistry: BaseLintCapabilityRegistry;
+    templeExtensions: string[];
+    virtualDocumentChangeEmitter: vscode.EventEmitter<vscode.Uri>;
+    outputChannel: vscode.OutputChannel;
+    logLevel: BaseLintLogLevel;
+  }
+): Promise<ShadowDocHandle | undefined> {
+  if (!isTemplatedLanguageId(sourceDocument.languageId)) {
+    return undefined;
+  }
+  const detectedFromLanguage = languageIdToDetectedFormat(sourceDocument.languageId);
+  const detectedFormat = detectedFromLanguage || 'unknown';
+  const sourceUri = sourceDocument.uri;
+  const baseUri = baseUriFromTemplateUri(sourceUri, options.templeExtensions);
+  const baseUriKey = baseUri.toString();
+  sourceToBaseUriMap.set(sourceUri.toString(), baseUriKey);
+  const existing = shadowDocHandles.get(baseUriKey);
+  if (
+    existing &&
+    existing.version === sourceDocument.version &&
+    existing.sourceUri.toString() === sourceUri.toString()
+  ) {
+    return existing;
+  }
+
+  const strategyDecision = resolveBaseLintStrategy({
+    mode: options.strategyMode,
+    detectedFormat,
+    capabilities: options.capabilityRegistry.capabilitiesForFormat(detectedFormat),
+  });
+  const strategy =
+    strategyDecision.strategy === 'embedded' ? 'virtual' : strategyDecision.strategy;
+  const targetUri =
+    strategy === 'mirror-file'
+      ? resolveMirrorFileTargetUri(baseUri, detectedFormat)
+      : baseUri.with({ scheme: VIRTUAL_SCHEME });
+  const projection = await requestProjectionSnapshot(
+    sourceDocument,
+    detectedFormat,
+    options.outputChannel
+  );
+  const shadowText = projection.targetText;
+
+  const uriKey = targetUri.toString();
+  const nextVersion = (cleanedContentVersionMap.get(uriKey) ?? 0) + 1;
+  cleanedContentVersionMap.set(uriKey, nextVersion);
+  if (strategy === 'mirror-file') {
+    fs.writeFileSync(targetUri.fsPath, shadowText, 'utf8');
+  } else {
+    cleanedContentMap.set(uriKey, shadowText);
+    options.virtualDocumentChangeEmitter.fire(targetUri);
+  }
+  shadowDocHandles.set(baseUriKey, {
+    sourceUri,
+    baseUri,
+    targetUri,
+    strategy,
+    detectedFormat,
+    version: sourceDocument.version,
+    updatedAt: Date.now(),
+    projection,
+  });
+
+  if (shouldLogBaseLint(options.logLevel, 'trace')) {
+    options.outputChannel.appendLine(
+      `[${EXTENSION_NAME}] Shadow doc ensured source=${sourceUri.toString()} base=${baseUriKey} target=${targetUri.toString()} strategy=${strategy}`
+    );
+  }
+  return shadowDocHandles.get(baseUriKey);
+}
+
+function registerBaseLspBridgeProviders(
+  context: vscode.ExtensionContext,
+  options: {
+    bridgeMode: BaseLspBridgeMode;
+    strategyMode: BaseLintStrategyMode;
+    capabilityRegistry: BaseLintCapabilityRegistry;
+    templeExtensions: string[];
+    virtualDocumentChangeEmitter: vscode.EventEmitter<vscode.Uri>;
+    outputChannel: vscode.OutputChannel;
+    logLevel: BaseLintLogLevel;
+  }
+): void {
+  if (options.bridgeMode === 'off') {
+    return;
+  }
+  const selector = BASE_LSP_PARITY_LANGUAGE_IDS.map((language) => ({ language }));
+  const semanticLegend = new vscode.SemanticTokensLegend(
+    [
+      'namespace',
+      'type',
+      'class',
+      'enum',
+      'interface',
+      'struct',
+      'typeParameter',
+      'parameter',
+      'variable',
+      'property',
+      'enumMember',
+      'event',
+      'function',
+      'method',
+      'macro',
+      'keyword',
+      'modifier',
+      'comment',
+      'string',
+      'number',
+      'regexp',
+      'operator',
+      'decorator',
+    ],
+    [
+      'declaration',
+      'definition',
+      'readonly',
+      'static',
+      'deprecated',
+      'abstract',
+      'async',
+      'modification',
+      'documentation',
+      'defaultLibrary',
+    ]
+  );
+
+  const withShadow = async (
+    document: vscode.TextDocument
+  ): Promise<ShadowDocHandle | undefined> =>
+    ensureShadowDocumentForSource(document, {
+      strategyMode: options.strategyMode,
+      capabilityRegistry: options.capabilityRegistry,
+      templeExtensions: options.templeExtensions,
+      virtualDocumentChangeEmitter: options.virtualDocumentChangeEmitter,
+      outputChannel: options.outputChannel,
+      logLevel: options.logLevel,
+    });
+  const logBlockedEdits = (capability: string, uri: vscode.Uri) => {
+    logBridgeDowngradeOnce(
+      capability,
+      `blocked edit overlapping Temple syntax for ${uri.toString()}`,
+      options.outputChannel
+    );
+  };
+
+  context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      selector,
+      {
+        async provideCompletionItems(document, position, _token, contextInfo) {
+          const shadow = await withShadow(document);
+          if (!shadow) {
+            return undefined;
+          }
+          const targetPosition = mapSourcePositionToTarget(position, shadow.projection);
+          return vscode.commands.executeCommand<
+            vscode.CompletionList | vscode.CompletionItem[]
+          >(
+            'vscode.executeCompletionItemProvider',
+            shadow.targetUri,
+            targetPosition,
+            contextInfo.triggerCharacter
+          );
+        },
+      },
+      '.',
+      ':',
+      '<',
+      '"',
+      "'",
+      '/'
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(selector, {
+      async provideHover(document, position) {
+        const shadow = await withShadow(document);
+        if (!shadow) {
+          return undefined;
+        }
+        const targetPosition = mapSourcePositionToTarget(position, shadow.projection);
+        const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
+          'vscode.executeHoverProvider',
+          shadow.targetUri,
+          targetPosition
+        );
+        const hover = hovers?.[0];
+        if (!hover) {
+          return hover;
+        }
+        if (!hover.range) {
+          return hover;
+        }
+        return new vscode.Hover(
+          hover.contents,
+          mapTargetRangeToSource(hover.range, shadow.projection)
+        );
+      },
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerDefinitionProvider(selector, {
+      async provideDefinition(document, position) {
+        const shadow = await withShadow(document);
+        if (!shadow) {
+          return undefined;
+        }
+        const targetPosition = mapSourcePositionToTarget(position, shadow.projection);
+        const result = await vscode.commands.executeCommand<
+          Array<vscode.Location | vscode.LocationLink>
+        >('vscode.executeDefinitionProvider', shadow.targetUri, targetPosition);
+        if (!result) {
+          return result;
+        }
+        const remapped = result.map((entry) =>
+          remapLocationLikeToSource(entry, shadow, document.uri)
+        );
+        const allLocations = remapped.every((entry) => entry instanceof vscode.Location);
+        if (allLocations) {
+          return remapped as vscode.Location[];
+        }
+        return remapped.filter(
+          (entry): entry is vscode.LocationLink => !(entry instanceof vscode.Location)
+        );
+      },
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerReferenceProvider(selector, {
+      async provideReferences(document, position, contextInfo) {
+        const shadow = await withShadow(document);
+        if (!shadow) {
+          return undefined;
+        }
+        const targetPosition = mapSourcePositionToTarget(position, shadow.projection);
+        const result = await vscode.commands.executeCommand<vscode.Location[]>(
+          'vscode.executeReferenceProvider',
+          shadow.targetUri,
+          targetPosition
+        );
+        if (!result) {
+          return result;
+        }
+        if (!contextInfo.includeDeclaration) {
+          return result
+            .filter((entry) => {
+              if (entry.uri.toString() !== shadow.targetUri.toString()) {
+                return true;
+              }
+              return !entry.range.contains(targetPosition);
+            })
+            .map(
+              (entry) =>
+                remapLocationLikeToSource(entry, shadow, document.uri) as vscode.Location
+            );
+        }
+        return result.map((entry) =>
+          remapLocationLikeToSource(entry, shadow, document.uri)
+        ) as vscode.Location[];
+      },
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider(
+      selector,
+      {
+        async provideCodeActions(document, range, contextInfo) {
+          const shadow = await withShadow(document);
+          if (!shadow) {
+            return undefined;
+          }
+          const targetRange = mapSourceRangeToTarget(range, shadow.projection);
+          const actions = await vscode.commands.executeCommand<
+            Array<vscode.CodeAction | vscode.Command>
+          >(
+            'vscode.executeCodeActionProvider',
+            shadow.targetUri,
+            targetRange,
+            contextInfo.only?.value
+          );
+          if (!actions) {
+            return actions;
+          }
+          return actions.map((action) => {
+            if (!(action instanceof vscode.CodeAction)) {
+              return action;
+            }
+            if (!action.edit) {
+              return action;
+            }
+            const clone = new vscode.CodeAction(action.title, action.kind);
+            clone.command = action.command;
+            clone.diagnostics = action.diagnostics?.map((diag) => {
+              const mapped = new vscode.Diagnostic(
+                mapTargetRangeToSource(diag.range, shadow.projection),
+                diag.message,
+                diag.severity
+              );
+              mapped.code = diag.code;
+              mapped.source = diag.source;
+              return mapped;
+            });
+            clone.isPreferred = action.isPreferred;
+            clone.disabled = action.disabled;
+            const remapped = remapWorkspaceEditToSource(action.edit, shadow, document.uri);
+            if (remapped.blocked) {
+              clone.disabled = {
+                reason:
+                  clone.disabled?.reason ??
+                  'Temple bridge blocked edits that overlap template syntax',
+              };
+              logBlockedEdits('codeAction', document.uri);
+            }
+            clone.edit = remapped.edit;
+            return clone;
+          });
+        },
+      },
+      {
+        providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerDocumentSymbolProvider(selector, {
+      async provideDocumentSymbols(document) {
+        const shadow = await withShadow(document);
+        if (!shadow) {
+          return undefined;
+        }
+        const symbols = await vscode.commands.executeCommand<
+          vscode.DocumentSymbol[] | vscode.SymbolInformation[]
+        >('vscode.executeDocumentSymbolProvider', shadow.targetUri);
+        if (!symbols) {
+          return symbols;
+        }
+        return symbols.map((symbol) =>
+          remapSymbolLikeToSource(symbol, shadow, document.uri)
+        ) as vscode.DocumentSymbol[] | vscode.SymbolInformation[];
+      },
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerRenameProvider(selector, {
+      async provideRenameEdits(document, position, newName) {
+        const shadow = await withShadow(document);
+        if (!shadow) {
+          return undefined;
+        }
+        const targetPosition = mapSourcePositionToTarget(position, shadow.projection);
+        const workspaceEdit = await vscode.commands.executeCommand<vscode.WorkspaceEdit>(
+          'vscode.executeDocumentRenameProvider',
+          shadow.targetUri,
+          targetPosition,
+          newName
+        );
+        if (!workspaceEdit) {
+          return undefined;
+        }
+        const remapped = remapWorkspaceEditToSource(workspaceEdit, shadow, document.uri);
+        if (remapped.blocked) {
+          logBlockedEdits('rename', document.uri);
+          return undefined;
+        }
+        return remapped.edit;
+      },
+      async prepareRename(document, position) {
+        const shadow = await withShadow(document);
+        if (!shadow) {
+          return undefined;
+        }
+        const targetPosition = mapSourcePositionToTarget(position, shadow.projection);
+        const prepared = await vscode.commands.executeCommand<
+          vscode.Range | { range: vscode.Range; placeholder: string } | undefined
+        >('vscode.prepareRename', shadow.targetUri, targetPosition);
+        if (!prepared) {
+          return prepared;
+        }
+        if (prepared instanceof vscode.Range) {
+          return mapTargetRangeToSource(prepared, shadow.projection);
+        }
+        return {
+          ...prepared,
+          range: mapTargetRangeToSource(prepared.range, shadow.projection),
+        };
+      },
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerDocumentFormattingEditProvider(selector, {
+      async provideDocumentFormattingEdits(document, options) {
+        const shadow = await withShadow(document);
+        if (!shadow) {
+          return [];
+        }
+        const edits = await vscode.commands.executeCommand<vscode.TextEdit[]>(
+          'vscode.executeFormatDocumentProvider',
+          shadow.targetUri,
+          options
+        );
+        const remapped = remapTextEditsToSource(edits, shadow);
+        if (remapped.blocked) {
+          logBlockedEdits('formatDocument', document.uri);
+        }
+        return remapped.edits;
+      },
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerDocumentRangeFormattingEditProvider(selector, {
+      async provideDocumentRangeFormattingEdits(document, range, options) {
+        const shadow = await withShadow(document);
+        if (!shadow) {
+          return [];
+        }
+        const targetRange = mapSourceRangeToTarget(range, shadow.projection);
+        const edits = await vscode.commands.executeCommand<vscode.TextEdit[]>(
+          'vscode.executeFormatRangeProvider',
+          shadow.targetUri,
+          targetRange,
+          options
+        );
+        const remapped = remapTextEditsToSource(edits, shadow);
+        if (remapped.blocked) {
+          logBlockedEdits('formatRange', document.uri);
+        }
+        return remapped.edits;
+      },
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerOnTypeFormattingEditProvider(
+      selector,
+      {
+        async provideOnTypeFormattingEdits(document, position, ch, options) {
+          const shadow = await withShadow(document);
+          if (!shadow) {
+            return [];
+          }
+          const targetPosition = mapSourcePositionToTarget(position, shadow.projection);
+          const edits = await vscode.commands.executeCommand<vscode.TextEdit[]>(
+            'vscode.executeFormatOnTypeProvider',
+            shadow.targetUri,
+            targetPosition,
+            ch,
+            options
+          );
+          const remapped = remapTextEditsToSource(edits, shadow);
+          if (remapped.blocked) {
+            logBlockedEdits('formatOnType', document.uri);
+          }
+          return remapped.edits;
+        },
+      },
+      '\n',
+      '}',
+      ']'
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerDocumentSemanticTokensProvider(
+      selector,
+      {
+        async provideDocumentSemanticTokens(document) {
+          const shadow = await withShadow(document);
+          if (!shadow) {
+            return undefined;
+          }
+          const tokens = await vscode.commands.executeCommand<vscode.SemanticTokens>(
+            'vscode.provideDocumentSemanticTokens',
+            shadow.targetUri
+          );
+          const remapped = remapSemanticTokensToSource(tokens, shadow.projection);
+          if (tokens && !remapped) {
+            logBridgeDowngradeOnce(
+              'semanticTokens',
+              `unable to remap semantic tokens for ${document.uri.toString()}`,
+              options.outputChannel
+            );
+          }
+          return remapped;
+        },
+      },
+      semanticLegend
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerDocumentRangeSemanticTokensProvider(
+      selector,
+      {
+        async provideDocumentRangeSemanticTokens(
+          document: vscode.TextDocument,
+          range: vscode.Range
+        ) {
+          const shadow = await withShadow(document);
+          if (!shadow) {
+            return undefined;
+          }
+          const targetRange = mapSourceRangeToTarget(range, shadow.projection);
+          const tokens = await vscode.commands.executeCommand<vscode.SemanticTokens>(
+            'vscode.provideDocumentRangeSemanticTokens',
+            shadow.targetUri,
+            targetRange
+          );
+          return remapSemanticTokensToSource(tokens, shadow.projection);
+        },
+      },
+      semanticLegend
+    )
+  );
 }
 
 export async function activate(
@@ -1073,6 +2120,12 @@ export async function activate(
     'embeddedBaseLintFormats',
     []
   );
+  const baseLspBridgeMode = normalizeBaseLspBridgeMode(
+    templeConfig.get<string>('baseLspBridgeMode', 'full')
+  );
+  const baseLspParityBaseline = normalizeBaseLspParityBaseline(
+    templeConfig.get<string>('baseLspParityBaseline', 'official-defaults')
+  );
   const capabilityRegistry = new DefaultBaseLintCapabilityRegistry(
     embeddedBaseLintFormats
   );
@@ -1092,7 +2145,7 @@ export async function activate(
     fs.mkdirSync(baseLintStorageRoot, { recursive: true });
   }
   outputChannel.appendLine(
-    `[${EXTENSION_NAME}] Base lint mode=${baseLintStrategyMode} focus=${baseLintFocusMode} logLevel=${effectiveBaseLintLogLevel}`
+    `[${EXTENSION_NAME}] Base lint mode=${baseLintStrategyMode} focus=${baseLintFocusMode} logLevel=${effectiveBaseLintLogLevel} bridgeMode=${baseLspBridgeMode} parity=${baseLspParityBaseline}`
   );
   const semanticSchemaPath = semanticSchemaPathRaw
     ? resolveWorkspacePath(semanticSchemaPathRaw)
@@ -1105,32 +2158,6 @@ export async function activate(
     vscode.workspace.createFileSystemWatcher(`**/*${extension}`)
   );
   context.subscriptions.push(...fileWatchers);
-
-  for (const doc of vscode.workspace.textDocuments) {
-    void ensurePreferredTemplateLanguage(
-      doc,
-      effectiveTempleExtensions,
-      outputChannel
-    );
-  }
-
-  context.subscriptions.push(
-    vscode.workspace.onDidOpenTextDocument((doc) => {
-      void ensurePreferredTemplateLanguage(
-        doc,
-        effectiveTempleExtensions,
-        outputChannel
-      );
-      if (
-        isTempleTemplateDocument(doc, effectiveTempleExtensions) &&
-        doc.languageId !== 'templated-any'
-      ) {
-        outputChannel.appendLine(
-          `[${EXTENSION_NAME}] '${doc.uri.fsPath}' opened as '${doc.languageId}'. Temple will still lint by filename pattern.`
-        );
-      }
-    })
-  );
 
   const linterRoot = resolveServerCwd(context, templeConfig, outputChannel);
   const serverEnv = buildServerEnv(linterRoot);
@@ -1162,6 +2189,8 @@ export async function activate(
       baseLintDebounceSeconds,
       baseLintStrategyMode,
       embeddedBaseLintFormats,
+      baseLspBridgeMode,
+      baseLspParityBaseline,
     },
   };
 
@@ -1190,13 +2219,6 @@ export async function activate(
         outputChannel.appendLine(
           `[${EXTENSION_NAME}] Using temple extensions from language server defaults: ${effectiveTempleExtensions.join(', ')}`
         );
-        for (const doc of vscode.workspace.textDocuments) {
-          void ensurePreferredTemplateLanguage(
-            doc,
-            effectiveTempleExtensions,
-            outputChannel
-          );
-        }
       }
     }
   } catch (error) {
@@ -1208,6 +2230,47 @@ export async function activate(
     );
     throw error;
   }
+
+  registerBaseLspBridgeProviders(context, {
+    bridgeMode: baseLspBridgeMode,
+    strategyMode: baseLintStrategyMode,
+    capabilityRegistry,
+    templeExtensions: effectiveTempleExtensions,
+    virtualDocumentChangeEmitter,
+    outputChannel,
+    logLevel: effectiveBaseLintLogLevel,
+  });
+
+  context.subscriptions.push(
+    vscode.workspace.onDidCloseTextDocument((doc) => {
+      if (!isTemplatedLanguageId(doc.languageId)) {
+        return;
+      }
+      cleanupShadowHandlesForSourceUri(doc.uri, effectiveTempleExtensions);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument((event) => {
+      const doc = event.document;
+      if (!isTemplatedLanguageId(doc.languageId)) {
+        return;
+      }
+      const baseUri = baseUriFromTemplateUri(doc.uri, effectiveTempleExtensions);
+      const existing = shadowDocHandles.get(baseUri.toString());
+      if (!existing) {
+        return;
+      }
+      void ensureShadowDocumentForSource(doc, {
+        strategyMode: baseLintStrategyMode,
+        capabilityRegistry,
+        templeExtensions: effectiveTempleExtensions,
+        virtualDocumentChangeEmitter,
+        outputChannel,
+        logLevel: effectiveBaseLintLogLevel,
+      });
+    })
+  );
 
   client.onRequest(
     'temple/requestBaseDiagnostics',
@@ -1243,41 +2306,60 @@ export async function activate(
         strategyDecision.strategy === 'mirror-file'
           ? resolveMirrorFileTargetUri(originalUri, normalizedFormat)
           : originalUri.with({ scheme: VIRTUAL_SCHEME });
+      const sourceCandidate = effectiveTempleExtensions
+        .map((extension) =>
+          originalUri.scheme === 'file'
+            ? vscode.Uri.file(`${originalUri.fsPath}${normalizeTempleExtension(extension)}`)
+            : undefined
+        )
+        .find((candidate): candidate is vscode.Uri => {
+          if (!candidate) {
+            return false;
+          }
+          return vscode.workspace.textDocuments.some(
+            (doc) => doc.uri.toString() === candidate.toString()
+          );
+        });
+      if (sourceCandidate) {
+        sourceToBaseUriMap.set(sourceCandidate.toString(), originalUri.toString());
+      }
+
       const uriKey = targetUri.toString();
       const nextVersion = (cleanedContentVersionMap.get(uriKey) ?? 0) + 1;
       cleanedContentVersionMap.set(uriKey, nextVersion);
-      try {
-        if (strategyDecision.strategy === 'mirror-file') {
-          fs.writeFileSync(targetUri.fsPath, params.content, 'utf8');
-        } else {
-          cleanedContentMap.set(uriKey, params.content);
-          virtualDocumentChangeEmitter.fire(targetUri);
-        }
-
-        const diagnostics = await collectDiagnosticsForVirtualUri(
-          targetUri,
-          nextVersion
-        );
-        if (shouldLogBaseLint(effectiveBaseLintLogLevel, 'trace')) {
-          const sources = dedupe(
-            diagnostics
-              .map((diag) => (diag.source ?? '').trim())
-              .filter((source) => source.length > 0)
-          );
-          outputChannel.appendLine(
-            `[${EXTENSION_NAME}] Base lint strategy=${strategyDecision.strategy} target=${targetUri.toString()} (${normalizedFormat || 'unknown'}) -> ${diagnostics.length} diagnostics` +
-              ` [reason: ${strategyDecision.reason}]` +
-              ` [publish-uri: ${originalUri.toString()}]` +
-              (sources.length ? ` [sources: ${sources.join(', ')}]` : '')
-          );
-        }
-        return { diagnostics: diagnostics.map(vscDiagToLspDiag) };
-      } finally {
-        if (strategyDecision.strategy === 'mirror-file') {
-          cleanupMirrorFileTargetUri(targetUri);
-          cleanupMirrorDirectories();
-        }
+      if (strategyDecision.strategy === 'mirror-file') {
+        fs.writeFileSync(targetUri.fsPath, params.content, 'utf8');
+      } else {
+        cleanedContentMap.set(uriKey, params.content);
+        virtualDocumentChangeEmitter.fire(targetUri);
       }
+      const existingShadow = shadowDocHandles.get(originalUri.toString());
+      shadowDocHandles.set(originalUri.toString(), {
+        sourceUri: sourceCandidate ?? existingShadow?.sourceUri ?? originalUri,
+        baseUri: originalUri,
+        targetUri,
+        strategy: strategyDecision.strategy,
+        detectedFormat: normalizedFormat,
+        version: nextVersion,
+        updatedAt: Date.now(),
+        projection: existingShadow?.projection,
+      });
+
+      const diagnostics = await collectDiagnosticsForVirtualUri(targetUri, nextVersion);
+      if (shouldLogBaseLint(effectiveBaseLintLogLevel, 'trace')) {
+        const sources = dedupe(
+          diagnostics
+            .map((diag) => (diag.source ?? '').trim())
+            .filter((source) => source.length > 0)
+        );
+        outputChannel.appendLine(
+          `[${EXTENSION_NAME}] Base lint strategy=${strategyDecision.strategy} target=${targetUri.toString()} (${normalizedFormat || 'unknown'}) -> ${diagnostics.length} diagnostics` +
+            ` [reason: ${strategyDecision.reason}]` +
+            ` [publish-uri: ${originalUri.toString()}]` +
+            (sources.length ? ` [sources: ${sources.join(', ')}]` : '')
+        );
+      }
+      return { diagnostics: diagnostics.map(vscDiagToLspDiag) };
     }
   );
 

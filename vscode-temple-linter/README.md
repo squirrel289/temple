@@ -13,7 +13,7 @@ Language support for Temple templated files with integrated linting and diagnost
 
 Syntax grammar maintenance note:
 
-- `syntaxes/templated-any.tmLanguage.json` and `syntaxes/temple.injection.tmLanguage.json` are generated from a shared source script: `scripts/generate-syntaxes.js`.
+- `syntaxes/templ-*.tmLanguage.json` and `syntaxes/temple.injection.tmLanguage.json` are generated from a shared source script: `scripts/generate-syntaxes.js`.
 - Run `npm run generate:syntaxes` (or `npm run compile`) after grammar changes.
 
 ## Installation
@@ -120,6 +120,19 @@ Create files with `.tmpl` or `.template` extensions:
 - `app.yaml.tmpl` - YAML template  
 - `index.html.tmpl` - HTML template
 - `README.md.tmpl` - Markdown template
+
+Temple keeps templates on Temple-owned language IDs:
+
+- `templ-markdown`
+- `templ-json`
+- `templ-yaml`
+- `templ-html`
+- `templ-xml`
+- `templ-toml`
+- `templ-any` (fallback)
+
+This preserves Temple diagnostic ownership while enabling shadow-bridge
+base-language tooling.
 
 ### Template Syntax
 
@@ -269,15 +282,22 @@ flowchart TD
 
 **Check language ID:**
 
-- Bottom-right corner of VS Code should show "Templated File"
-- Click to manually select language if incorrect
+- Bottom-right corner of VS Code should show `Templated ...` (for example,
+  `Templated Markdown` for `.md.tmpl`).
+- If it switches to `markdown`/`json`/other base language, remove user/workspace
+  `files.associations` overrides for `*.md.tmpl`, `*.json.tmpl`, etc.
 - If another extension claims `.tmpl` (for example Go templates), force Temple association:
 
   ```json
   {
     "files.associations": {
-      "*.tmpl": "templated-any",
-      "*.template": "templated-any"
+      "*.md.tmpl": "templ-markdown",
+      "*.json.tmpl": "templ-json",
+      "*.yaml.tmpl": "templ-yaml",
+      "*.html.tmpl": "templ-html",
+      "*.xml.tmpl": "templ-xml",
+      "*.toml.tmpl": "templ-toml",
+      "*.tmpl": "templ-any"
     }
   }
   ```
@@ -354,11 +374,19 @@ vscode-temple-linter/
 ├── test_sample.json.tmpl
 ├── tsconfig.json                         # TypeScript compiler configuration
 ├── scripts/
+│   ├── generate-defaults.js
 │   └── generate-syntaxes.js
 ├── src/                                  # Extension source code
+│   ├── defaults.ts
 │   └── extension.ts                      # LanguageClient bootstrap and LSP wiring
 ├── syntaxes/
-│   ├── templated-any.tmLanguage.json
+│   ├── templ-any.tmLanguage.json
+│   ├── templ-html.tmLanguage.json
+│   ├── templ-json.tmLanguage.json
+│   ├── templ-markdown.tmLanguage.json
+│   ├── templ-toml.tmLanguage.json
+│   ├── templ-xml.tmLanguage.json
+│   ├── templ-yaml.tmLanguage.json
 │   └── temple.injection.tmLanguage.json
 └── test/
     ├── runTest.js

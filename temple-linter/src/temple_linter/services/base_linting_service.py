@@ -3,6 +3,7 @@ BaseLintingService - Delegates linting to VS Code's native linters
 """
 
 import logging
+import time
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Any
 
@@ -24,6 +25,8 @@ class BaseLintingService:
 
     def __init__(self, logger: logging.Logger = None):
         self.logger = logger or logging.getLogger(__name__)
+        self._last_timeout_log_signature: tuple[str, str, int] | None = None
+        self._last_timeout_log_at = 0.0
 
     def request_base_diagnostics(
         self,
@@ -73,8 +76,11 @@ class BaseLintingService:
                     "detectedFormat": detected_format,
                 },
             )
-            # Keep this short so template syntax diagnostics remain responsive.
-            result = result_future.result(timeout=0.5)
+            timeout_seconds = self._resolve_timeout_seconds(
+                cleaned_text=cleaned_text,
+                detected_format=detected_format,
+            )
+            result = result_future.result(timeout=timeout_seconds)
 
             # Coerce diagnostics to LSP Diagnostic objects
             raw_diagnostics = result.get("diagnostics", []) if result else []
@@ -109,8 +115,14 @@ class BaseLintingService:
             return valid_diagnostics
 
         except FutureTimeoutError:
-            self.logger.warning(
-                "Timed out waiting for base diagnostics from extension transport"
+            self._log_timeout_once(
+                original_uri=original_uri,
+                detected_format=detected_format or "unknown",
+                cleaned_text_length=len(cleaned_text),
+                timeout_seconds=self._resolve_timeout_seconds(
+                    cleaned_text=cleaned_text,
+                    detected_format=detected_format,
+                ),
             )
             return []
         except Exception as e:
@@ -127,3 +139,45 @@ class BaseLintingService:
         if protocol is None or not hasattr(protocol, "send_request"):
             raise RuntimeError("Request transport does not provide protocol.send_request")
         return protocol
+
+    @staticmethod
+    def _resolve_timeout_seconds(
+        cleaned_text: str,
+        detected_format: str | None,
+    ) -> float:
+        normalized = (detected_format or "").strip().lower()
+        if normalized in {"md", "markdown"}:
+            baseline = 1.2
+        elif normalized in {"json", "yaml", "yml", "toml", "xml", "html"}:
+            baseline = 0.8
+        else:
+            baseline = 0.6
+
+        size_boost = min(len(cleaned_text) / 8000.0, 1.0) * 0.7
+        timeout = baseline + size_boost
+        return max(0.35, min(timeout, 2.5))
+
+    def _log_timeout_once(
+        self,
+        original_uri: str,
+        detected_format: str,
+        cleaned_text_length: int,
+        timeout_seconds: float,
+    ) -> None:
+        signature = (original_uri, detected_format, int(timeout_seconds * 1000))
+        now = time.monotonic()
+        if (
+            signature == self._last_timeout_log_signature
+            and (now - self._last_timeout_log_at) < 8.0
+        ):
+            return
+        self._last_timeout_log_signature = signature
+        self._last_timeout_log_at = now
+        self.logger.warning(
+            "Timed out waiting for base diagnostics from extension transport "
+            "(uri=%s format=%s timeout=%.2fs cleaned_len=%d)",
+            original_uri,
+            detected_format,
+            timeout_seconds,
+            cleaned_text_length,
+        )

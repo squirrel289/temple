@@ -1,8 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Temple Templated File",
-  "scopeName": "source.templated-any",
+  "name": "Temple Templated Markdown",
+  "scopeName": "source.templ-markdown",
   "patterns": [
+    {
+      "include": "text.html.markdown"
+    },
     {
       "include": "#templeComment"
     },

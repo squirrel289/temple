@@ -82,8 +82,8 @@ function runStrategyResolverTests(testing) {
   });
   assert.equal(
     markdownFallback.strategy,
-    "mirror-file",
-    "markdown should use mirror-file when virtual diagnostics are unreliable"
+    "virtual",
+    "markdown should use virtual strategy by default"
   );
 
   const embeddedFallback = testing.resolveBaseLintStrategy({
@@ -101,12 +101,9 @@ function runStrategyResolverTests(testing) {
 function runMirrorPathTests(testing, markdownTemplatePath) {
   const markdownUri = vscode.Uri.file(markdownTemplatePath);
   const mirrorUri = testing.resolveMirrorFileTargetUri(markdownUri, "markdown");
-  const sourceDir = path.dirname(markdownTemplatePath);
-  const expectedDir = path.join(sourceDir, testing.MIRROR_GHOST_DIRNAME);
-  assert.equal(
-    path.dirname(mirrorUri.fsPath),
-    expectedDir,
-    "mirror-file path should be collocated under hidden sibling directory"
+  assert.ok(
+    mirrorUri.fsPath.includes(testing.MIRROR_GHOST_DIRNAME),
+    "mirror-file path should use Temple shadow cache directory"
   );
   assert.ok(
     mirrorUri.fsPath.endsWith(".md"),
@@ -130,7 +127,7 @@ async function runIntegrationTests() {
 
   const workspaceRoot = getWorkspaceRoot();
 
-  // 1) .md.tmpl should preserve Markdown language features via association defaults.
+  // 1) Base extension templated files resolve to format-specific Temple IDs.
   const markdownTemplatePath = path.join(
     workspaceRoot,
     "examples",
@@ -142,8 +139,8 @@ async function runIntegrationTests() {
   await vscode.window.showTextDocument(markdownDoc);
   assert.equal(
     markdownDoc.languageId,
-    "markdown",
-    "Expected .md.tmpl files to use markdown language id"
+    "templ-markdown",
+    "Expected .md.tmpl files to use templ-markdown language id"
   );
   runMirrorPathTests(extension.exports.__testing, markdownTemplatePath);
 
@@ -159,8 +156,8 @@ async function runIntegrationTests() {
     await vscode.window.showTextDocument(malformedDoc);
     assert.equal(
       malformedDoc.languageId,
-      "templated-any",
-      "Expected plain .tmpl files to use templated-any language id"
+      "templ-any",
+      "Expected plain .tmpl files to use templ-any language id"
     );
 
     const diagnostics = await waitFor(

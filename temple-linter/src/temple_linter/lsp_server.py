@@ -22,10 +22,12 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_PREPARE_RENAME,
     TEXT_DOCUMENT_REFERENCES,
     TEXT_DOCUMENT_RENAME,
+    WORKSPACE_DID_CHANGE_WATCHED_FILES,
     CompletionOptions,
     CompletionParams,
     DefinitionParams,
     DidChangeTextDocumentParams,
+    DidChangeWatchedFilesParams,
     DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
     HoverParams,
@@ -52,6 +54,7 @@ from .lsp_features import (
     TemplateRenameProvider,
 )
 from .services.lint_orchestrator import LintOrchestrator
+from .services.projection_snapshot import ProjectionSnapshot
 
 
 class TempleLinterServer(LanguageServer):
@@ -77,6 +80,25 @@ class TempleLinterServer(LanguageServer):
 
 ls = TempleLinterServer()
 TEMPLE_GET_DEFAULTS_METHOD = "temple/getDefaults"
+TEMPLE_GET_BASE_PROJECTION_METHOD = "temple/getBaseProjection"
+
+
+def _normalize_projection_delimiters(
+    raw: Any,
+) -> dict[str, tuple[str, str]] | None:
+    if not isinstance(raw, dict):
+        return None
+    normalized: dict[str, tuple[str, str]] = {}
+    for token_type, value in raw.items():
+        if not isinstance(token_type, str):
+            continue
+        if not isinstance(value, (list, tuple)) or len(value) != 2:
+            continue
+        start, end = value
+        if not isinstance(start, str) or not isinstance(end, str):
+            continue
+        normalized[token_type] = (start, end)
+    return normalized or None
 
 
 @ls.feature(INITIALIZE)
@@ -141,6 +163,44 @@ def get_defaults(_ls: TempleLinterServer, *_args):
             token_type: [start, end]
             for token_type, (start, end) in DEFAULT_TEMPLATE_DELIMITERS.items()
         },
+    }
+
+
+@ls.feature(TEMPLE_GET_BASE_PROJECTION_METHOD)
+def get_base_projection(ls: TempleLinterServer, params: Any):
+    payload = params if isinstance(params, dict) else {}
+    content = payload.get("content")
+    detected_format = payload.get("detectedFormat")
+    delimiters = _normalize_projection_delimiters(payload.get("templateDelimiters"))
+
+    if not isinstance(content, str):
+        content = ""
+    if not isinstance(detected_format, str):
+        detected_format = None
+
+    contract = ls.orchestrator.token_cleaning_service.clean_for_base_lint(
+        content,
+        format_hint=detected_format,
+        delimiters=delimiters,
+    )
+    projection = ProjectionSnapshot.from_contract(
+        contract,
+        format_hint=detected_format,
+    )
+    spans = [
+        {
+            "startOffset": span.start_offset,
+            "endOffset": span.end_offset,
+            "tokenType": span.token.type,
+        }
+        for span in contract.token_spans
+        if span.token.type != "text"
+    ]
+    return {
+        "cleanedText": projection.cleaned_text,
+        "cleanedToSourceOffsets": list(projection.cleaned_to_source_offsets),
+        "sourceToCleanedOffsets": list(projection.source_to_cleaned_offsets),
+        "templateTokenSpans": spans,
     }
 
 
@@ -215,6 +275,15 @@ def did_save(ls: TempleLinterServer, params: DidSaveTextDocumentParams):
             diagnostics=diagnostics,
         )
     )
+
+
+@ls.feature(WORKSPACE_DID_CHANGE_WATCHED_FILES)
+def did_change_watched_files(
+    _ls: TempleLinterServer,
+    _params: DidChangeWatchedFilesParams,
+):
+    """No-op handler to avoid unknown-method noise from client file watchers."""
+    return None
 
 
 def main() -> int:

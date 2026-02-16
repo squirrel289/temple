@@ -127,18 +127,21 @@ const sharedRepository = {
   },
 };
 
-const sharedPatterns = [
+const templeOnlyPatterns = [
   { include: "#templeComment" },
   { include: "#templeStatement" },
   { include: "#templeExpression" },
 ];
 
-function buildGrammar({ name, scopeName, injectionSelector }) {
+function buildGrammar({ name, scopeName, injectionSelector, baseScopeInclude }) {
+  const patterns = baseScopeInclude
+    ? [{ include: baseScopeInclude }, ...templeOnlyPatterns]
+    : templeOnlyPatterns;
   const grammar = {
     $schema: SCHEMA_URL,
     name,
     scopeName,
-    patterns: sharedPatterns,
+    patterns,
     repository: sharedRepository,
   };
 
@@ -159,10 +162,59 @@ function main() {
   fs.mkdirSync(SYNTAX_DIR, { recursive: true });
 
   writeSyntaxFile(
-    "templated-any.tmLanguage.json",
+    "templ-any.tmLanguage.json",
     buildGrammar({
       name: "Temple Templated File",
-      scopeName: "source.templated-any",
+      scopeName: "source.templ-any",
+    })
+  );
+
+  writeSyntaxFile(
+    "templ-markdown.tmLanguage.json",
+    buildGrammar({
+      name: "Temple Templated Markdown",
+      scopeName: "source.templ-markdown",
+      baseScopeInclude: "text.html.markdown",
+    })
+  );
+  writeSyntaxFile(
+    "templ-json.tmLanguage.json",
+    buildGrammar({
+      name: "Temple Templated JSON",
+      scopeName: "source.templ-json",
+      baseScopeInclude: "source.json",
+    })
+  );
+  writeSyntaxFile(
+    "templ-yaml.tmLanguage.json",
+    buildGrammar({
+      name: "Temple Templated YAML",
+      scopeName: "source.templ-yaml",
+      baseScopeInclude: "source.yaml",
+    })
+  );
+  writeSyntaxFile(
+    "templ-html.tmLanguage.json",
+    buildGrammar({
+      name: "Temple Templated HTML",
+      scopeName: "source.templ-html",
+      baseScopeInclude: "text.html.basic",
+    })
+  );
+  writeSyntaxFile(
+    "templ-xml.tmLanguage.json",
+    buildGrammar({
+      name: "Temple Templated XML",
+      scopeName: "source.templ-xml",
+      baseScopeInclude: "text.xml",
+    })
+  );
+  writeSyntaxFile(
+    "templ-toml.tmLanguage.json",
+    buildGrammar({
+      name: "Temple Templated TOML",
+      scopeName: "source.templ-toml",
+      baseScopeInclude: "source.toml",
     })
   );
 

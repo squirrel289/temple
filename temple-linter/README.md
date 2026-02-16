@@ -296,6 +296,7 @@ temple-linter/tests/
 ├── test_lsp_features.py                # Completion/hover/definition/references/rename tests
 ├── test_lsp_mvp_smoke.py
 ├── test_lsp_transport_wiring.py
+├── test_projection_snapshot.py
 ├── test_semantic_linter.py
 └── fixtures/                           # Template fixtures for base-format and linting scenarios
     ├── valid_docker_compose.yaml.tmpl

@@ -13,5 +13,6 @@ class BaseCleaningContract:
 
     original_text: str
     cleaned_text: str
+    cleaned_to_original_offsets: tuple[int, ...]
     token_spans: tuple[TemplateTokenSpan, ...]
     line_metadata: tuple[TemplateLineMetadata, ...]

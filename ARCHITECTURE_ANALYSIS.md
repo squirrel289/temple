@@ -1,4 +1,5 @@
 # Temple Monorepo: Comprehensive Architecture Analysis
+
 **Date**: January 7, 2026  
 **Scope**: Full system architecture review, dependency analysis, and refactoring recommendations
 
@@ -21,11 +22,13 @@ flowchart LR
 ### 1.2 Component Roles & Responsibilities
 
 #### **Component 1: temple/** - Core Templating Engine
+
 **Status**: Active Development (Functional Core)  
 **Language**: Python 3.8+  
 **Primary Responsibility**: Authoritative tokenization and core template processing
 
 **Roles**:
+
 - **Authoritative Tokenizer**: Production-ready template tokenization with configurable delimiters
 - **Token Model Definition**: Canonical `Token` class with (line, col) position tracking
 - **Performance Optimizations**: LRU-cached regex pattern compilation for 10x+ speedup
@@ -33,6 +36,7 @@ flowchart LR
 - **Core Library**: Provides foundational components for temple-linter and other consumers
 
 **Key Files**:
+
 - [`src/temple/template_tokenizer.py`](temple/src/temple/template_tokenizer.py) - Authoritative tokenizer implementation
 - [`src/temple/__init__.py`](temple/src/temple/__init__.py) - Package exports (Token, TokenType, temple_tokenizer)
 - [`tests/test_tokenizer.py`](temple/tests/test_tokenizer.py) - Core tokenizer tests (10 passing)
@@ -44,7 +48,8 @@ flowchart LR
 
 **Dependencies**: None (pure Python 3.8+ stdlib)
 
-**Outputs**: 
+**Outputs**:
+
 - Installable `temple` package
 - Token class and tokenizer for downstream consumers
 - Architecture specifications
@@ -52,11 +57,13 @@ flowchart LR
 ---
 
 #### **Component 2: temple-linter/** - LSP Server & Linting
+
 **Status**: Active Development (Functional)  
 **Language**: Python 3.8+  
 **Primary Responsibility**: Template-aware linting and LSP server implementation
 
 **Roles**:
+
 - **Linting Orchestration**: Coordinates template linting using core tokenizer from `temple` package
 - **Template Preprocessor**: Strips template tokens to expose base format for native linters
 - **LSP Server**: Implements Language Server Protocol for editor integration
@@ -64,6 +71,7 @@ flowchart LR
 - **Base Format Detector**: Identifies underlying format (JSON, HTML, YAML, etc.)
 
 **Key Files**:
+
 - **Services** (using temple core tokenizer):
   
 - [`src/temple_linter/template_preprocessing.py`](temple-linter/src/temple_linter/template_preprocessing.py)
@@ -88,10 +96,12 @@ flowchart LR
   - `detect_base_format()` - Extension and content-based detection
 
 **Dependencies**:
+
 - `temple>=0.1.0` - Core tokenization engine (REQUIRED)
 - `pygls>=1.0.0` - LSP server framework
 
 **Outputs**:
+
 - LSP diagnostics for template files
 - Cleaned content for base format linting
 - Position-mapped diagnostics
@@ -99,11 +109,13 @@ flowchart LR
 ---
 
 #### **Component 3: vscode-temple-linter/** - VS Code Extension
+
 **Status**: Functional Prototype  
 **Language**: TypeScript / Node.js  
 **Primary Responsibility**: VS Code integration via LSP proxy
 
 **Roles**:
+
 - **Extension Host**: Activates on `.tmpl`, `.template` files
 - **LSP Client**: Connects to `temple-linter` Python LSP server
 - **Virtual Document Provider**: Creates `temple-cleaned://` URIs for cleaned content
@@ -111,6 +123,7 @@ flowchart LR
 - **Position Translator**: Maps diagnostics between cleaned and original documents
 
 **Key Files**:
+
 - [`src/extension.ts`](vscode-temple-linter/src/extension.ts) - Main extension entry point
   - `activate()` - Starts Python LSP server, registers handlers
   - `handleCreateVirtualDocument()` - Stores cleaned content in memory
@@ -119,7 +132,7 @@ flowchart LR
   - LSP proxy server for `temple/requestBaseDiagnostics`
 
 - [`package.json`](vscode-temple-linter/package.json)
-  - Language definition: `templated-any` for `.tmpl`, `.template`
+  - Language definition: `templ-any` for `.tmpl`, `.template`
   - Extension activation events
   - Dependencies: `vscode-languageclient`, `vscode-languageserver`
 
@@ -128,11 +141,13 @@ flowchart LR
   - Architecture diagrams showing data flow
 
 **Dependencies**:
+
 - `vscode-languageclient@^9.0.1` - LSP client library
 - `vscode-languageserver@^8.0.0` - LSP server types
 - `typescript@^4.8.0` - Build toolchain
 
 **Outputs**:
+
 - Real-time diagnostics in VS Code editor
 - Integration with VS Code's native linters (JSON, Markdown, HTML, etc.)
 
@@ -155,7 +170,7 @@ flowchart TD
 
 ### 1.4 Critical Integration Points
 
-1. **temple → temple-linter**: 
+1. **temple → temple-linter**:
    - Shared delimiter configuration schema
    - Position tracking conventions `(line, col)` tuples
    - Error reporting format (inline + actionable)
@@ -179,12 +194,14 @@ flowchart TD
 #### Current State: ✅ PROPERLY ISOLATED
 
 **temple/**:
+
 - Virtual environment: `.venv/` (local to `temple/`)
 - Dependencies: `requirements.txt` (currently empty - spec only)
 - Package config: `pyproject.toml` with `setuptools` build system
 - No runtime dependencies on `temple-linter`
 
 **temple-linter/**:
+
 - Virtual environment: `.venv/` (local to `temple-linter/`)
 - Dependencies: `requirements.txt` → `temple>=0.1.0`, `pygls>=1.0.0`
 - Package config: `pyproject.toml` + `setup.py`
@@ -196,6 +213,7 @@ flowchart TD
 #### Current State: ✅ PROPERLY ISOLATED
 
 **vscode-temple-linter/**:
+
 - Node modules: `node_modules/` (local to `vscode-temple-linter/`)
 - Dependencies: `package.json` properly scoped
 - Build output: `dist/` directory
@@ -204,12 +222,14 @@ flowchart TD
 ### 2.3 Current Status
 
 ✅ **Architecture Refactored** (January 8, 2026):
+
 1. **temple/** is now the core engine with authoritative tokenizer
 2. **temple-linter/** depends on `temple>=0.1.0` and imports from it
 3. **Proper dependency flow**: temple → temple-linter → vscode-temple-linter
 4. **No duplication**: Single source of truth for tokenization
 
 **Environment Setup**:
+
 - Each Python project needs `python -m venv .venv` in its directory
 - Install temple first: `cd temple && pip install -e .`
 - Then temple-linter: `cd temple-linter && pip install -e .`
@@ -234,48 +254,60 @@ flowchart TD
 ### 3.2 Documentation Improvements Needed
 
 #### [`temple/README.md`](temple/README.md)
+
 **Issues**:
+
 - ✅ Good: References [`/backlog`](backlog/) directory with detailed work items
 - ⚠️ "See `/backlog` for detailed work items" appears twice (minor redundancy)
 - ✅ Good: Core philosophy clearly stated
 - ✅ Good: Roadmap with checkboxes
 
 **Recommended Changes**:
+
 - Remove duplicate `/backlog` reference (keep one)
 - Add "Current Status" section explaining spec-only phase
 - Link to GitHub Issues or Project Board instead
 
 #### [`temple-linter/README.md`](temple-linter/README.md)
+
 **Issues**:
+
 - ❌ Only 4 lines, no substance
 - ❌ No setup instructions
 - ❌ No usage examples
 - ❌ No API documentation
 
 **Recommended Changes**:
+
 - Add installation instructions
 - Add CLI usage examples
 - Add LSP server startup instructions
 - Document custom LSP methods
 
 #### [`vscode-temple-linter/ARCHITECTURE.md`](vscode-temple-linter/ARCHITECTURE.md)
+
 **Issues**:
+
 - ❌ Mermaid diagram syntax as text (not rendering)
 - ✅ Good sequence diagram
 - ✅ Clear component breakdown
 
 **Recommended Changes**:
+
 - Wrap Mermaid diagrams in proper code blocks
 - Add section on debugging the extension
 - Document environment variables (`TEMPLE_LINTER_FORCE_TEMP`)
 
 #### [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
+
 **Issues**:
+
 - ✅ Excellent comprehensive guide
 - ✅ Clear patterns and conventions
 - ⚠️ Says "multi-root workspace" but `temple.code-workspace` uses single root
 
 **Recommended Changes**:
+
 - Update copilot-instructions.md to clarify: "monorepo workspace" (single root "." is intentional for unified settings)
 - Add troubleshooting section
 
@@ -288,6 +320,7 @@ flowchart TD
 **Previous Issue**: Inverted dependency - temple-linter owned tokenizer, temple had "reference"
 
 **Resolution** (January 8, 2026):
+
 - Moved tokenizer to `temple/src/temple/template_tokenizer.py` (authoritative)
 - Updated temple-linter to depend on `temple>=0.1.0`
 - All imports now use `from temple.template_tokenizer import ...`
@@ -304,6 +337,7 @@ flowchart TD
 **Previous Problem**: Two different Token implementations in temple and temple-linter
 
 **Resolution** (January 8, 2026):
+
 - Single authoritative `Token` class in `temple/src/temple/template_tokenizer.py`
 - Uses `(line, col)` tuples for position tracking (0-indexed)
 - All components import from `temple.template_tokenizer`
@@ -314,12 +348,14 @@ flowchart TD
 #### Issue 2.2: Duplicate Parser Logic
 
 **Files**:
+
 - `temple/src/parser.py` - `TemplateParser` class
 - `temple-linter/src/temple_linter/template_tokenizer.py` - `temple_tokenizer()` function
 
 **Problem**: Two implementations of the same tokenization logic with slight differences.
 
 **Recommendation**:
+
 1. Document that `temple/src/parser.py` is **reference only** (add comment)
 2. Make `temple-linter` the canonical implementation
 3. Consider publishing `temple-linter` as installable package for `temple` to import
@@ -333,11 +369,13 @@ flowchart TD
 **Problem**: Specifications mention "Rendering Engine" but no implementation exists anywhere.
 
 **Current State**:
+
 - `temple/docs/ARCHITECTURE.md` describes "Rendering Engine" component
 - No code in `temple/` or `temple-linter/` implements rendering
 - Unclear if this is future work or out of scope
 
 **Recommendation**:
+
 - Add `temple/docs/ROADMAP.md` with clear phases:
   - **Phase 1** (Current): Linting & Validation
   - **Phase 2** (Future): Rendering Engine
@@ -348,7 +386,8 @@ flowchart TD
 
 **File**: [`temple-linter/src/temple_linter/lsp_server.py`](temple-linter/src/temple_linter/lsp_server.py)
 
-**Problem**: 
+**Problem**:
+
 ```python
 ls = TempleLinterServer()  # This is the server
 lc = LanguageClient("temple-linter-client", "v1")  # But this client is never connected
@@ -357,6 +396,7 @@ lc = LanguageClient("temple-linter-client", "v1")  # But this client is never co
 The `lc` variable is created but never actually connects to anything. The code assumes it's connected to the VS Code extension, but there's no setup code.
 
 **Recommendation**:
+
 - Remove unused `lc = LanguageClient(...)` if not needed
 - OR document how it should be initialized
 - OR pass `lc` as parameter to functions that need it instead of global
@@ -370,6 +410,7 @@ The `lc` variable is created but never actually connects to anything. The code a
 **File**: [`temple-linter/src/temple_linter/template_tokenizer.py`](temple-linter/src/temple_linter/template_tokenizer.py)
 
 **Problem**:
+
 ```python
 def temple_tokenizer(text: str, delimiters: Optional[dict[TokenType, tuple[str, str]]] = None):
     import re  # Import inside function
@@ -384,6 +425,7 @@ def temple_tokenizer(text: str, delimiters: Optional[dict[TokenType, tuple[str, 
 **Impact**: Regex recompiled for every file, slowing down linting.
 
 **Fix**:
+
 ```python
 # Cache compiled patterns
 _pattern_cache: dict[str, re.Pattern] = {}
@@ -405,6 +447,7 @@ def temple_tokenizer(text: str, delimiters: Optional[dict[TokenType, tuple[str, 
 **File**: [`vscode-temple-linter/src/extension.ts`](vscode-temple-linter/src/extension.ts)
 
 **Problem**:
+
 ```typescript
 // Always tries virtual doc first, then falls back to temp file
 const tempFilePath = path.join(os.tmpdir(), `temple-cleaned-${Date.now()}${ext}`);
@@ -426,6 +469,7 @@ Creates temp files even when virtual documents work, creating unnecessary disk I
 **File**: [`temple-linter/src/temple_linter/lsp_server.py`](temple-linter/src/temple_linter/lsp_server.py)
 
 **Problem**: `lint_template()` function does too much:
+
 1. Template linting
 2. Token cleaning
 3. Base linting delegation
@@ -433,6 +477,7 @@ Creates temp files even when virtual documents work, creating unnecessary disk I
 5. Diagnostic merging
 
 **Recommendation**: Extract into separate classes:
+
 ```python
 class TemplateLintingService:
     def lint(self, text: str) -> List[Diagnostic]: ...
@@ -456,6 +501,7 @@ class LintOrchestrator:
 **File**: [`temple-linter/src/temple_linter/base_format_linter.py`](temple-linter/src/temple_linter/base_format_linter.py)
 
 **Problem**: `detect_base_format()` uses giant if/elif chain:
+
 ```python
 if ext in ['.json', '.json.tmpl', '.json.template']:
     return 'json'
@@ -467,6 +513,7 @@ if ext in ['.yaml', '.yml', ...]:
 **Issue**: Not extensible - adding new formats requires modifying this function.
 
 **Fix**: Use Strategy pattern with registry:
+
 ```python
 class FormatDetector(Protocol):
     def matches(self, filename: str, content: str) -> bool: ...
@@ -500,6 +547,7 @@ FormatDetectorRegistry.register(YamlFormatDetector())
 **File**: [`vscode-temple-linter/src/extension.ts`](vscode-temple-linter/src/extension.ts)
 
 **Problem**:
+
 ```typescript
 await new Promise(resolve => setTimeout(resolve, 100)); // Magic number
 ```
@@ -507,6 +555,7 @@ await new Promise(resolve => setTimeout(resolve, 100)); // Magic number
 Appears multiple times with no explanation of why 100ms.
 
 **Fix**:
+
 ```typescript
 const DIAGNOSTIC_WAIT_MS = 100; // VS Code needs time to process virtual documents
 await new Promise(resolve => setTimeout(resolve, DIAGNOSTIC_WAIT_MS));
@@ -522,6 +571,7 @@ lc = LanguageClient(...)    # 'lc' not obvious
 ```
 
 **Fix**:
+
 ```python
 lsp_server = TempleLinterServer()
 lsp_client = LanguageClient(...)
@@ -546,16 +596,19 @@ These are simple, low-risk changes that can be applied now:
 These require careful design and should be tracked as separate issues:
 
 #### **WORK ITEM #1: Refactor LSP Server into Service Classes**
+
 **Priority**: HIGH  
 **Complexity**: High  
 **Estimated Effort**: 2-3 days
 
 **Context Files**:
+
 - [`temple-linter/src/temple_linter/lsp_server.py`](temple-linter/src/temple_linter/lsp_server.py)
 - [`temple-linter/src/temple_linter/linter.py`](temple-linter/src/temple_linter/linter.py)
 - [`temple-linter/src/temple_linter/diagnostics.py`](temple-linter/src/temple_linter/diagnostics.py)
 
 **Tasks**:
+
 1. Create `services/` directory in `temple-linter/src/temple_linter/`
 2. Extract `TemplateLintingService` class
 3. Extract `TokenCleaningService` class
@@ -568,6 +621,7 @@ These require careful design and should be tracked as separate issues:
 **Dependencies**: None
 
 **Acceptance Criteria**:
+
 - Each service has single responsibility
 - Services are independently testable
 - LSP server code is < 200 lines
@@ -575,6 +629,7 @@ These require careful design and should be tracked as separate issues:
 - Add integration test for full workflow
 
 **LLM Agent Prompt**:
+
 ```
 Refactor temple-linter LSP server following Single Responsibility Principle.
 
@@ -601,14 +656,17 @@ Constraints:
 ---
 
 #### **WORK ITEM #2: Implement Format Detector Registry**
+
 **Priority**: MEDIUM  
 **Complexity**: Medium  
 **Estimated Effort**: 1 day
 
 **Context Files**:
+
 - [`temple-linter/src/temple_linter/base_format_linter.py`](temple-linter/src/temple_linter/base_format_linter.py)
 
 **Tasks**:
+
 1. Define `FormatDetector` Protocol
 2. Create `FormatDetectorRegistry` class
 3. Implement detectors for JSON, YAML, HTML, TOML, XML, Markdown
@@ -619,12 +677,14 @@ Constraints:
 **Dependencies**: None
 
 **Acceptance Criteria**:
+
 - Can add new formats without modifying existing code
 - Each detector is independently testable
 - Performance same or better than current implementation
 - Documentation includes example of adding custom detector
 
 **LLM Agent Prompt**:
+
 ```
 Implement extensible format detection using Strategy pattern in temple-linter.
 
@@ -651,15 +711,18 @@ Requirements:
 ---
 
 #### **WORK ITEM #3: Unified Token Model**
+
 **Priority**: MEDIUM  
 **Complexity**: High  
 **Estimated Effort**: 2 days
 
 **Context Files**:
+
 - [`temple/src/parser.py`](temple/src/parser.py)
 - [`temple-linter/src/temple_linter/template_tokenizer.py`](temple-linter/src/temple_linter/template_tokenizer.py)
 
 **Tasks**:
+
 1. Define canonical Token model (choose one or create new)
 2. Update `temple/src/parser.py` to match if needed
 3. Update `temple-linter` to match if needed
@@ -670,12 +733,14 @@ Requirements:
 **Dependencies**: None
 
 **Acceptance Criteria**:
+
 - Both projects use identical Token representation
 - Position tracking is unambiguous (line, col or offset)
 - All tests pass in both projects
 - Clear documentation of token structure
 
 **LLM Agent Prompt**:
+
 ```
 Unify token models across temple and temple-linter for consistency.
 
@@ -701,15 +766,18 @@ Constraints:
 ---
 
 #### **WORK ITEM #4: Performance Optimization - Regex Caching**
+
 **Priority**: LOW  
 **Complexity**: Low  
 **Estimated Effort**: 2 hours
 
 **Context Files**:
+
 - [`temple-linter/src/temple_linter/template_tokenizer.py`](temple-linter/src/temple_linter/template_tokenizer.py)
 - [`temple-linter/src/temple_linter/template_preprocessing.py`](temple-linter/src/temple_linter/template_preprocessing.py)
 
 **Tasks**:
+
 1. Add pattern cache to `temple_tokenizer()`
 2. Add pattern cache to `strip_template_tokens()`
 3. Benchmark before/after
@@ -719,12 +787,14 @@ Constraints:
 **Dependencies**: None
 
 **Acceptance Criteria**:
+
 - Regex compiled once per delimiter configuration
 - 10x+ speedup on repeated tokenization
 - Cache invalidated appropriately
 - No behavior changes
 
 **LLM Agent Prompt**:
+
 ```
 Add regex pattern caching to temple-linter tokenization functions for performance.
 
@@ -751,14 +821,17 @@ Requirements:
 ---
 
 #### **WORK ITEM #5: Comprehensive API Documentation**
+
 **Priority**: HIGH  
 **Complexity**: Low  
 **Estimated Effort**: 1 day
 
 **Context Files**:
+
 - All `temple-linter/src/temple_linter/*.py` files
 
 **Tasks**:
+
 1. Generate API docs using Sphinx or pdoc
 2. Add docstrings to all public classes/functions
 3. Create `temple-linter/docs/API.md`
@@ -768,12 +841,14 @@ Requirements:
 **Dependencies**: None
 
 **Acceptance Criteria**:
+
 - All public APIs documented
 - Examples for common use cases
 - Generated HTML docs available
 - Integrated into CI (docs must build)
 
 **LLM Agent Prompt**:
+
 ```
 Generate comprehensive API documentation for temple-linter Python package.
 
@@ -807,21 +882,25 @@ Requirements:
 ## 6. Execution Order for Work Items
 
 **Phase 1: Critical Fixes (This Session)**
+
 1. ✅ Fix broken import
 2. ✅ Update documentation
 3. ✅ Add TODO comments
 4. ✅ Commit all changes
 
 **Phase 2: Architecture Foundation (Week 1)**
+
 1. WORK ITEM #3: Unified Token Model
 2. WORK ITEM #1: Refactor LSP Server
 3. WORK ITEM #5: API Documentation
 
 **Phase 3: Extensibility & Performance (Week 2)**
+
 1. WORK ITEM #2: Format Detector Registry
 2. WORK ITEM #4: Regex Caching
 
 **Phase 4: Testing & Polish (Week 3)**
+
 1. Integration tests
 2. Performance benchmarks
 3. User documentation
@@ -834,16 +913,19 @@ Requirements:
 ### Changes Made in This Session
 
 #### Configuration & Structure
+
 - ✅ Initialized git monorepo at `/Users/macos/dev/temple`
 - ✅ Created unified [`.gitignore`](.gitignore) covering Python, Node.js, IDEs, and OS files
 - ✅ Removed nested `.gitignore` files from subprojects
 - ✅ Created comprehensive root [`README.md`](README.md) documenting monorepo structure
 
 #### Documentation
+
 - ✅ Created [`ARCHITECTURE_ANALYSIS.md`](ARCHITECTURE_ANALYSIS.md) (this document)
 - ✅ Committed workspace configuration [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
 
 #### Code Fixes
+
 - ✅ Verified `base_format_linter.py` import is correct
 - ✅ Added TODO comment for future registry refactoring
 - ✅ Cleaned up documentation references
@@ -853,6 +935,7 @@ Requirements:
 ### Architecture Assessment
 
 **Strengths**:
+
 - ✅ Clear separation of concerns across three components
 - ✅ Well-documented specifications in `temple/`
 - ✅ Functional LSP implementation in `temple-linter/`
@@ -861,6 +944,7 @@ Requirements:
 - ✅ Position tracking strategy is sound
 
 **Weaknesses**:
+
 - ❌ Broken import creating phantom dependency
 - ❌ Inconsistent token models between projects
 - ❌ Minimal API documentation
@@ -868,6 +952,7 @@ Requirements:
 - ❌ No rendering engine implementation
 
 **Opportunities**:
+
 - 💡 Publish `temple-linter` as standalone package
 - 💡 Create format detector plugin ecosystem
 - 💡 Implement rendering engine in Phase 2
@@ -875,6 +960,7 @@ Requirements:
 - 💡 Support more editors (Neovim, Emacs)
 
 **Risks**:
+
 - ⚠️ Specification drift between `temple/` and `temple-linter/`
 - ⚠️ VS Code extension is prototype quality
 - ⚠️ No performance benchmarks yet
@@ -883,6 +969,7 @@ Requirements:
 ### Dependency Isolation: ✅ VERIFIED
 
 All three components properly isolate dependencies:
+
 - `temple/`: Separate `.venv/`, no dependencies yet
 - `temple-linter/`: Separate `.venv/`, only `pygls>=1.0.0`
 - `vscode-temple-linter/`: Separate `node_modules/`, TypeScript stack
@@ -896,4 +983,3 @@ All three components properly isolate dependencies:
 5. **Create** CONTRIBUTING.md with development guidelines
 
 ---
-
