@@ -89,8 +89,12 @@ jobs:
         run: ./scripts/pre-commit/lint-shell.sh
 
   codeql:
-    name: CodeQL Analysis
+    name: CodeQL Analysis (${{ matrix.language }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript]
     permissions:
       contents: read
       security-events: write
@@ -112,12 +116,14 @@ jobs:
       - name: Initialize CodeQL (Python & JS/TS)
         uses: github/codeql-action/init@v3
         with:
-          languages: python,javascript-typescript
+          languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
 
   detect-secrets:
     name: Detect secrets
