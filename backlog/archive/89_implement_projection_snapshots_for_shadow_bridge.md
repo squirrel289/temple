@@ -1,16 +1,17 @@
 ---
 title: "Implement projection snapshots for cleaned shadow bridge mapping"
 id: 89
-status: testing
-state_reason: null
+status: completed
+state_reason: success
 priority: critical
 complexity: high
 estimated_hours: 18
 actual_hours: 6.0
-completed_date: null
+completed_date: 2026-02-16
 related_commit:
   - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
   - b03fa90  # chore(backlog): update shadow-bridge status and PR traceability
+  - 67d4374  # merge(PR #11): shadow-bridge parity core merged to main
 test_results: |
   Initial validation on 2026-02-16:
   - PYTHONPATH=temple-linter/src:temple/src .ci-venv/bin/pytest
@@ -30,7 +31,7 @@ test_results: |
     temple-linter/tests/test_lsp_mvp_smoke.py
     (19 passed)
 dependencies:
-  - "[[86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
+  - "[[archive/86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
 related_backlog:
   - "archive/75_implement_collocated_mirror_ghost_files_and_diagnostic_remap.md"
   - "archive/77_add_base_lint_queueing_adaptive_debounce_and_observability.md"
@@ -51,6 +52,9 @@ notes: |
   - Added `temple/getBaseProjection` server request for extension shadow bridge use.
   - Added smoke coverage for projection request payload and token span export.
   - Projection snapshot remains canonical mapping source for diagnostics and bridge remap.
+  2026-02-16: Finalized after merge.
+  - Confirmed merged in PR #11 (merge commit `67d4374`).
+  - Acceptance criteria and test evidence verified; archived as completed.
 ---
 
 ## Goal

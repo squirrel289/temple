@@ -16,7 +16,7 @@ test_results: |
   - npm --prefix vscode-temple-linter run compile (pass)
   - npm --prefix vscode-temple-linter run lint (pass)
 dependencies:
-  - "[[89_implement_projection_snapshots_for_shadow_bridge.md]]"
+  - "[[archive/89_implement_projection_snapshots_for_shadow_bridge.md]]"
   - "[[90_implement_shadow_document_lifecycle_and_diagnostic_ownership.md]]"
 related_backlog:
   - "archive/67_fix_lsp_base_diagnostics_transport.md"

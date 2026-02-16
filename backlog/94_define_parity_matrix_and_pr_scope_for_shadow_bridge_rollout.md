@@ -17,11 +17,11 @@ test_results: |
     `feature/90-shadow-doc-lifecycle`.
   - Compile/lint baseline for extension currently passing.
 dependencies:
-  - "[[89_implement_projection_snapshots_for_shadow_bridge.md]]"
+  - "[[archive/89_implement_projection_snapshots_for_shadow_bridge.md]]"
   - "[[90_implement_shadow_document_lifecycle_and_diagnostic_ownership.md]]"
   - "[[91_proxy_base_language_lsp_features_with_edit_safety.md]]"
   - "[[92_add_templated_format_language_ids_and_generated_grammars.md]]"
-  - "[[93_harden_transport_timeouts_and_watched_files_noise.md]]"
+  - "[[archive/93_harden_transport_timeouts_and_watched_files_noise.md]]"
 related_backlog:
   - "[[88_validate_diagnostics_pipeline_and_prepare_patch_release.md]]"
   - "[[95_run_unsandboxed_vscode_parity_validation_and_close_shadow_bridge.md]]"

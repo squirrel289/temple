@@ -20,15 +20,15 @@ test_results: |
     updater lookup also reports ENOTFOUND for update.code.visualstudio.com and
     falls back to cached 1.109.3)
 dependencies:
-  - "[[86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
-  - "[[87_align_manifest_docs_and_integration_tests_for_templated_any.md]]"
+  - "[[archive/86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
+  - "[[archive/87_align_manifest_docs_and_integration_tests_for_templated_any.md]]"
 related_backlog:
   - "archive/57_vscode_packaging_and_init_contract_hardening.md"
-  - "[[89_implement_projection_snapshots_for_shadow_bridge.md]]"
+  - "[[archive/89_implement_projection_snapshots_for_shadow_bridge.md]]"
   - "[[90_implement_shadow_document_lifecycle_and_diagnostic_ownership.md]]"
   - "[[91_proxy_base_language_lsp_features_with_edit_safety.md]]"
   - "[[92_add_templated_format_language_ids_and_generated_grammars.md]]"
-  - "[[93_harden_transport_timeouts_and_watched_files_noise.md]]"
+  - "[[archive/93_harden_transport_timeouts_and_watched_files_noise.md]]"
   - "[[94_define_parity_matrix_and_pr_scope_for_shadow_bridge_rollout.md]]"
   - "[[95_run_unsandboxed_vscode_parity_validation_and_close_shadow_bridge.md]]"
 related_spike: []

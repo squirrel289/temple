@@ -16,7 +16,7 @@ test_results: |
   - npm --prefix vscode-temple-linter run compile (pass; includes syntax generation)
   - npm --prefix vscode-temple-linter run lint (pass)
 dependencies:
-  - "[[86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
+  - "[[archive/86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
 related_backlog:
   - "archive/74_implement_base_lint_strategy_resolver_and_capability_registry.md"
 related_spike: []
