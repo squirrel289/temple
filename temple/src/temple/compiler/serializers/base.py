@@ -9,24 +9,14 @@ Serializers convert type-checked AST + input data into formatted output
 from abc import ABC, abstractmethod
 from typing import Any
 
+from temple.compiler.types import BaseType
+from temple.diagnostics import SourceRange
+from temple.expression_eval import evaluate_expression
+
 # Alias the core AST node type for type hints used in serializers.
 # Importing as `ASTNode` keeps existing type hints stable and avoids
 # NameError during test collection when annotations are evaluated.
 from temple.typed_ast import Node as ASTNode
-
-# Guard optional AST node types that may not yet exist in `typed_ast`.
-try:
-    from temple.typed_ast import FunctionCall, FunctionDef
-except Exception:
-
-    class _MissingNode:
-        pass
-
-    FunctionDef = _MissingNode
-    FunctionCall = _MissingNode
-from temple.compiler.types import BaseType
-from temple.diagnostics import SourceRange
-from temple.expression_eval import evaluate_expression
 
 
 class SerializationError(Exception):
@@ -67,10 +57,24 @@ class SerializationContext:
         Raises:
             SerializationError: If path is invalid
         """
-        value = self.scope_stack[-1]
+        value = self.scope_mapping()
         if path is None:
             return value
         return evaluate_expression(path, value)
+
+    def scope_mapping(self) -> dict[str, Any]:
+        """Return a dictionary view of the current scope with set variables."""
+        current = self.current_scope
+        scope = dict(current) if isinstance(current, dict) else {"value": current}
+        if self.variables:
+            scope.update(self.variables)
+        return scope
+
+    def set_variable(self, name: str, value: Any) -> None:
+        """Persist variable assignment for subsequent expression evaluation."""
+        self.variables[name] = value
+        if isinstance(self.current_scope, dict):
+            self.current_scope[name] = value
 
     def push_scope(self, data: Any) -> None:
         """Push new scope onto stack."""

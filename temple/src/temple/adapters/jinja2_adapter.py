@@ -19,7 +19,7 @@ from temple.sdk.adapter import (
 from temple.typed_ast import Block, Expression, For, If, Include, Set, Text
 
 try:
-    from jinja2 import Environment, nodes
+    from jinja2 import Environment, nodes, select_autoescape
     from jinja2.exceptions import TemplateSyntaxError
 
     _JINJA2_IMPORT_ERROR: ModuleNotFoundError | None = None
@@ -27,6 +27,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - exercised in integratio
     _JINJA2_IMPORT_ERROR = exc
     Environment = object  # type: ignore[assignment,misc]
     TemplateSyntaxError = Exception  # type: ignore[assignment,misc]
+    select_autoescape = None  # type: ignore[assignment]
     nodes = None  # type: ignore[assignment]
 
 
@@ -48,7 +49,9 @@ class Jinja2Adapter(AdapterBase):
             raise ModuleNotFoundError(
                 "jinja2 is required for temple.adapters.jinja2_adapter"
             ) from _JINJA2_IMPORT_ERROR
-        self.environment = environment or Environment()
+        self.environment = environment or Environment(
+            autoescape=select_autoescape(default=True, default_for_string=True)
+        )
 
     def parse_to_ir(self, source: str, filename: str = "<memory>") -> AdapterParseResult:
         cursor = _SourceCursor(tuple(len(line) for line in source.splitlines()))

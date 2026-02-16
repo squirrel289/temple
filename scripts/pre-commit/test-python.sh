@@ -12,19 +12,32 @@ if [ -z "$PYTHON" ]; then
 fi
 
 run_pytest() {
+  local status=0
+
   if "$PYTHON" -m pytest --version >/dev/null 2>&1; then
+    set +e
     "$PYTHON" -m pytest "$@"
-    return
-  fi
-
-  if command -v uv >/dev/null 2>&1; then
+    status=$?
+    set -e
+  elif command -v uv >/dev/null 2>&1; then
     echo "pytest not available in interpreter; falling back to uv-managed pytest." >&2
+    set +e
     uv run --with pytest --with-editable ./temple --with-editable ./temple-linter python -m pytest "$@"
-    return
+    status=$?
+    set -e
+  else
+    echo "pytest is unavailable and uv is not installed; cannot run test hook." >&2
+    exit 1
   fi
 
-  echo "pytest is unavailable and uv is not installed; cannot run test hook." >&2
-  exit 1
+  # pytest exit code 5 means "no tests collected". For affected-file runs,
+  # treat that as non-blocking rather than failing the commit.
+  if [[ $status -eq 5 ]]; then
+    echo "No matching tests collected for this change set; skipping." >&2
+    return 0
+  fi
+
+  return $status
 }
 
 # If no filenames are provided, decide based on context.

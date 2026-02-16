@@ -99,7 +99,7 @@ class JSONSerializer(Serializer):
 
             results = []
             for item in iterable:
-                context.push_scope({node.var: item, **context.current_scope})
+                context.push_scope({node.var: item, **context.scope_mapping()})
                 result = self._evaluate_block(node.body.nodes, context)
                 context.pop_scope()
 
@@ -115,7 +115,7 @@ class JSONSerializer(Serializer):
             return None
 
         elif isinstance(node, Set):
-            context.current_scope[node.name] = context.get_variable(node.expr)
+            context.set_variable(node.name, context.get_variable(node.expr))
             return None
 
         else:

@@ -26,3 +26,12 @@ def test_render_passthrough_supports_tilde_trim_markers():
 
     assert errors == []
     assert rendered == "leftright"
+
+
+def test_render_passthrough_does_not_leak_trim_right_across_template_tokens():
+    template = "A{{ value -}}{% if cond %}{% end %}   B"
+
+    rendered, errors = render_passthrough(template)
+
+    assert errors == []
+    assert rendered == "A   B"

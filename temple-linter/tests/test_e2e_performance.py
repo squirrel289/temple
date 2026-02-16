@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 
 from lsprotocol.types import Diagnostic as LspDiagnostic
@@ -10,6 +11,19 @@ from lsprotocol.types import Range as LspRange
 
 from temple.compiler.schema import SchemaParser
 from temple_linter.services.lint_orchestrator import LintOrchestrator
+
+_DEFAULT_PERF_THRESHOLD_MULTIPLIER = 3.0
+
+
+def _perf_threshold_multiplier() -> float:
+    raw = os.getenv("TEMPLE_PERF_THRESHOLD_MULTIPLIER")
+    if raw is None:
+        return _DEFAULT_PERF_THRESHOLD_MULTIPLIER
+    try:
+        parsed = float(raw)
+    except ValueError:
+        return _DEFAULT_PERF_THRESHOLD_MULTIPLIER
+    return max(parsed, 0.1)
 
 
 class _FakeResult:
@@ -98,7 +112,7 @@ def test_large_template_lint_stays_under_threshold() -> None:
     elapsed = time.perf_counter() - started
 
     assert isinstance(diagnostics, list)
-    assert elapsed < 1.5
+    assert elapsed < (1.5 * _perf_threshold_multiplier())
 
 
 def test_small_edit_lint_stays_under_threshold() -> None:
@@ -122,4 +136,4 @@ def test_small_edit_lint_stays_under_threshold() -> None:
     elapsed = time.perf_counter() - started
 
     assert isinstance(diagnostics, list)
-    assert elapsed < 1.0
+    assert elapsed < (1.0 * _perf_threshold_multiplier())

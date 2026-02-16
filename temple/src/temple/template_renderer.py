@@ -110,6 +110,10 @@ def render_passthrough(
     trim_next_text_left = False
     for token in tokens:
         if token.type in {"statement", "expression", "comment"}:
+            # Trim-right should apply only to immediately following text; if we
+            # encounter another template token first, clear stale intent.
+            if trim_next_text_left:
+                trim_next_text_left = False
             if token.trim_left:
                 apply_left_trim(output_parts)
             if token.trim_right:

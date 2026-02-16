@@ -225,8 +225,7 @@ def parse_with_diagnostics(
 
     Example:
         >>> ast, diagnostics = parse_with_diagnostics("{% if x %}{{ user.name }}")
-        >>> len(diagnostics) > 0  # Missing {% end %}
-        True
+        >>> bool(diagnostics)  # Missing {% end %}
     """
     collector = node_collector or DiagnosticCollector()
     if _LARK_IMPORT_ERROR is not None:

@@ -22,8 +22,8 @@ repos:
         name: "docs: confirm markdown structure blocks match current state (sync_readme_structure.py)"
         entry: python3 scripts/docs/sync_readme_structure.py --check
         language: system
-        pass_filenames: true
-        files: \.md$
+        pass_filenames: false
+        files: (\.md$|\.structure-notes\.ya?ml$)
         stages: [pre-commit, pre-push]
 
       - id: lint-python
