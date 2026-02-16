@@ -30,22 +30,22 @@ set_args: STMT_ARGS
 expr_content: EXPR_CONTENT
 
 // Terminals - delimiters and content only
-_EXPR_OPEN: "{{"
-_EXPR_CLOSE: "}}"
+_EXPR_OPEN: /\{\{[-~]?/
+_EXPR_CLOSE: /[-~]?\}\}/
 
 // Compound terminals for control-flow closers (avoid LALR ambiguity)
 END_TAG: _STMT_OPEN "end" _STMT_CLOSE
 ELSE_TAG: _STMT_OPEN "else" _STMT_CLOSE
-ELSE_IF_TAG: _STMT_OPEN /else\s+if/ STMT_ARGS _STMT_CLOSE
+ELSE_IF_TAG: _STMT_OPEN /(else\s+if|elif)/ STMT_ARGS _STMT_CLOSE
 
-_STMT_OPEN:  /\{%\s*/
-_STMT_CLOSE: /\s*%\}/
+_STMT_OPEN:  /\{%(?:[-~])?\s*/
+_STMT_CLOSE: /\s*(?:[-~])?%\}/
 
 // Content terminals
-EXPR_CONTENT: /(?:(?!\}\}).)+/s
-STMT_ARGS: /(?:(?!%\}).)+/s
+EXPR_CONTENT: /(?:(?!(?:[-~]?\}\})).)+/s
+STMT_ARGS: /(?:(?!(?:[-~]?%\})).)+/s
 
-RAW_COMMENT: /\{#[\s\S]*?#\}/
+RAW_COMMENT: /\{#(?:[-~])?[\s\S]*?(?:[-~])?#\}/
 
 // TEXT matches any characters up to the next template opening sequence
 TEXT: /(?:(?!\{\{|\{\%|\{#)[\s\S])+/

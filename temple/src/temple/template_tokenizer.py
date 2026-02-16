@@ -7,8 +7,12 @@ Supports configurable delimiters and efficient regex pattern caching.
 """
 
 import re
+from collections.abc import Iterator
 from functools import lru_cache
-from typing import Iterator, Optional, Tuple, Literal
+from typing import Literal
+
+from temple.defaults import DEFAULT_TEMPLATE_DELIMITERS
+from temple.whitespace_control import parse_token_trim_markers
 
 TokenType = Literal["text", "statement", "expression", "comment"]
 
@@ -43,17 +47,20 @@ class Token:
     def __init__(
         self,
         raw_token: str,
-        start: Tuple[int, int],
-        delimiters: Optional[dict[TokenType, tuple[str, str]]] = None,
+        start: tuple[int, int],
+        delimiters: dict[TokenType, tuple[str, str]] | None = None,
     ):
         self.raw_token = raw_token
         self.start = start
-        self.delimiters = delimiters or {
-            "statement": ("{%", "%}"),
-            "expression": ("{{", "}}"),
-            "comment": ("{#", "#}"),
-        }
-        self.type, self.value, self.delimiter_start, self.delimiter_end = (
+        self.delimiters = delimiters or DEFAULT_TEMPLATE_DELIMITERS
+        (
+            self.type,
+            self.value,
+            self.delimiter_start,
+            self.delimiter_end,
+            self.trim_left,
+            self.trim_right,
+        ) = (
             self._parse_type_and_value()
         )
         self.end = self._compute_end()
@@ -63,10 +70,14 @@ class Token:
             if self.raw_token.startswith(start_delim) and self.raw_token.endswith(
                 end_delim
             ):
-                value = self.raw_token[len(start_delim) : -len(end_delim)].strip()
-                return ttype, value, start_delim, end_delim
+                content_start, content_end, trim_left, trim_right = (
+                    parse_token_trim_markers(self.raw_token, start_delim, end_delim)
+                )
+
+                value = self.raw_token[content_start:content_end].strip()
+                return ttype, value, start_delim, end_delim, trim_left, trim_right
         # Default to text
-        return "text", self.raw_token, None, None
+        return "text", self.raw_token, None, None, False, False
 
     def _compute_end(self):
         line, col = self.start
@@ -79,12 +90,18 @@ class Token:
         return (line, col)
 
     def __repr__(self):
-        return f"Token(type={self.type!r}, value={self.value!r}, start={self.start}, end={self.end}, delimiters=({self.delimiter_start!r},{self.delimiter_end!r}))"
+        return (
+            "Token("
+            f"type={self.type!r}, value={self.value!r}, start={self.start}, end={self.end}, "
+            f"delimiters=({self.delimiter_start!r},{self.delimiter_end!r}), "
+            f"trim_left={self.trim_left}, trim_right={self.trim_right}"
+            ")"
+        )
 
 
 def temple_tokenizer(
     text: str,
-    delimiters: Optional[dict[TokenType, tuple[str, str]]] = None,
+    delimiters: dict[TokenType, tuple[str, str]] | None = None,
 ) -> Iterator[Token]:
     """
     Yields Token objects for text, statement, expression, and comment regions.
@@ -103,11 +120,7 @@ def temple_tokenizer(
         Token objects representing text, statement, expression, or comment regions.
     """
     # Default delimiters (Jinja-like)
-    delims = delimiters or {
-        "statement": ("{%", "%}"),
-        "expression": ("{{", "}}"),
-        "comment": ("{#", "#}"),
-    }
+    delims = delimiters or DEFAULT_TEMPLATE_DELIMITERS
 
     # Convert delimiters dict to frozen tuple for caching
     delims_tuple = tuple(sorted((k, v[0], v[1]) for k, v in delims.items()))
@@ -131,7 +144,7 @@ def temple_tokenizer(
             yield Token(value, (line, col), delimiters)
             line, col = _advance((line, col), value)
         # Token itself
-        for ttype in delims.keys():
+        for ttype in delims:
             if m.group(ttype):
                 raw_token = m.group(ttype)
                 yield Token(raw_token, (line, col), delimiters)
@@ -140,7 +153,7 @@ def temple_tokenizer(
         pos = m.end()
 
 
-def _advance(start: Tuple[int, int], value: str) -> Tuple[int, int]:
+def _advance(start: tuple[int, int], value: str) -> tuple[int, int]:
     """Advance (line, col) by value."""
     line, col = start
     for c in value:

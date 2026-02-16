@@ -35,7 +35,7 @@ Temple is a meta-templating system for structured data (JSON, XML, YAML, TOML) t
   - LSP proxy server handling `temple/createVirtualDocument` notifications
   - Fallback to temp files if virtual docs fail (controlled by `TEMPLE_LINTER_FORCE_TEMP`)
 - **Build**: `npm run compile` (TypeScript → dist/src/)
-- **File Extensions**: `.tmpl`, `.template` mapped to `templated-any` language ID
+- **File Extensions**: `.tmpl`, `.template` mapped to `templ-any` language ID
 
 ## Critical Patterns & Conventions
 

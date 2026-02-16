@@ -9,13 +9,19 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ensure_ci_venv_ready() {
   # Prefer externally provided CI_VENV_PATH, then workspace cache, then local .ci-venv
   VENV_DIR="${CI_VENV_PATH:-$ROOT_DIR/.cache/ci-venv}"
-  if [ -d "$VENV_DIR" ] && [ -f "$VENV_DIR/bin/activate" ]; then
-    . "$VENV_DIR/bin/activate"
-    return 0
+  if [ -d "$VENV_DIR" ] && [ -f "$VENV_DIR/bin/activate" ] && [ -x "$VENV_DIR/bin/python" ]; then
+    # Ensure the interpreter itself is runnable (handles stale/broken symlink venvs).
+    if "$VENV_DIR/bin/python" -c "import sys" >/dev/null 2>&1; then
+      . "$VENV_DIR/bin/activate"
+      return 0
+    fi
   fi
 
   # Try local development venv
-  if [ -d "$ROOT_DIR/.ci-venv" ] && [ -f "$ROOT_DIR/.ci-venv/bin/activate" ]; then
+  if [ -d "$ROOT_DIR/.ci-venv" ] && [ -f "$ROOT_DIR/.ci-venv/bin/activate" ] && [ -x "$ROOT_DIR/.ci-venv/bin/python" ]; then
+    if ! "$ROOT_DIR/.ci-venv/bin/python" -c "import sys" >/dev/null 2>&1; then
+      return 1
+    fi
     # shellcheck disable=SC1090
     . "$ROOT_DIR/.ci-venv/bin/activate"
     return 0

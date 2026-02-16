@@ -3,12 +3,13 @@ Tests for base serializer interface and functionality.
 """
 
 import pytest
+
 from temple.compiler.serializers.base import (
-    Serializer,
     SerializationContext,
+    Serializer,
 )
-from temple.typed_ast import Text, Expression, Block
 from temple.diagnostics import Position, SourceRange
+from temple.typed_ast import Block, Expression, Text
 
 
 class MockSerializer(Serializer):
@@ -70,6 +71,23 @@ class TestSerializationContext:
 
         ctx.pop_scope()
         assert ctx.current_scope == {"outer": "value"}
+
+    def test_set_variable_available_to_expression_eval(self):
+        """Set variables should participate in subsequent lookups."""
+        ctx = SerializationContext({"user": {"name": "Ada"}})
+        ctx.set_variable("greeting", "hello")
+
+        assert ctx.get_variable("greeting") == "hello"
+        assert ctx.get_variable("user.name") == "Ada"
+
+    def test_scope_mapping_handles_non_dict_scope(self):
+        """Scope mapping should be safe even when current scope is not a dict."""
+        ctx = SerializationContext({"items": [1, 2, 3]})
+        ctx.push_scope("scalar")
+        mapped = ctx.scope_mapping()
+
+        assert mapped["value"] == "scalar"
+        ctx.pop_scope()
 
 
 class TestBasicSerialization:

@@ -1,5 +1,5 @@
-import sys
 import pathlib
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -24,7 +24,7 @@ class _FakeResult:
     def __init__(self, payload):
         self._payload = payload
 
-    def result(self):
+    def result(self, timeout=None):
         return self._payload
 
 
@@ -132,3 +132,53 @@ def test_request_base_diagnostics_handles_errors_gracefully():
     )
 
     assert diagnostics == []
+
+
+def test_request_base_diagnostics_handles_timeout_gracefully():
+    from concurrent.futures import TimeoutError as FutureTimeoutError
+
+    class _TimeoutResult:
+        def result(self, timeout=None):
+            raise FutureTimeoutError("timed out")
+
+    class _TimeoutProtocol:
+        def send_request(self, *_args, **_kwargs):
+            return _TimeoutResult()
+
+    class _TimeoutClient:
+        def __init__(self):
+            self.protocol = _TimeoutProtocol()
+
+    svc = BaseLintingService()
+    diagnostics = svc.request_base_diagnostics(
+        _TimeoutClient(),
+        cleaned_text="{}",
+        original_uri="file:///workspace/slow.json.tmpl",
+        detected_format="json",
+        original_filename="slow.json.tmpl",
+        temple_extensions=[".tmpl"],
+    )
+
+    assert diagnostics == []
+
+
+def test_timeout_budget_scales_by_format_and_size():
+    svc = BaseLintingService()
+
+    markdown_large = svc._resolve_timeout_seconds(
+        cleaned_text="x" * 16000,
+        detected_format="markdown",
+    )
+    json_small = svc._resolve_timeout_seconds(
+        cleaned_text="{}",
+        detected_format="json",
+    )
+    unknown_small = svc._resolve_timeout_seconds(
+        cleaned_text="{}",
+        detected_format=None,
+    )
+
+    assert markdown_large > json_small
+    assert json_small > unknown_small
+    assert 0.35 <= unknown_small <= 2.5
+    assert 0.35 <= markdown_large <= 2.5

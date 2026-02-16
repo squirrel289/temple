@@ -10,20 +10,21 @@ Produces valid JSON respecting schema types, with proper handling of:
 """
 
 import json
-from typing import Any, Dict, List
+from typing import Any
+
 from temple.compiler.serializers.base import (
-    Serializer,
+    ASTNode,
     SerializationContext,
     SerializationError,
+    Serializer,
 )
-from temple.compiler.serializers.base import ASTNode
-from temple.typed_ast import Block, Text, Expression, If, For, Include
+from temple.typed_ast import Block, Expression, For, If, Include, Set, Text
 
 
 class JSONSerializer(Serializer):
     """Serializer for JSON output format."""
 
-    def serialize(self, ast: ASTNode, data: Dict[str, Any]) -> str:
+    def serialize(self, ast: ASTNode, data: dict[str, Any]) -> str:
         """
         Serialize AST with input data to JSON string.
 
@@ -98,7 +99,7 @@ class JSONSerializer(Serializer):
 
             results = []
             for item in iterable:
-                context.push_scope({node.var: item, **context.current_scope})
+                context.push_scope({node.var: item, **context.scope_mapping()})
                 result = self._evaluate_block(node.body.nodes, context)
                 context.pop_scope()
 
@@ -113,6 +114,10 @@ class JSONSerializer(Serializer):
         elif isinstance(node, Include):
             return None
 
+        elif isinstance(node, Set):
+            context.set_variable(node.name, context.get_variable(node.expr))
+            return None
+
         else:
             return None
 
@@ -121,7 +126,7 @@ class JSONSerializer(Serializer):
         return json.dumps(value, indent=2 if self.pretty else None)
 
     def _evaluate_block(
-        self, children: List[ASTNode], context: SerializationContext
+        self, children: list[ASTNode], context: SerializationContext
     ) -> Any:
         """
         Evaluate a block of nodes, combining results.

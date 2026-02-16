@@ -1,10 +1,10 @@
-extends: ../../.yamllint
+---
+extends: default
 
 # Per-folder yamllint config for GitHub workflow files.
-# This file extends the repository-level `.yamllint` at the project root
-# to allow folder-specific overrides if needed.
+# This file starts from yamllint's built-in `default` profile and applies
+# workflow-specific overrides.
 
-# Disable the `truthy` rule repository-wide to avoid workflow-file
-# style warnings for bare `pull_request:` / `pull_request: true` usage.
 rules:
+  line-length: disable
   truthy: disable

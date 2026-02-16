@@ -9,8 +9,8 @@ related_backlog:
   - "[[05_output_format_linters.md]]"
   - "[[23_refactor_tokenizer_to_core.md]]"
 related_commit: 
-  - "3b913ab"
-  - "cd69df9"
+  - 3b913ab  # feat(linter): strip temple suffix from URIs in base linting request
+  - cd69df9  # feat(linter): optimize base linting with format hints and type safety
 ---
 
 # 24: Optimize Base Linting Diagnostics

@@ -12,12 +12,13 @@ A Language Server Protocol (LSP) server for linting templated files. Integrates 
 🎨 **Format Detection**: Automatic detection of JSON, YAML, HTML, XML, TOML, Markdown  
 🔌 **VS Code Integration**: Seamless integration with VS Code's native linters  
 📊 **Complete Diagnostics**: Combines template and base format diagnostics with accurate position mapping
+🧭 **LSP Language Features**: Completion, hover, go-to-definition, find references, and rename
 
 ## Dependencies
 
 - **temple>=0.1.0**: Core templating engine with parser, type checker, and diagnostics (REQUIRED)
 - **pygls>=1.0.0**: LSP server framework
-- **Python 3.8+**: Required for temple core compatibility
+- **Python 3.10+**: Required by package metadata and CI
 
 ## Installation
 
@@ -197,9 +198,33 @@ Configure in `.vscode/settings.json`:
 ```json
 {
   "temple.fileExtensions": [".tmpl", ".template", ".tpl", ".jinja"],
+  "temple.semanticSchemaPath": "schemas/template.schema.json",
+  "temple.semanticContext": {
+    "user": { "name": "Alice" }
+  },
   "python.defaultInterpreterPath": "/path/to/python"
 }
 ```
+
+### LSP Initialization Contract
+
+The VS Code extension sends these initialization options to `temple_linter.lsp_server`:
+
+- `templeExtensions` (`string[]`) - file extensions treated as Temple templates.
+- `semanticSchema` (`object`, optional) - parsed JSON schema object used for semantic checks and schema-aware language features.
+- `semanticSchemaPath` (`string`, optional) - schema file path fallback when `semanticSchema` is not provided.
+- `semanticContext` (`object`, optional) - context object for semantic checks.
+
+### Stable Diagnostic Conventions
+
+Temple semantic diagnostics from `temple-type-checker` currently use `ERROR` severity and these stable codes:
+
+| Code | Meaning |
+|------|---------|
+| `undefined_variable` | Root variable path is not defined in context/schema |
+| `missing_property` | Property access does not exist on an object type |
+| `type_mismatch` | Expression/operation uses an incompatible type (e.g., iterating non-array) |
+| `schema_violation` | Value or structure violates schema constraints |
 
 ### Custom Delimiters
 
@@ -218,7 +243,7 @@ delimiters:
 | Format   | Extensions          | Detection Heuristics        |
 |----------|---------------------|------------------------------|
 | JSON     | `.json`             | Starts with `{` or `[`       |
-| YAML     | `.yaml`, `.yml`     | Contains `: ` patterns       |
+| YAML     | `.yaml`, `.yml`     | Contains `:` patterns       |
 | HTML     | `.html`             | `<!DOCTYPE>`, `<html>`       |
 | XML      | `.xml`              | `<?xml version`              |
 | TOML     | `.toml`             | Starts with `[section]`      |
@@ -231,61 +256,84 @@ delimiters:
 ### Running Tests
 
 ```bash
-# All tests (49 tests)
-pytest tests/ -v
+# All tests
+pytest tests/ -q
 
-# Specific test suites
-pytest tests/test_tokenizer.py -v          # Token parsing
-pytest tests/test_preprocessing.py -v      # Token stripping
-pytest tests/test_base_format_linter.py -v # Format detection
-pytest tests/test_integration.py -v        # Full pipeline
+# Core linting/diagnostics suites
+pytest tests/test_preprocessing.py -q
+pytest tests/test_base_format_linter.py -q
+pytest tests/test_diagnostics.py -q
+pytest tests/test_linter.py -q
+pytest tests/test_semantic_linter.py -q
+pytest tests/test_integration.py -q
+
+# LSP-specific suites
+pytest tests/test_lsp_entrypoint.py -q
+pytest tests/test_lsp_transport_wiring.py -q
+pytest tests/test_lsp_features.py -q
+
+# E2E + performance thresholds
+pytest tests/test_e2e_performance.py -q
 
 # With coverage
 pytest tests/ --cov=temple_linter --cov-report=html
 ```
 
-### Test Structure
+### Test Structure (Auto-Synced)
 
-```
-tests/
-├── test_tokenizer.py           # Token parsing (10 tests)
-├── test_preprocessing.py       # Token stripping (4 tests)
-├── test_base_format_linter.py  # Format detection (18 tests)
-├── test_diagnostics.py         # Diagnostic mapping (1 test)
-├── test_linter.py              # Template linting (1 test)
-├── test_integration.py         # Full pipeline (15 tests)
-└── fixtures/                   # Real-world templates
-    ├── valid_package.json.tmpl
+The tree below is generated from the repository during pre-commit/CI to avoid drift.
+
+<!-- BEGIN:project-structure path=temple-linter/tests depth=2 annotations=temple-linter/.structure-notes.yaml section=tests -->
+```text
+temple-linter/tests/
+├── test_base_format_linter.py          # Base format validation coverage
+├── test_base_linting_service.py
+├── test_diagnostic_converter.py        # Diagnostic mapping and reporting coverage
+├── test_e2e_performance.py             # E2E and performance guardrails
+├── test_integration.py                 # End-to-end linting pipeline coverage
+├── test_linter.py
+├── test_lsp_entrypoint.py
+├── test_lsp_features.py                # Completion/hover/definition/references/rename tests
+├── test_lsp_mvp_smoke.py
+├── test_lsp_transport_wiring.py
+├── test_projection_snapshot.py
+├── test_semantic_linter.py
+└── fixtures/                           # Template fixtures for base-format and linting scenarios
     ├── valid_docker_compose.yaml.tmpl
+    ├── valid_package.json.tmpl
     ├── valid_page.html.tmpl
     └── valid_README.md.tmpl
 ```
+<!-- END:project-structure -->
 
 ### Project Structure
 
-```
+Critical files to know first:
+
+- [[lsp_server.py]] - LSP entry point and feature registration
+- [[lsp_features.py]] - completion/hover/definition/references/rename providers
+- [[linter.py]] - Temple syntax + semantic linting integration
+- [[lint_orchestrator.py]] - pipeline coordinator
+- [[test_integration.py]] - broad pipeline coverage
+- [[test_e2e_performance.py]] - E2E and performance thresholds
+
+Generated mini-tree (auto-synced):
+
+<!-- BEGIN:project-structure path=temple-linter depth=1 annotations=temple-linter/.structure-notes.yaml section=project exclude=.* include=src/temple_linter/ -->
+```text
 temple-linter/
-├── src/temple_linter/
-│   ├── lsp_server.py                  # LSP entry point
-│   ├── linter.py                      # Template syntax linter
-│   ├── template_tokenizer.py         # Tokenization with caching
-│   ├── template_preprocessing.py     # Token stripping with caching
-│   ├── template_mapping.py           # Position utilities
-│   ├── base_format_linter.py         # Format detection registry
-│   ├── diagnostics.py                # Diagnostic utilities
-│   └── services/
-│       ├── lint_orchestrator.py           # Workflow coordinator
-│       ├── token_cleaning_service.py      # Token cleaning
-│       ├── base_linting_service.py        # VS Code delegation
-│       └── diagnostic_mapping_service.py  # Position mapping
-├── tests/                             # 49 tests
-├── docs/
-│   ├── ARCHITECTURE.md               # Architecture overview
-│   ├── EXTENDING.md                  # Extension guide
-│   └── api/                          # Sphinx documentation
+├── pyproject.toml      # Package metadata and tooling configuration
+├── README.md           # ⭐ You are here
 ├── requirements.txt
-└── README.md
+├── setup.py
+├── uv.lock
+├── docs/               # Sphinx docs and developer guides
+├── src/                # Python package sources
+│   └── temple_linter/  # Linter and LSP implementation
+├── tests/              # Test suites and fixtures
+└── typings/
 ```
+<!-- END:project-structure -->
 
 ## Performance
 
@@ -337,22 +385,24 @@ See [docs/EXTENDING.md](docs/EXTENDING.md) for complete guide.
 ### LSP Server Not Starting
 
 **Check Python path:**
+
 ```bash
 # Verify Python version
-python --version  # Should be 3.8+
+python --version  # Should be 3.10+
 
 # Check installed packages
 pip list | grep temple-linter
 ```
 
 **Check VS Code Output:**
-- View → Output → Select "Temple LSP" from dropdown
+
+- View → Output → Select "Temple Language Server" from dropdown
 - Look for startup messages or errors
 
 ### Diagnostics Not Appearing
 
 1. **Verify file extension**: Must match `temple.fileExtensions` setting
-2. **Check LSP connection**: Look for "Temple LSP" client in VS Code
+2. **Check LSP connection**: Look for "Temple Language Server" client in VS Code
 3. **Test with known-good template**: Use examples from `tests/fixtures/`
 
 ### Wrong Diagnostic Positions
@@ -397,7 +447,7 @@ Or view online: [docs/api/](docs/api/)
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file for details
+MIT License - See [LICENSE](../LICENSE) file for details
 
 ## Related Projects
 
@@ -408,6 +458,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## Credits
 
 Built with:
+
 - [pygls](https://github.com/openlawlibrary/pygls) - LSP framework
 - [lsprotocol](https://github.com/microsoft/lsprotocol) - LSP types
 - [pytest](https://pytest.org/) - Testing framework
@@ -415,30 +466,25 @@ Built with:
 
 ## Status
 
-**Version**: 0.1.0-alpha  
-**Stability**: Alpha - Core functionality complete
+**Version**: 0.1.0  
+**Stability**: MVP in active iteration
 
 ### Completed Features
 
 - ✅ LSP server with service architecture
-- ✅ Template tokenization with regex caching
-- ✅ Token cleaning and preprocessing
-- ✅ Format detection with VS Code passthrough
-- ✅ Base linting delegation
-- ✅ Diagnostic position mapping
-- ✅ Diagnostic merging and publishing
-- ✅ Configurable temple extensions
-- ✅ 49 tests passing (unit + integration)
+- ✅ Syntax + semantic diagnostics integration
+- ✅ Base linting delegation and mapped diagnostics
+- ✅ Completion, hover, definition, references, and rename
+- ✅ Configurable Temple file extensions
+- ✅ E2E and performance-threshold test coverage
 - ✅ API documentation (Sphinx)
-- ✅ Real-world template examples
+- ✅ Real-world template fixtures
 
 ### Roadmap
 
-- [ ] Custom delimiter configuration via files
-- [ ] Template syntax validation improvements
-- [ ] Query language integration (JMESPath)
-- [ ] Schema validation support
-- [ ] Performance profiling and optimization
+- [ ] Multi-file rename/definition beyond single-document scope
+- [ ] Richer schema auto-discovery in LSP initialization
+- [ ] Performance profiling with larger real-world fixture sets
 - [ ] VS Code extension marketplace publication
 
 ## Support

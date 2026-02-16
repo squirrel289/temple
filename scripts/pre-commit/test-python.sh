@@ -2,25 +2,43 @@
 set -euo pipefail
 
 # Run pytest for affected Python modules (pre-commit) or all tests (scheduled/push).
-
-# Ensure CI virtualenv is activated so tests run with the CI toolset.
 ROOT_DIR="$(git rev-parse --show-toplevel)"
-
-# Ensure CI venv is available if helper exists
-if [ -f "$ROOT_DIR/scripts/ci/venv_utils.sh" ]; then
-  . "$ROOT_DIR/scripts/ci/venv_utils.sh"
-fi
-
-if ! ensure_ci_venv_ready; then
-  print_ci_venv_instructions || true
-  exit 1
-fi
+cd "$ROOT_DIR"
 
 PYTHON="$(command -v python3 || command -v python)"
 if [ -z "$PYTHON" ]; then
   echo "python not found in PATH; skipping test checks (allowing commit)." >&2
   exit 0
 fi
+
+run_pytest() {
+  local status=0
+
+  if "$PYTHON" -m pytest --version >/dev/null 2>&1; then
+    set +e
+    "$PYTHON" -m pytest "$@"
+    status=$?
+    set -e
+  elif command -v uv >/dev/null 2>&1; then
+    echo "pytest not available in interpreter; falling back to uv-managed pytest." >&2
+    set +e
+    uv run --with pytest --with-editable ./temple --with-editable ./temple-linter python -m pytest "$@"
+    status=$?
+    set -e
+  else
+    echo "pytest is unavailable and uv is not installed; cannot run test hook." >&2
+    exit 1
+  fi
+
+  # pytest exit code 5 means "no tests collected". For affected-file runs,
+  # treat that as non-blocking rather than failing the commit.
+  if [[ $status -eq 5 ]]; then
+    echo "No matching tests collected for this change set; skipping." >&2
+    return 0
+  fi
+
+  return $status
+}
 
 # If no filenames are provided, decide based on context.
 if [[ "$#" -eq 0 ]]; then
@@ -29,7 +47,7 @@ if [[ "$#" -eq 0 ]]; then
     base_ref="${GITHUB_BASE_REF:-}"
     if [[ -z "$base_ref" ]]; then
       echo "GITHUB_BASE_REF not set; falling back to full test run."
-      "$PYTHON" -m pytest tests/ -v --tb=short
+      run_pytest tests/ -v --tb=short
       exit 0
     fi
 
@@ -61,12 +79,12 @@ if [[ "$#" -eq 0 ]]; then
     done <<< "$uniq_patterns"
 
     echo "Running pytest for changed modules: $K_EXPR"
-    "$PYTHON" -m pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings
+    run_pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings
     exit 0
   fi
 
   echo "Non-PR run detected; running full test suite."
-  "$PYTHON" -m pytest tests/ -v --tb=short
+  run_pytest tests/ -v --tb=short
   exit 0
 fi
 
@@ -91,8 +109,7 @@ for f in "${files[@]}"; do
 done
 
 # Deduplicate patterns
-uniq_patterns=$(printf "%s
-" "${patterns[@]}" | awk '!seen[$0]++')
+uniq_patterns=$(printf "%s\n" "${patterns[@]}" | awk '!seen[$0]++')
 
 K_EXPR=""
 while IFS= read -r p; do
@@ -104,5 +121,4 @@ while IFS= read -r p; do
 done <<< "$uniq_patterns"
 
 echo "Running pytest for changed modules: $K_EXPR"
-"$PYTHON" -m pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings
-
+run_pytest -q -k "$K_EXPR" --maxfail=1 --disable-warnings

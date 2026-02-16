@@ -1,4 +1,4 @@
-from temple.template_tokenizer import temple_tokenizer, Token, _compile_token_pattern
+from temple.template_tokenizer import Token, _compile_token_pattern, temple_tokenizer
 
 
 def tokens_to_tuples(
@@ -84,6 +84,30 @@ def test_only_token():
     text = "{{foo}}"
     tokens = list(temple_tokenizer(text))
     assert tokens_to_tuples(tokens) == [("expression", "foo", (0, 0), (0, 7))]
+
+
+def test_trim_markers_set_flags_and_strip_marker_characters():
+    text = "{{- user.name -}}{% -ignored %}{%- if x -%}{{~ account.id ~}}"
+    tokens = list(temple_tokenizer(text))
+
+    assert tokens[0].type == "expression"
+    assert tokens[0].value == "user.name"
+    assert tokens[0].trim_left is True
+    assert tokens[0].trim_right is True
+
+    assert tokens[1].type == "statement"
+    assert tokens[1].trim_left is False
+    assert tokens[1].trim_right is False
+
+    assert tokens[2].type == "statement"
+    assert tokens[2].value == "if x"
+    assert tokens[2].trim_left is True
+    assert tokens[2].trim_right is True
+
+    assert tokens[3].type == "expression"
+    assert tokens[3].value == "account.id"
+    assert tokens[3].trim_left is True
+    assert tokens[3].trim_right is True
 
 
 def test_pattern_caching():

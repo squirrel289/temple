@@ -1,5 +1,6 @@
 import pathlib
 import sys
+
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -9,9 +10,9 @@ if str(SRC) not in sys.path:
 
 try:
     from temple_linter.base_format_linter import (
+        VSCODE_PASSTHROUGH,
         BaseFormatLinter,
         strip_temple_extension,
-        VSCODE_PASSTHROUGH,
     )
 except Exception:
     # Fall back to adding repo src to sys.path for local test runs
@@ -24,9 +25,9 @@ except Exception:
         sys.path.insert(0, str(SRC))
 
     from temple_linter.base_format_linter import (
+        VSCODE_PASSTHROUGH,
         BaseFormatLinter,
         strip_temple_extension,
-        VSCODE_PASSTHROUGH,
     )
 
 
@@ -72,6 +73,32 @@ def test_lint_base_format_returns_diagnostics(linter):
     diagnostics = linter.lint_base_format("Hello {% if user %}{{ user.name }}{% end %}")
     assert isinstance(diagnostics, list)
     assert diagnostics[0]["base_format"] == VSCODE_PASSTHROUGH
+
+
+def test_lint_base_format_forwards_custom_delimiters_to_cleaner(monkeypatch):
+    custom_delimiters = {
+        "statement": ("<%", "%>"),
+        "expression": ("<<", ">>"),
+        "comment": ("<#", "#>"),
+    }
+    linter = BaseFormatLinter(delimiters=custom_delimiters)
+    captured: dict[str, object] = {}
+
+    def fake_clean(
+        text: str,
+        format_hint: str | None = None,
+        delimiters: dict[str, tuple[str, str]] | None = None,
+    ) -> tuple[str, list[object]]:
+        captured["text"] = text
+        captured["delimiters"] = delimiters
+        return "{}", []
+
+    monkeypatch.setattr(linter._token_cleaner, "clean_text_and_tokens", fake_clean)
+
+    diagnostics = linter.lint_base_format("<< user.name >>", filename="config.json")
+    assert diagnostics[0]["base_format"] == "json"
+    assert captured["text"] == "<< user.name >>"
+    assert captured["delimiters"] == custom_delimiters
 
 
 def test_strip_temple_extension_tmpl():

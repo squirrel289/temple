@@ -11,14 +11,15 @@ Produces valid Markdown with proper handling of:
 - Tables (future)
 """
 
-from typing import Any, Dict, List
+from typing import Any
+
 from temple.compiler.serializers.base import (
-    Serializer,
+    ASTNode,
     SerializationContext,
     SerializationError,
+    Serializer,
 )
-from temple.compiler.serializers.base import ASTNode
-from temple.typed_ast import Block, Text, Expression, If, For, Include
+from temple.typed_ast import Block, Expression, For, If, Include, Set, Text
 
 
 class MarkdownSerializer(Serializer):
@@ -40,7 +41,7 @@ class MarkdownSerializer(Serializer):
         self.current_list_level = 0
         self.heading_level = base_heading_level
 
-    def serialize(self, ast: ASTNode, data: Dict[str, Any]) -> str:
+    def serialize(self, ast: ASTNode, data: dict[str, Any]) -> str:
         """
         Serialize AST with input data to Markdown string.
 
@@ -121,7 +122,7 @@ class MarkdownSerializer(Serializer):
                             "first": idx == 0,
                             "last": idx == len(iterable) - 1,
                         },
-                        **context.current_scope,
+                        **context.scope_mapping(),
                     }
                 )
                 result = self._evaluate_block(node.body.nodes, context)
@@ -139,6 +140,10 @@ class MarkdownSerializer(Serializer):
             # Full include handling requires file system access
             return ""
 
+        elif isinstance(node, Set):
+            context.set_variable(node.name, context.get_variable(node.expr))
+            return ""
+
         else:
             return ""
 
@@ -147,7 +152,7 @@ class MarkdownSerializer(Serializer):
         return self._escape_markdown(str(value))
 
     def _evaluate_block(
-        self, children: List[ASTNode], context: SerializationContext
+        self, children: list[ASTNode], context: SerializationContext
     ) -> str:
         """Evaluate block of nodes, joining results with newlines."""
         results = []

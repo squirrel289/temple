@@ -7,31 +7,22 @@ Serializers convert type-checked AST + input data into formatted output
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any
+
+from temple.compiler.types import BaseType
+from temple.diagnostics import SourceRange
+from temple.expression_eval import evaluate_expression
 
 # Alias the core AST node type for type hints used in serializers.
 # Importing as `ASTNode` keeps existing type hints stable and avoids
 # NameError during test collection when annotations are evaluated.
 from temple.typed_ast import Node as ASTNode
 
-# Guard optional AST node types that may not yet exist in `typed_ast`.
-try:
-    from temple.typed_ast import FunctionDef, FunctionCall
-except Exception:
-
-    class _MissingNode:
-        pass
-
-    FunctionDef = _MissingNode
-    FunctionCall = _MissingNode
-from temple.diagnostics import SourceRange
-from temple.compiler.types import BaseType
-
 
 class SerializationError(Exception):
     """Error during serialization process."""
 
-    def __init__(self, message: str, source_range: Optional[SourceRange] = None):
+    def __init__(self, message: str, source_range: SourceRange | None = None):
         self.message = message
         self.source_range = source_range
         super().__init__(f"{message}" + (f" at {source_range}" if source_range else ""))
@@ -40,7 +31,7 @@ class SerializationError(Exception):
 class SerializationContext:
     """Context for tracking serialization state and scope."""
 
-    def __init__(self, data: Dict[str, Any], schema: Optional[BaseType] = None):
+    def __init__(self, data: dict[str, Any], schema: BaseType | None = None):
         """
         Initialize serialization context.
 
@@ -50,12 +41,12 @@ class SerializationContext:
         """
         self.data = data
         self.schema = schema
-        self.variables: Dict[str, Any] = {}
+        self.variables: dict[str, Any] = {}
         self.scope_stack = [self.data]
 
     def get_variable(self, path: str | None) -> Any:
         """
-        Get variable value by dot-notation path (e.g., 'user.name').
+        Get variable value by expression/path in the current scope.
 
         Args:
             path: Dot-notation variable path
@@ -66,25 +57,24 @@ class SerializationContext:
         Raises:
             SerializationError: If path is invalid
         """
-        value = self.scope_stack[-1]  # Current scope
+        value = self.scope_mapping()
         if path is None:
             return value
+        return evaluate_expression(path, value)
 
-        parts = path.split(".")
+    def scope_mapping(self) -> dict[str, Any]:
+        """Return a dictionary view of the current scope with set variables."""
+        current = self.current_scope
+        scope = dict(current) if isinstance(current, dict) else {"value": current}
+        if self.variables:
+            scope.update(self.variables)
+        return scope
 
-        for part in parts:
-            if isinstance(value, dict):
-                value = value.get(part)
-            elif isinstance(value, (list, tuple)):
-                try:
-                    idx = int(part)
-                    value = value[idx]
-                except (ValueError, IndexError):
-                    return None
-            else:
-                return None
-
-        return value
+    def set_variable(self, name: str, value: Any) -> None:
+        """Persist variable assignment for subsequent expression evaluation."""
+        self.variables[name] = value
+        if isinstance(self.current_scope, dict):
+            self.current_scope[name] = value
 
     def push_scope(self, data: Any) -> None:
         """Push new scope onto stack."""
@@ -116,7 +106,7 @@ class Serializer(ABC):
         self.strict = strict
 
     @abstractmethod
-    def serialize(self, ast: ASTNode, data: Dict[str, Any]) -> str:
+    def serialize(self, ast: ASTNode, data: dict[str, Any]) -> str:
         """
         Serialize AST with input data into formatted output.
 
@@ -166,7 +156,7 @@ class Serializer(ABC):
         """Escape special characters for output format (override in subclasses)."""
         return text
 
-    def _type_coerce(self, value: Any, target_type: Optional[BaseType]) -> Any:
+    def _type_coerce(self, value: Any, target_type: BaseType | None) -> Any:
         """
         Coerce value to target type if schema provided.
 

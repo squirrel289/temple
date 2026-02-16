@@ -13,35 +13,106 @@ Grammar Strategy:
 # ============================================================================
 # Public API (matches production lark_parser.py)
 # ============================================================================
-from typing import overload, Literal, Any, List, Optional, Sequence, Tuple
 import os
-
 import re
-from lark import (
-    Lark,
-    UnexpectedToken,
-    UnexpectedCharacters,
-    UnexpectedInput,
-    Tree,
-    Transformer,
-    Token,
-)
+from collections.abc import Sequence
+from typing import Any, Literal, overload
+
+try:
+    from lark import (
+        Lark,
+        Token,
+        Transformer,
+        Tree,
+        UnexpectedCharacters,
+        UnexpectedInput,
+        UnexpectedToken,
+    )
+    _LARK_IMPORT_ERROR: ModuleNotFoundError | None = None
+except ModuleNotFoundError as exc:
+    _LARK_IMPORT_ERROR = exc
+
+    class UnexpectedInput(Exception):
+        """Fallback parser exception when lark dependency is unavailable."""
+
+    class UnexpectedToken(UnexpectedInput):
+        """Fallback parser exception when lark dependency is unavailable."""
+
+    class UnexpectedCharacters(UnexpectedInput):
+        """Fallback parser exception when lark dependency is unavailable."""
+
+    class Token(str):  # type: ignore[misc]
+        """Minimal token shim for typing/runtime import safety."""
+
+        line = 1
+        column = 1
+        end_line = 1
+        end_column = 1
+        type = "TOKEN"
+
+    class Tree:  # type: ignore[no-redef]
+        """Minimal parse-tree shim for typing/runtime import safety."""
+
+    class Transformer:  # type: ignore[no-redef]
+        """Minimal transformer shim for typing/runtime import safety."""
+
+        def __class_getitem__(cls, _item):
+            return cls
+
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    class Lark:  # type: ignore[no-redef]
+        """Minimal parser shim for typing/runtime import safety."""
+
+        def __init__(self, *_args, **_kwargs):
+            raise ModuleNotFoundError(
+                "temple parser dependency 'lark' is missing"
+            ) from _LARK_IMPORT_ERROR
 
 from temple.diagnostics import (
     Diagnostic,
     DiagnosticCollector,
-    SourceRange,
     Position,
+    SourceRange,
 )
-
 from temple.typed_ast import (
     Block,
     Expression,
     For,
     If,
     Include,
+    Set,
     Text,
 )
+from temple.whitespace_control import TRIM_MARKERS
+
+_TRIM_MARKER_CLASS = re.escape("".join(sorted(TRIM_MARKERS)))
+_EXPR_SCAN_RE = re.compile(
+    rf"\{{\{{[{_TRIM_MARKER_CLASS}]?(.*?)[{_TRIM_MARKER_CLASS}]?\}}\}}",
+    re.DOTALL,
+)
+_ELSE_IF_PREFIX_RE = re.compile(r"^(?:else\s+if|elif)\b(?P<condition>.*)$", re.IGNORECASE)
+
+
+def _extract_else_if_condition(tag_text: str) -> str:
+    """Extract else-if condition from compound ELSE_IF_TAG token text."""
+    text = tag_text.strip()
+    if text.startswith("{%"):
+        text = text[2:]
+    if text.endswith("%}"):
+        text = text[:-2]
+    text = text.strip()
+
+    if text and text[0] in TRIM_MARKERS:
+        text = text[1:].strip()
+    if text and text[-1] in TRIM_MARKERS:
+        text = text[:-1].strip()
+
+    match = _ELSE_IF_PREFIX_RE.match(text)
+    if match:
+        return match.group("condition").strip()
+    return ""
 
 
 def _token_range(tk: Token) -> SourceRange:
@@ -56,7 +127,7 @@ def _make_empty_range() -> SourceRange:
     return SourceRange(Position(0, 0), Position(0, 0))
 
 
-def _validate_expression_syntax(expr: str) -> Tuple[bool, str]:
+def _validate_expression_syntax(expr: str) -> tuple[bool, str]:
     """Validate expression syntax (dot notation, identifiers).
 
     Returns:
@@ -89,7 +160,11 @@ GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), "typed_grammar.lark")
 
 def get_parser() -> Lark:
     """Load and return Lark parser for Temple grammar."""
-    with open(GRAMMAR_PATH, "r") as f:
+    if _LARK_IMPORT_ERROR is not None:
+        raise ModuleNotFoundError(
+            "temple parser dependency 'lark' is missing; install temple with parser requirements"
+        ) from _LARK_IMPORT_ERROR
+    with open(GRAMMAR_PATH) as f:
         grammar = f.read()
     return Lark(grammar, start="start", parser="lalr")
 
@@ -97,24 +172,26 @@ def get_parser() -> Lark:
 @overload
 def parse_template(
     text: str,
-    node_collector: Optional[DiagnosticCollector] = None,
-) -> Block: ...
+    node_collector: DiagnosticCollector | None = None,
+) -> Block:
+    pass
 
 
 @overload
 def parse_template(
     text: str,
-    node_collector: Optional[DiagnosticCollector] = None,
+    node_collector: DiagnosticCollector | None = None,
     *,
     include_raw: Literal[True],
-) -> Tuple[Block, Tree]: ...
+) -> tuple[Block, Tree]:
+    pass
 
 
 def parse_template(
     text: str,
-    node_collector: Optional[DiagnosticCollector] = None,
+    node_collector: DiagnosticCollector | None = None,
     include_raw: bool = False,
-) -> Block | Tuple[Block, Tree]:
+) -> Block | tuple[Block, Tree]:
     """Parse template text and return AST.
 
     Args:
@@ -137,8 +214,8 @@ def parse_template(
 
 
 def parse_with_diagnostics(
-    text: str, node_collector: Optional[DiagnosticCollector] = None
-) -> Tuple[Block, Tuple[Diagnostic, ...]]:
+    text: str, node_collector: DiagnosticCollector | None = None
+) -> tuple[Block, tuple[Diagnostic, ...]]:
     """Parse template text and collect diagnostics.
 
     Args:
@@ -150,15 +227,21 @@ def parse_with_diagnostics(
 
     Example:
         >>> ast, diagnostics = parse_with_diagnostics("{% if x %}{{ user.name }}")
-        >>> len(diagnostics) > 0  # Missing {% end %}
-        True
+        >>> bool(diagnostics)  # Missing {% end %}
     """
     collector = node_collector or DiagnosticCollector()
+    if _LARK_IMPORT_ERROR is not None:
+        collector.add_error(
+            "Temple parser dependency 'lark' is missing; install temple with parser requirements.",
+            SourceRange(Position(0, 0), Position(0, 1)),
+            code="PARSER_DEPENDENCY_MISSING",
+        )
+        return Block([]), collector.diagnostics
+
     ast = None
 
     # First, scan for expression syntax errors directly from text
-    expr_pattern = r"\{\{(.*?)\}\}"
-    for match in re.finditer(expr_pattern, text, re.DOTALL):
+    for match in _EXPR_SCAN_RE.finditer(text):
         expr_text = match.group(1).strip()
         is_valid, error_msg = _validate_expression_syntax(expr_text)
         if not is_valid:
@@ -247,7 +330,7 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
     - block wrapping
     """
 
-    def __init__(self, node_collector: Optional[DiagnosticCollector] = None):
+    def __init__(self, node_collector: DiagnosticCollector | None = None):
         super().__init__()
         self.node_collector = node_collector
 
@@ -311,9 +394,9 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
     # if_stmt: STMT_OPEN "if" condition STMT_CLOSE block else_if_chain? else_clause? END_TAG
     def if_stmt(self, items: Sequence[Any]):
         cond = ""
-        body: Optional[Block] = None
-        else_if_parts: List[Tuple[str, Block]] = []
-        else_body: Optional[Block] = None
+        body: Block | None = None
+        else_if_parts: list[tuple[str, Block]] = []
+        else_body: Block | None = None
         src = _make_empty_range()
 
         # Extract components - Tokens inherit from str, so check Token first!
@@ -347,12 +430,8 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
 
     # else_if_chain: (ELSE_IF_TAG block)+
     def else_if_chain(self, items: Sequence[Any]):
-        """Parse else-if chain from compound ELSE_IF_TAG terminals.
-
-        ELSE_IF_TAG captures the entire {% else if CONDITION %} tag.
-        Extract condition using same logic as main condition rule would use.
-        """
-        parts: List[Tuple[str, Block]] = []
+        """Parse else-if chain from compound ELSE_IF_TAG terminals."""
+        parts: list[tuple[str, Block]] = []
 
         # Items alternate: ELSE_IF_TAG, block, ELSE_IF_TAG, block, ...
         i = 0
@@ -360,17 +439,12 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
             cond = ""
             body = Block([])
 
-            # Look for ELSE_IF_TAG token and extract condition
             if (
                 i < len(items)
                 and isinstance(items[i], Token)
                 and getattr(items[i], "type", "") == "ELSE_IF_TAG"
             ):
-                # Extract condition from '{% else if CONDITION %}'
-                # This extraction logic should match how 'condition' rule works
-                tag_text = str(items[i])
-                m = re.match(r"\{%\s*else\s+if\s+(.+?)\s*%\}", tag_text)
-                cond = m.group(1).strip() if m else ""
+                cond = _extract_else_if_condition(str(items[i]))
 
             if i + 1 < len(items) and isinstance(items[i + 1], Block):
                 body = items[i + 1]
@@ -391,7 +465,7 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
     # for_stmt: STMT_OPEN "for" loop_args STMT_CLOSE block END_TAG
     def for_stmt(self, items: Sequence[Any]):
         loop_args_str = ""
-        body: Optional[Block] = None
+        body: Block | None = None
         src = _make_empty_range()
 
         for it in items:
@@ -406,10 +480,10 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
         var = ""
         iterable = ""
         if loop_args_str:
-            m = re.match(r"(\w+)\s+in\s+(\S+)", loop_args_str)
+            m = re.match(r"([A-Za-z_]\w*)\s+in\s+(.+)", loop_args_str)
             if m:
                 var = m.group(1)
-                iterable = m.group(2)
+                iterable = m.group(2).strip()
 
         return For(src, var, iterable, body or Block([]))
 
@@ -429,9 +503,27 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
 
     # set_stmt: STMT_OPEN "set" set_args STMT_CLOSE
     def set_stmt(self, items: Sequence[Any]):
-        """Placeholder for set statement (not in typed_ast yet)."""
-        # Return None or a placeholder node
-        return None
+        args = self._extract_str(items)
+        src = _make_empty_range()
+
+        for it in items:
+            if isinstance(it, Token):
+                src = _token_range(it)
+                break
+
+        m = re.match(r"([A-Za-z_]\w*)\s*=\s*(.+)", args, re.DOTALL)
+        if not m:
+            if self.node_collector is not None:
+                self.node_collector.add_error(
+                    f"Invalid set statement syntax: {args or '<empty>'}",
+                    src,
+                    code="INVALID_SET_STATEMENT",
+                )
+            return None
+
+        name = m.group(1)
+        expr = m.group(2).strip()
+        return Set(src, name, expr)
 
     # inline_stmt: STMT_OPEN (include_stmt | set_stmt) STMT_CLOSE
     def inline_stmt(self, items: Sequence[Any]):
@@ -447,7 +539,7 @@ class _LarkToTypedASTTransformer(Transformer[Block]):
     # block: (text | expression | if_stmt | for_stmt | include_stmt | set_stmt)*
     def block(self, items: Sequence[Any]) -> Block:
         """Wrap items in Block, filtering out None values."""
-        flattened: List[Any] = []
+        flattened: list[Any] = []
 
         for it in items:
             # Skip None (from set_stmt or Tree objects)
