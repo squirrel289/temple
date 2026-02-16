@@ -10,6 +10,7 @@ actual_hours: 2.5
 completed_date: null
 related_commit:
   - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
+  - b03fa90  # chore(backlog): update shadow-bridge status and PR traceability
 test_results: |
   Validation on 2026-02-16:
   - PYTHONPATH=temple-linter/src:temple/src .ci-venv/bin/pytest

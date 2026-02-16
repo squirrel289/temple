@@ -10,6 +10,7 @@ actual_hours: null
 completed_date: null
 related_commit:
   - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
+  - b03fa90  # chore(backlog): update shadow-bridge status and PR traceability
 test_results: null
 dependencies:
   - "[[88_validate_diagnostics_pipeline_and_prepare_patch_release.md]]"
