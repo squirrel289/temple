@@ -18,7 +18,7 @@ test_results: |
   - npm --prefix vscode-temple-linter run test:integration
     (fails in sandbox with VS Code host SIGABRT)
 dependencies:
-  - "[[89_implement_projection_snapshots_for_shadow_bridge.md]]"
+  - "[[archive/89_implement_projection_snapshots_for_shadow_bridge.md]]"
 related_backlog:
   - "archive/75_implement_collocated_mirror_ghost_files_and_diagnostic_remap.md"
 related_spike: []

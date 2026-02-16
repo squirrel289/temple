@@ -1,16 +1,17 @@
 ---
 title: "Harden transport timeout policy and watched-files notification noise"
 id: 93
-status: testing
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: medium
 estimated_hours: 8
 actual_hours: 2.5
-completed_date: null
+completed_date: 2026-02-16
 related_commit:
   - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
   - b03fa90  # chore(backlog): update shadow-bridge status and PR traceability
+  - 67d4374  # merge(PR #11): shadow-bridge parity core merged to main
 test_results: |
   Validation on 2026-02-16:
   - PYTHONPATH=temple-linter/src:temple/src .ci-venv/bin/pytest
@@ -24,7 +25,7 @@ test_results: |
     temple-linter/src/temple_linter/services
     temple-linter/src/temple_linter/lsp_server.py (pass)
 dependencies:
-  - "[[89_implement_projection_snapshots_for_shadow_bridge.md]]"
+  - "[[archive/89_implement_projection_snapshots_for_shadow_bridge.md]]"
 related_backlog:
   - "archive/77_add_base_lint_queueing_adaptive_debounce_and_observability.md"
 related_spike: []
@@ -39,6 +40,9 @@ notes: |
   2026-02-16: Revalidated in testing.
   - Targeted smoke includes watched-files handler and adaptive timeout tests.
   - No regressions in transport wiring/integration Python test suite.
+  2026-02-16: Finalized after merge.
+  - Confirmed merged in PR #11 (merge commit `67d4374`).
+  - Acceptance criteria and test evidence verified; archived as completed.
 ---
 
 ## Goal
