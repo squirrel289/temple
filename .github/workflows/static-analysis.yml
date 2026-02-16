@@ -87,14 +87,13 @@ jobs:
   lint-python:
     name: Lint Python
     runs-on: ubuntu-latest
+    env:
+      CI_VENV_PATH: ${{ github.workspace }}/.cache/ci-venv
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Python Setup
-        uses: ./.github/actions/setup-python
-        with:
-          python-version: '3.11'
-          extras: "[dev]"
+      - name: Bootstrap CI environment
+        run: ./scripts/ci/ensure_ci_venv.sh
       - name: Lint Python (ruff)
         run: ./scripts/pre-commit/lint-python.sh scripts/ci tests
 
@@ -173,17 +172,12 @@ jobs:
   detect-secrets:
     name: Detect secrets
     runs-on: ubuntu-latest
+    env:
+      CI_VENV_PATH: ${{ github.workspace }}/.cache/ci-venv
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Secret Scanner
-        id: secret-scan
-        uses: secret-scanner/action@0.0.2
-        with:
-          detect-secrets-version: 1.5.0
-          baseline-file: .secrets.baseline
-          python-version: 3.11
-          # Uncomment and configure exclusions as needed:
-          # detect-secret-additional-args: ''
+        run: ./scripts/pre-commit/secure-find-secrets.sh

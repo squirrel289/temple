@@ -16,7 +16,7 @@ examples/
 ├── README.md                        # ⭐ You are here
 ├── run_example.py                   # Script to render templates
 ├── sample_data.json                 # Input data for all examples
-├── bench/                           # asv benchmark harness
+├── bench/
 ├── outputs/                         # 📋 Expected rendering results
 │   ├── html_positive.html.output
 │   ├── md_positive.md.output
