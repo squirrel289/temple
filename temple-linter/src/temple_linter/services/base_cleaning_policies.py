@@ -6,6 +6,9 @@ from temple.template_spans import TemplateTokenSpan
 
 from .base_cleaning_contract import BaseCleaningContract
 
+MARKDOWN_EXPRESSION_PLACEHOLDER = "lorem"
+_MARKDOWN_EXPRESSION_PLACEHOLDER_PADDED = f" {MARKDOWN_EXPRESSION_PLACEHOLDER} "
+
 
 def apply_markdown_policy(contract: BaseCleaningContract) -> BaseCleaningContract:
     """Apply markdown-specific post-processing on top of base-cleaning contract."""
@@ -125,7 +128,7 @@ def _rewrite_markdown_mixed_line(
             offsets.extend(range(cursor, token_start))
 
         if span.token.type == "expression":
-            placeholder = " lorem "
+            placeholder = _MARKDOWN_EXPRESSION_PLACEHOLDER_PADDED
             anchor_offset = max(span.content_start_offset, span.start_offset)
             while (
                 anchor_offset < span.content_end_offset

@@ -11,6 +11,9 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 try:
+    from temple_linter.services.base_cleaning_policies import (
+        MARKDOWN_EXPRESSION_PLACEHOLDER,
+    )
     from temple_linter.services.diagnostic_mapping_service import (
         DiagnosticMappingService,
     )
@@ -21,6 +24,9 @@ except Exception:
     if str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 
+    from temple_linter.services.base_cleaning_policies import (
+        MARKDOWN_EXPRESSION_PLACEHOLDER,
+    )
     from temple_linter.services.diagnostic_mapping_service import (
         DiagnosticMappingService,
     )
@@ -41,7 +47,7 @@ def test_markdown_projection_handles_trimmed_trailing_newline_case() -> None:
     projection = service.project_for_base_lint(template, format_hint="markdown")
 
     assert len(projection.cleaned_to_source_offsets) == len(projection.cleaned_text)
-    assert "lorem" in projection.cleaned_text
+    assert MARKDOWN_EXPRESSION_PLACEHOLDER in projection.cleaned_text
     for line in projection.cleaned_text.splitlines():
         assert line == line.rstrip(" \t")
 
@@ -51,7 +57,7 @@ def test_projection_maps_placeholder_back_to_expression_content() -> None:
     template = "Hello {{ user.name }} world\n"
     projection = service.project_for_base_lint(template, format_hint="markdown")
 
-    cleaned_index = projection.cleaned_text.index("lorem")
+    cleaned_index = projection.cleaned_text.index(MARKDOWN_EXPRESSION_PLACEHOLDER)
     mapped_line, mapped_char = projection.map_cleaned_position_to_source(
         0,
         cleaned_index,
@@ -66,12 +72,15 @@ def test_diagnostic_mapping_uses_projection_snapshot() -> None:
     template = "### {{ project.name }}\n"
     projection = service.project_for_base_lint(template, format_hint="markdown")
 
-    placeholder_col = projection.cleaned_text.splitlines()[0].index("lorem")
+    placeholder_col = projection.cleaned_text.splitlines()[0].index(
+        MARKDOWN_EXPRESSION_PLACEHOLDER
+    )
+    placeholder_len = len(MARKDOWN_EXPRESSION_PLACEHOLDER)
     diagnostics = [
         Diagnostic(
             range=Range(
                 start=Position(line=0, character=placeholder_col),
-                end=Position(line=0, character=placeholder_col + 5),
+                end=Position(line=0, character=placeholder_col + placeholder_len),
             ),
             message="example",
             source="markdownlint",

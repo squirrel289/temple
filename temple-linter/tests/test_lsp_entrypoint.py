@@ -3,7 +3,10 @@
 from importlib import import_module
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib  # type: ignore[no-redef]
 
 from temple_linter import lsp_server
 

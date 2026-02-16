@@ -19,7 +19,7 @@ run_pytest() {
 
   if command -v uv >/dev/null 2>&1; then
     echo "pytest not available in interpreter; falling back to uv-managed pytest." >&2
-    uv run --with pytest --with ./temple --with ./temple-linter python -m pytest "$@"
+    uv run --with pytest --with-editable ./temple --with-editable ./temple-linter python -m pytest "$@"
     return
   fi
 

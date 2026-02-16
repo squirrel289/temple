@@ -26,6 +26,11 @@ function renderPythonDefaults({ templeExtensions, templateDelimiters }) {
       throw new Error(`Invalid delimiter pair for '${name}' in shared defaults.`);
     }
     const [start, end] = pair;
+    if (typeof start !== "string" || typeof end !== "string") {
+      throw new Error(
+        `Invalid delimiter pair for '${name}' in shared defaults: start and end must be strings.`,
+      );
+    }
     return `    "${name}": (${JSON.stringify(start)}, ${JSON.stringify(end)}),`;
   });
 
