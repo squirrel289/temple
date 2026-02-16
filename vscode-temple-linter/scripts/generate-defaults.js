@@ -61,15 +61,11 @@ function renderTypeScriptDefaults({ templeExtensions }) {
   ].join("\n");
 }
 
-function writeIfChanged(targetPath, nextContent) {
+function contentChanged(targetPath, nextContent) {
   const currentContent = fs.existsSync(targetPath)
     ? fs.readFileSync(targetPath, "utf8")
     : "";
-  if (currentContent === nextContent) {
-    return false;
-  }
-  fs.writeFileSync(targetPath, nextContent, "utf8");
-  return true;
+  return currentContent !== nextContent;
 }
 
 function main() {
@@ -79,11 +75,17 @@ function main() {
   const typeScriptContent = renderTypeScriptDefaults(defaults);
 
   const changedFiles = [];
-  if (writeIfChanged(PYTHON_DEFAULTS_PATH, pythonContent)) {
+  if (contentChanged(PYTHON_DEFAULTS_PATH, pythonContent)) {
     changedFiles.push(PYTHON_DEFAULTS_PATH);
+    if (!checkMode) {
+      fs.writeFileSync(PYTHON_DEFAULTS_PATH, pythonContent, "utf8");
+    }
   }
-  if (writeIfChanged(TYPESCRIPT_DEFAULTS_PATH, typeScriptContent)) {
+  if (contentChanged(TYPESCRIPT_DEFAULTS_PATH, typeScriptContent)) {
     changedFiles.push(TYPESCRIPT_DEFAULTS_PATH);
+    if (!checkMode) {
+      fs.writeFileSync(TYPESCRIPT_DEFAULTS_PATH, typeScriptContent, "utf8");
+    }
   }
 
   if (checkMode && changedFiles.length > 0) {

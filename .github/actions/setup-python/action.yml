@@ -30,13 +30,13 @@ runs:
       if: ${{ inputs.uv-install == 'true' }}
       run: pip install uv
       shell: bash
-    - name: Install dependencies (uv)
-      working-directory: ${{ inputs.working-directory }}
-      run: uv pip install --system .${{ inputs.extras }}
-      shell: bash
     - name: Cache uv wheels
       uses: actions/cache@v4
       with:
         path: ~/.cache/uv
         key: ${{ runner.os }}-uv-${{ inputs.python-version }}-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: ${{ runner.os }}-uv-
+    - name: Install dependencies (uv)
+      working-directory: ${{ inputs.working-directory }}
+      run: uv pip install --system .${{ inputs.extras }}
+      shell: bash

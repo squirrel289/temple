@@ -15,7 +15,7 @@ if [ -f "$SRC" ]; then
   cat "$SRC" >> "$ASV_MACHINE_JSON"
   echo -n ",\"version\": 1}" >> "$ASV_MACHINE_JSON"
 
-  MNAME=$(grep -m1 '"machine"' "$SRC" | sed -E "s/.*:\s*\"([^\"]+)\".*/\1/")
+  MNAME=$(grep -m1 '"machine"' "$SRC" | sed -E "s/.*:[[:space:]]*\"([^\"]+)\".*/\1/")
   if [ -z "$MNAME" ]; then
     MNAME="$HOSTNAME"
   fi

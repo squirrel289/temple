@@ -1,5 +1,4 @@
 import importlib.util
-import os
 import sys
 from pathlib import Path
 
@@ -7,7 +6,7 @@ import pytest
 
 
 def _load_sync_module():
-    path = Path(os.getcwd()) / "scripts" / "docs" / "sync_readme_structure.py"
+    path = Path(__file__).resolve().parents[1] / "scripts" / "docs" / "sync_readme_structure.py"
     module_name = "docs.sync_readme_structure_test"
     spec = importlib.util.spec_from_file_location(module_name, path)
     module = importlib.util.module_from_spec(spec)

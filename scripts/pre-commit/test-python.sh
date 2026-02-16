@@ -96,8 +96,7 @@ for f in "${files[@]}"; do
 done
 
 # Deduplicate patterns
-uniq_patterns=$(printf "%s
-" "${patterns[@]}" | awk '!seen[$0]++')
+uniq_patterns=$(printf "%s\n" "${patterns[@]}" | awk '!seen[$0]++')
 
 K_EXPR=""
 while IFS= read -r p; do

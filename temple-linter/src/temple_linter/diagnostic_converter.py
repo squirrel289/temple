@@ -74,7 +74,9 @@ def _humanize_parser_message(message: str) -> str:
     # Fallback: best-effort token-label replacements.
     updated = message
     for token_name, label in _TOKEN_LABELS.items():
-        updated = re.sub(rf"\b{re.escape(token_name)}\b", label, updated)
+        # Use lookarounds so tokens with non-word chars (e.g. "$END") still match.
+        pattern = rf"(?<![A-Za-z0-9_]){re.escape(token_name)}(?![A-Za-z0-9_])"
+        updated = re.sub(pattern, label, updated)
     return updated
 
 

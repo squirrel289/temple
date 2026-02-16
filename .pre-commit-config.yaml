@@ -45,7 +45,7 @@ repos:
         name: "lint: js/ts (ESLint)"
         entry: bash -c "cd vscode-temple-linter && npx eslint"
         language: system
-        pass_filenames: true
+        pass_filenames: false
         types: [javascript]
         files: ^vscode-temple-linter/src/.*\.ts$
         stages: [pre-commit]
