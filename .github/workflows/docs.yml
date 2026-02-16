@@ -13,6 +13,8 @@ jobs:
   docs-linter:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Temple Linter Python Environment Setup
         uses: ./.github/actions/setup-python
         with:
@@ -26,6 +28,8 @@ jobs:
   docs-core:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Temple Core Python Environment Setup
         uses: ./.github/actions/setup-python
         with:

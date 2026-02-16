@@ -88,6 +88,8 @@ jobs:
     name: Lint Python
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Python Setup
         uses: ./.github/actions/setup-python
         with:
@@ -100,6 +102,8 @@ jobs:
     name: Lint JavaScript/TypeScript
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Node.js Setup
         uses: ./.github/actions/setup-node
         with:
@@ -115,6 +119,8 @@ jobs:
     name: Validate VS Code Extension Package
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Node.js Setup
         uses: ./.github/actions/setup-node
         with:
@@ -141,6 +147,8 @@ jobs:
       security-events: write
       actions: read
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Python Setup
         uses: ./.github/actions/setup-python
         with:
@@ -174,7 +182,7 @@ jobs:
         id: secret-scan
         uses: secret-scanner/action@0.0.2
         with:
-          detect-secrets-version: 1.2.0
+          detect-secrets-version: 1.5.0
           baseline-file: .secrets.baseline
           python-version: 3.11
           # Uncomment and configure exclusions as needed:
@@ -184,7 +192,7 @@ jobs:
     name: Propose baseline update
     needs: detect-secrets
     runs-on: ubuntu-latest
-    if: failure()  # Only run if detect-secrets fails (secrets found)
+    if: failure() && secrets.DETECT_SECRETS_BOT_TOKEN != ''  # Only run when auth is configured
     steps:
       - name: Checkout (automation token)
         uses: actions/checkout@v4

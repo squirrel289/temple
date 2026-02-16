@@ -13,6 +13,8 @@ jobs:
   root-python-tests:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Python Setup (root automation tests)
         uses: ./.github/actions/setup-python
         with:
@@ -30,6 +32,8 @@ jobs:
         python-version: ["3.10", "3.11"]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Python Setup (temple)
         uses: ./.github/actions/setup-python
         with:
@@ -43,6 +47,8 @@ jobs:
   temple-parity-tests:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Python Setup (temple parity)
         uses: ./.github/actions/setup-python
         with:
@@ -57,6 +63,8 @@ jobs:
   temple-linter-tests:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Python Setup (temple dependency)
         uses: ./.github/actions/setup-python
         with:
