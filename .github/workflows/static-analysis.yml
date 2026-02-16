@@ -131,3 +131,63 @@ jobs:
           fetch-depth: 0
       - name: Secret Scanner
         run: ./scripts/pre-commit/secure-find-secrets.sh
+      - name: Upload detect-secrets artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detect-secrets-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            current.baseline
+            detect_secrets_curr.json
+            detect_secrets_status.txt
+            secrets-report.json
+          if-no-files-found: ignore
+
+  propose-baseline:
+    name: Propose baseline update
+    needs: detect-secrets
+    runs-on: ubuntu-latest
+    if: >-
+      always() &&
+      needs.detect-secrets.result == 'failure' &&
+      (github.event_name == 'push' || github.event_name == 'schedule')
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      CI_VENV_PATH: ${{ github.workspace }}/.cache/ci-venv
+      DETECT_SECRETS_BOT_TOKEN: ${{ secrets.DETECT_SECRETS_BOT_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Bootstrap CI environment
+        run: ./scripts/ci/ensure_ci_venv.sh
+      - name: Regenerate .secrets.baseline
+        run: ./scripts/ci/create_secrets_baseline.sh
+      - name: Resolve automation token
+        id: auth
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${DETECT_SECRETS_BOT_TOKEN}" ]]; then
+            echo "token=${DETECT_SECRETS_BOT_TOKEN}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "token=${GH_TOKEN}" >> "${GITHUB_OUTPUT}"
+          fi
+      - name: Create baseline update PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.auth.outputs.token }}
+          commit-message: "chore(secrets): update .secrets.baseline (automated)"
+          title: "chore(secrets): update .secrets.baseline (automated)"
+          body: |
+            Automated `.secrets.baseline` refresh triggered by a failing detect-secrets check.
+
+            Please review the baseline diff carefully before merge.
+          base: main
+          branch: chore/detect-secrets/baseline-update-${{ github.run_id }}
+          add-paths: .secrets.baseline
