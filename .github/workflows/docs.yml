@@ -12,6 +12,8 @@ on:
 jobs:
   docs-linter:
     runs-on: ubuntu-latest
+    env:
+      CI_VENV_PATH: ${{ github.workspace }}/.cache/ci-venv
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,6 +23,8 @@ jobs:
           python-version: '3.11'
           working-directory: temple-linter
           extras: "[docs]"
+      - name: Bootstrap CI environment
+        run: ./scripts/ci/ensure_ci_venv.sh
       - name: Build docs
         run: ./scripts/pre-commit/build-docs.sh
       - name: Lint docs

@@ -46,4 +46,5 @@ bench = [
 ]
 
 [tool.setuptools]
-# No packages specified here; this is a meta-environment for CI
+# Explicitly disable auto-discovery; this project exists only to aggregate deps.
+py-modules = []
