@@ -1,15 +1,17 @@
 ---
 title: "Add author-controlled whitespace trim tokens across linter and renderer"
 id: 78
-status: in_progress
-state_reason: null
+status: completed
+state_reason: success
 priority: high
 complexity: high
 estimated_hours: 20
 actual_hours: 2.5
-completed_date: null
-related_commit: []
-test_results: "Local: .ci-venv/bin/pytest temple/tests/test_mvp_language_core.py temple/tests/test_tokenizer.py temple/tests/test_template_renderer.py temple-linter/tests/test_integration.py (49 passed)"
+completed_date: 2026-02-16
+related_commit:
+  - 9d0f429  # feat(core): anchor trim semantics and dedupe whitespace controls
+  - 7ff3552  # refactor(linter): add core span metadata cleaning contract
+test_results: "Local: .ci-venv/bin/python -m pytest temple/tests/test_mvp_language_core.py temple/tests/test_tokenizer.py temple/tests/test_template_renderer.py temple/tests/test_template_spans.py temple-linter/tests/test_integration.py (53 passed)"
 dependencies:
   - "[[archive/76_generalize_focus_mode_and_diagnostic_hygiene_across_base_types.md]]"
   - "[[archive/77_add_base_lint_queueing_adaptive_debounce_and_observability.md]]"
@@ -26,6 +28,8 @@ notes: |
   Follow-up refactor anchored trim marker set in shared core utility and
   removed duplicated leading/trailing whitespace regexes from renderer and linter cleaner.
   Added tilde (`~`) parity tests for tokenizer, renderer, and lint-cleaning integration.
+  Completed on 2026-02-16 after validation pass of trim-aware parser,
+  renderer, token-span mapping, and linter integration suites.
 ---
 
 ## Goal
@@ -68,8 +72,8 @@ Current markdown-specific cleaning behavior mitigates false positives but behave
 
 ## Acceptance Criteria
 
-- [ ] `{{- ... -}}`, `{%- ... -%}`, and `{#- ... -#}` parse and execute with defined semantics.
-- [ ] Lint cleaning and rendering apply matching trim behavior.
-- [ ] Existing templates without trim markers preserve current behavior.
-- [ ] Diagnostic mapping remains stable and test-covered under trim cases.
-- [ ] Markdown-specific heuristic logic is reduced or isolated behind compatibility fallback.
+- [x] `{{- ... -}}`, `{%- ... -%}`, and `{#- ... -#}` parse and execute with defined semantics.
+- [x] Lint cleaning and rendering apply matching trim behavior.
+- [x] Existing templates without trim markers preserve current behavior.
+- [x] Diagnostic mapping remains stable and test-covered under trim cases.
+- [x] Markdown-specific heuristic logic is reduced or isolated behind compatibility fallback.
