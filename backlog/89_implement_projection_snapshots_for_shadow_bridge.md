@@ -30,7 +30,7 @@ test_results: |
     temple-linter/tests/test_lsp_mvp_smoke.py
     (19 passed)
 dependencies:
-  - "[[86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
+  - "[[archive/86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
 related_backlog:
   - "archive/75_implement_collocated_mirror_ghost_files_and_diagnostic_remap.md"
   - "archive/77_add_base_lint_queueing_adaptive_debounce_and_observability.md"

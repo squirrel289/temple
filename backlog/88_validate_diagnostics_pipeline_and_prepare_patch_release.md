@@ -20,8 +20,8 @@ test_results: |
     updater lookup also reports ENOTFOUND for update.code.visualstudio.com and
     falls back to cached 1.109.3)
 dependencies:
-  - "[[86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
-  - "[[87_align_manifest_docs_and_integration_tests_for_templated_any.md]]"
+  - "[[archive/86_disable_auto_reassociation_and_lock_template_language_identity.md]]"
+  - "[[archive/87_align_manifest_docs_and_integration_tests_for_templated_any.md]]"
 related_backlog:
   - "archive/57_vscode_packaging_and_init_contract_hardening.md"
   - "[[89_implement_projection_snapshots_for_shadow_bridge.md]]"
