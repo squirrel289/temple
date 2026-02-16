@@ -8,7 +8,8 @@ complexity: high
 estimated_hours: 18
 actual_hours: 6.0
 completed_date: null
-related_commit: []
+related_commit:
+  - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
 test_results: |
   Initial validation on 2026-02-16:
   - PYTHONPATH=temple-linter/src:temple/src .ci-venv/bin/pytest

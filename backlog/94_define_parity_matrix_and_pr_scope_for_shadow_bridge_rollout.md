@@ -8,7 +8,8 @@ complexity: medium
 estimated_hours: 6
 actual_hours: 2.0
 completed_date: null
-related_commit: []
+related_commit:
+  - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
 test_results: |
   Tracking artifact update on 2026-02-16:
   - PR slice implementation currently active on branch
@@ -35,6 +36,8 @@ notes: |
   - PR3 scope: provider proxy/remap/edit safety + semantic tokens (91).
   - PR4 scope: language IDs/grammars/docs/integration alignment (92, 88).
   - Remaining blocker for release gate: VS Code integration host SIGABRT in sandbox.
+  - PR submitted: https://github.com/squirrel289/temple/pull/11
+  - Current PR state: BLOCKED (no approvals + failing remote checks).
 ---
 
 ## Goal

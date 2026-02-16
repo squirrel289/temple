@@ -8,7 +8,8 @@ complexity: medium
 estimated_hours: 6
 actual_hours: 1.5
 completed_date: 2026-02-16
-related_commit: []
+related_commit:
+  - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
 test_results: |
   Validation on 2026-02-16:
   - Static verification: no remaining `setTextDocumentLanguage` reassociation

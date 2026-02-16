@@ -8,7 +8,8 @@ complexity: low
 estimated_hours: 4
 actual_hours: 2.0
 completed_date: null
-related_commit: []
+related_commit:
+  - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
 test_results: |
   Validation rerun on 2026-02-16:
   - npm --prefix vscode-temple-linter run compile (pass)
@@ -45,6 +46,8 @@ notes: |
   - Python projection/transport/integration suites pass.
   - VS Code integration host still terminates with SIGABRT in sandbox; release
     gate remains pending unsandboxed host validation.
+  - PR submitted: https://github.com/squirrel289/temple/pull/11
+  - Remote CI currently failing across required checks; see process-pr status.
 ---
 
 ## Goal

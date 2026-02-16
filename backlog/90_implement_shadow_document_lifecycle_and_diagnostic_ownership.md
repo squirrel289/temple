@@ -8,7 +8,8 @@ complexity: high
 estimated_hours: 16
 actual_hours: 5.0
 completed_date: null
-related_commit: []
+related_commit:
+  - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
 test_results: |
   Current validation on 2026-02-16:
   - npm --prefix vscode-temple-linter run compile (pass)

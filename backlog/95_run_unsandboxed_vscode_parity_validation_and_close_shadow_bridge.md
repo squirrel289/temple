@@ -8,7 +8,8 @@ complexity: medium
 estimated_hours: 6
 actual_hours: null
 completed_date: null
-related_commit: []
+related_commit:
+  - 3c11886  # feat(shadow-bridge): add projection-backed base LSP bridge
 test_results: null
 dependencies:
   - "[[88_validate_diagnostics_pipeline_and_prepare_patch_release.md]]"
@@ -24,6 +25,9 @@ notes: |
   2026-02-16: Created to track the remaining release-gate activity that cannot
   be completed in the current sandbox due VS Code host SIGABRT during
   integration execution.
+  2026-02-16: Linked to PR processing status.
+  - Active PR: https://github.com/squirrel289/temple/pull/11
+  - Process-pr gate is currently blocked by failing remote checks and pending review.
 ---
 
 ## Goal
