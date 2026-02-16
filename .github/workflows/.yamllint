@@ -2,8 +2,8 @@
 extends: default
 
 # Per-folder yamllint config for GitHub workflow files.
-# This file extends the repository-level `.yamllint` at the project root
-# to allow folder-specific overrides if needed.
+# This file starts from yamllint's built-in `default` profile and applies
+# workflow-specific overrides.
 
 rules:
   line-length: disable
