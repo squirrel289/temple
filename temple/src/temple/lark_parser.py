@@ -173,7 +173,8 @@ def get_parser() -> Lark:
 def parse_template(
     text: str,
     node_collector: DiagnosticCollector | None = None,
-) -> Block: ...
+) -> Block:
+    pass
 
 
 @overload
@@ -182,7 +183,8 @@ def parse_template(
     node_collector: DiagnosticCollector | None = None,
     *,
     include_raw: Literal[True],
-) -> tuple[Block, Tree]: ...
+) -> tuple[Block, Tree]:
+    pass
 
 
 def parse_template(
