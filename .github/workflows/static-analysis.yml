@@ -192,14 +192,19 @@ jobs:
     name: Propose baseline update
     needs: detect-secrets
     runs-on: ubuntu-latest
-    if: failure() && secrets.DETECT_SECRETS_BOT_TOKEN != ''  # Only run when auth is configured
+    if: failure()
     steps:
+      - name: Skip when automation token is unavailable
+        if: ${{ secrets.DETECT_SECRETS_BOT_TOKEN == '' }}
+        run: echo "Skipping baseline proposal because DETECT_SECRETS_BOT_TOKEN is not configured."
       - name: Checkout (automation token)
+        if: ${{ secrets.DETECT_SECRETS_BOT_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.DETECT_SECRETS_BOT_TOKEN }}
       - name: Create Pull Request
+        if: ${{ secrets.DETECT_SECRETS_BOT_TOKEN != '' }}
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.DETECT_SECRETS_BOT_TOKEN }}
